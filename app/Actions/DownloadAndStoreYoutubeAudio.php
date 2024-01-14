@@ -6,7 +6,7 @@ use App\YoutubeDownloader\Client;
 use Illuminate\Filesystem\FilesystemManager;
 use Ramsey\Uuid\Uuid;
 
-class StoreAudioFromYoutubeUrl
+class DownloadAndStoreYoutubeAudio
 {
     public function __construct(
         private readonly Client $youtubeDownloader,

@@ -10,8 +10,6 @@ class Metadata
         public readonly string $description,
         public readonly string $channel_id,
         public readonly string $channel,
-        public readonly ?string $uploader_id,
-        public readonly ?string $uploader,
         public readonly int $duration,
     ) {}
 }

@@ -4,10 +4,10 @@ namespace App\Actions;
 
 use App\YoutubeDownloader\Metadata;
 
-class StoredAudioResult
+readonly class StoredAudioResult
 {
     public function __construct(
-        public readonly string $path,
-        public readonly Metadata $metadata,
+        public string $path,
+        public Metadata $metadata,
     ) {}
 }

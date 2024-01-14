@@ -36,8 +36,6 @@ class Client {
             description: $json['description'],
             channel_id: $json['channel_id'],
             channel: $json['channel'],
-            uploader_id: $json['uploader_id'],
-            uploader: $json['uploader'],
             duration: $json['duration']
         );
     }
