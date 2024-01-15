@@ -18,7 +18,8 @@ return new class extends Migration
             $table->string('title', 500);
             $table->string('description', 1000);
             $table->unsignedMediumInteger('duration');
-            $table->string('storage_path');
+            $table->string('storage_path')->unique();
+            $table->boolean('processing');
             $table->timestamps();
         });
     }
