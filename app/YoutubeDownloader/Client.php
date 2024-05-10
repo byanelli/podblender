@@ -4,7 +4,7 @@ namespace App\YoutubeDownloader;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Process\Factory;
-use Illuminate\Process\ProcessResult;
+use Illuminate\Contracts\Process\ProcessResult;
 use Ramsey\Uuid\Uuid;
 
 class Client {
@@ -31,12 +31,12 @@ class Client {
         $json = json_decode($jsonString, true);
 
         return new Metadata(
-            id: $json['id'],
+            id: (int) $json['id'],
             title: $json['title'],
             description: $json['description'],
             channel_id: $json['channel_id'],
             channel: $json['channel'],
-            duration: $json['duration']
+            duration: (int) $json['duration']
         );
     }
 

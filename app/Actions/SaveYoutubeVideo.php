@@ -2,8 +2,8 @@
 
 namespace App\Actions;
 
-use App\Models\YoutubeChannel;
-use App\Models\YoutubeVideo;
+use App\Models\AudioSource;
+use App\Models\AudioClip;
 use App\YoutubeDownloader\Client;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
@@ -17,28 +17,30 @@ class SaveYoutubeVideo
     /**
      * @throws \Exception
      */
-    public function __invoke(string $id): YoutubeVideo {
+    public function __invoke(string $id): AudioClip {
         $metadata = $this->youtubeDownloader->getMetadata($id);
 
         $storagePath = Uuid::uuid4()->toString();
 
-        /** @var YoutubeChannel $channel */
-        $channel = YoutubeChannel::firstOrCreate([YoutubeChannel::COL_PLATFORM_ID => $metadata->channel_id], [
-            YoutubeChannel::COL_PLATFORM_ID => $metadata->channel_id,
-            YoutubeChannel::COL_NAME        => $metadata->channel,
+        /** @var AudioSource $channel */
+        $channel = AudioSource::firstOrCreate([AudioSource::COL_PLATFORM_ID => $metadata->channel_id], [
+            AudioSource::COL_PLATFORM_ID => $metadata->channel_id,
+            AudioSource::COL_NAME        => $metadata->channel,
         ]);
 
-        /** @var YoutubeVideo $video */
-        $video = YoutubeVideo::create([
-            YoutubeVideo::COL_PLATFORM_ID        => $metadata->id,
-            YoutubeVideo::COL_YOUTUBE_CHANNEL_ID => $channel->id,
-            YoutubeVideo::COL_TITLE              => Str::limit($metadata->title, 500 - 3),
-            YoutubeVideo::COL_DESCRIPTION        => Str::limit($metadata->description, 1000 - 3),
-            YoutubeVideo::COL_DURATION           => $metadata->duration,
-            YoutubeVideo::COL_STORAGE_PATH       => $storagePath,
-            YoutubeVideo::COL_PROCESSING         => true,
+        /** @var AudioClip $clip */
+        $clip = AudioClip::create([
+            AudioClip::COL_PLATFORM_ID     => $metadata->id,
+            AudioClip::COL_AUDIO_SOURCE_ID => $channel->id,
+            AudioClip::COL_TITLE           => Str::limit($metadata->title, 500 - 3),
+            AudioClip::COL_DESCRIPTION     => Str::limit($metadata->description, 1000 - 3),
+            AudioClip::COL_DURATION        => $metadata->duration,
+            AudioClip::COL_STORAGE_PATH    => $storagePath,
+            AudioClip::COL_GUID            => Uuid::uuid4()->toString(),
+            AudioClip::COL_PROCESSING      => true,
+            AudioClip::COL_SIZE            => 0,
         ]);
 
-        return $video;
+        return $clip;
     }
 }

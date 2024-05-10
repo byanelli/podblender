@@ -2,12 +2,12 @@
 
 namespace App\Jobs;
 
-use App\Models\YoutubeVideo;
+use App\Models\AudioClip;
 use App\YoutubeDownloader\Client;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Filesystem\FilesystemManager;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -16,29 +16,36 @@ class DownloadAndStoreYoutubeVideo implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(private readonly YoutubeVideo $video) {}
+    public function __construct(private readonly AudioClip $clip) {}
 
     /**
      * Execute the job.
      */
     public function handle(
         Client $youtubeDownloader,
-        FilesystemManager $storage,
+        Application $app,
+        Filesystem $storage,
     ): void {
-        $downloadPath = $youtubeDownloader->downloadAudio($this->video->platform_id);
-        $downloadHandle = fopen($downloadPath, 'r');
+        $downloadPath = $youtubeDownloader->downloadAudio($this->clip->platform_id);
 
-        if (!$downloadHandle) {
-            throw new \Exception("Couldn't open $downloadPath as resource");
+        try {
+            $downloadHandle = fopen($downloadPath, 'r');
+
+            if (!$downloadHandle) {
+                throw new \Exception("Couldn't open $downloadPath as resource");
+            }
+
+            $storageResult = $storage->put($this->clip->storage_path, $downloadHandle);
+
+            if (!$storageResult) {
+                throw new \Exception("Couldn't store audio from $downloadPath");
+            }
+
+            $this->clip->processing = false;
+            $this->clip->size = $storage->size($this->clip->storage_path);
+            $this->clip->save();
+        } finally {
+            unlink($downloadPath);
         }
-
-        $storageResult = $storage->put($this->video->storage_path, $downloadHandle);
-
-        if (!$storageResult) {
-            throw new \Exception("Couldn't store audio from $downloadPath");
-        }
-
-        $this->video->processing = false;
-        $this->video->save();
     }
 }

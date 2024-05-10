@@ -1,0 +1,33 @@
+@php
+    /** @var \App\Models\Feed $feed */
+    /** @var \App\Http\Urls $urls */
+@endphp
+
+@php echo '<?xml version="1.0" encoding="UTF-8"?>\n'; @endphp
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+    <channel>
+        <title>{{$feed->name}}</title>
+        <link>{{$urls->showFeed($feed)}}</link>
+        <description>{{$feed->description}}</description>
+        <itunes:owner>
+            <itunes:email>{{$feed->authorEmail}}</itunes:email>
+        </itunes:owner>
+        <itunes:author>{{$feed->authorName}}</itunes:author>
+        <itunes:image href="{{$feed->imageUrl}}"/>
+        <language>en-us</language>
+        @foreach($feed->audioClipsFinishedProcessing as $clip)
+            <item>
+                <title>{{$clip->title}}</title>
+                <link>{{$clip->source_url}}</link>
+                <description>{{$clip->description}}</description>
+                {{--todo: this should come from the feed/clip pivot--}}
+                <pubDate>{{$clip->created_at->format(\DateTimeInterface::RSS)}}</pubDate>
+                <enclosure url="{{$clip->audio_url}}"
+                           type="audio/mpeg" length="{{$clip->size}}"/>
+                <itunes:duration>{{$clip->formatted_time}}</itunes:duration>
+                <guid isPermaLink="false">{{$clip->guid}}</guid>
+            </item>
+        @endforeach
+    </channel>
+</rss>

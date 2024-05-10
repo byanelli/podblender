@@ -14,10 +14,12 @@ return new class extends Migration
         Schema::create('youtube_videos', function (Blueprint $table) {
             $table->id();
             $table->string('platform_id')->unique();
-            $table->unsignedBigInteger('youtube_channel_id');
+            $table->string('guid')->unique();
+            $table->foreignId('youtube_channel_id');
             $table->string('title', 500);
             $table->string('description', 1000);
             $table->unsignedMediumInteger('duration');
+            $table->unsignedBigInteger('size');
             $table->string('storage_path')->unique();
             $table->boolean('processing');
             $table->timestamps();
