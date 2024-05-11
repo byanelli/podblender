@@ -2,14 +2,14 @@
 
 namespace App\YoutubeDownloader;
 
-class Metadata
+readonly class Metadata
 {
     public function __construct(
-        public readonly string $id,
-        public readonly string $title,
-        public readonly string $description,
-        public readonly string $channel_id,
-        public readonly string $channel,
-        public readonly int $duration,
+        public string $id,
+        public string $title,
+        public string $description,
+        public string $channel_id,
+        public string $channel,
+        public int    $duration,
     ) {}
 }

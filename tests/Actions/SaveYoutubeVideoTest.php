@@ -14,17 +14,23 @@ class SaveYoutubeVideoTest extends TestCase
 {
     #[Test]
     public function it_saves_a_youtube_video() {
-        $this->app->bind(Client::class, fn() => new class ($this->app, Process::fake()) extends Client {
-            public function getMetadata(string $url): Metadata {
-                return new Metadata(
-                    id: 'lijwliejfwlef',
-                    title: 'foo',
-                    description: 'zzz',
-                    channel_id: '9340e9tjh490e5',
-                    channel: 'bar',
-                    duration: 123,
-                );
-            }
+        $this->app->bind(Client::class, function () {
+            return new class (
+                $this->app,
+                $this->app->make(\App\Cache\Metadata::class),
+                Process::fake()
+            ) extends Client {
+                public function getMetadata(string $url): Metadata {
+                    return new Metadata(
+                        id: 'lijwliejfwlef',
+                        title: 'foo',
+                        description: 'zzz',
+                        channel_id: '9340e9tjh490e5',
+                        channel: 'bar',
+                        duration: 123,
+                    );
+                }
+            };
         });
 
         /** @var SaveYoutubeVideo $saveYoutubeVideo */

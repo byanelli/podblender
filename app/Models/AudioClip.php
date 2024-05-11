@@ -26,6 +26,7 @@ use Illuminate\Support\Traits\Tappable;
  * @property AudioSource $audioSource {@see self::audioSource()}
  * @property Platform $platform {@see self::platform()}
  * @property \DateTimeInterface $created_at
+ * @property bool $processed
  */
 class AudioClip extends Model
 {
