@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Actions\SaveYoutubeVideo;
+use App\Http\Routes\Web;
 use App\Jobs\DownloadAndStoreYoutubeVideo;
 use App\Models\AudioClip;
 use App\Models\Feed;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 
 class AddClipToFeed
 {
@@ -29,7 +31,7 @@ class AddClipToFeed
         // Attach the clip to the feed.
         $feed->audioClips()->attach($clip);
 
-        // Notify the user.
-        return view('addClip', ['feed' => $feed, 'clip' => $clip]);
+        // Redirect to the feed view.
+        return redirect(Web::showFeed($feed));
     }
 }

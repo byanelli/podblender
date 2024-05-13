@@ -64,4 +64,28 @@ class ClientTest extends TestCase
 
         $this->assertFileExists($file);
     }
+
+    #[Test]
+    public function it_rejects_invalid_input_when_getting_metadata() {
+        $this->expectException(\InvalidArgumentException::class);
+
+        Process::fake();
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $client->getMetadata('https://youtube.com/watch?v=zzz; rm -rf /some/important/path #');
+    }
+
+    #[Test]
+    public function it_rejects_invalid_input_when_downloading_audio() {
+        $this->expectException(\InvalidArgumentException::class);
+
+        Process::fake();
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $client->downloadAudio('https://youtube.com/watch?v=zzz; rm -rf /some/important/path #');
+    }
 }

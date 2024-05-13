@@ -1,5 +1,6 @@
+@use(App\Http\Routes\Web)
+
 @php
-    use App\Http\Routes\Web;
     /** @var \App\Models\Feed $feed */
 @endphp
 

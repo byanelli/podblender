@@ -7,6 +7,8 @@ use App\Enums\Platform;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Process\Factory;
 use Illuminate\Contracts\Process\ProcessResult;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
 class Client {
@@ -33,6 +35,8 @@ class Client {
     }
 
     public function getMetadata(string $url): Metadata {
+        $this->validateUserInput($url);
+
         $id = $this->normalizeId($url);
 
         // Return cached metadata if available.
@@ -75,8 +79,17 @@ class Client {
             : $url;
     }
 
+    private function validateUserInput(string $input): void {
+        // Ensure input contains no shell special characters that could hijack the youtube-dl command.
+        if (Str::of($input)->contains(['!', '@', '$', '&', '\\', '*', ' ', ';', '|', '%', '#'])) {
+            Log::error("Possible shell injection attempt: $input");
+            throw new \InvalidArgumentException('Invalid input');
+        }
+    }
 
     public function downloadAudio(string $url): string {
+        $this->validateUserInput($url);
+
         $filename = Uuid::uuid4()->toString();
 
         $outputPath = sys_get_temp_dir()."/$filename.mp3";

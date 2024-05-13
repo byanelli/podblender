@@ -24,7 +24,7 @@ class Feed extends Model
     /** {@see self::user()} */
     const REL_USER = 'user';
     /** {@see self::audioClips()} */
-    const REL_ENTRIES = 'audioClips';
+    const REL_AUDIO_CLIPS = 'audioClips';
     /** {@see self::audioClipsFinishedProcessing()} */
     const REL_AUDIO_CLIPS_FINISHED_PROCESSING = 'audioClipsFinishedProcessing';
 
