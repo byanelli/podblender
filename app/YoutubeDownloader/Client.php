@@ -34,6 +34,7 @@ class Client {
             ->throw();
     }
 
+    // todo: make this generic for different platforms
     public function getMetadata(string $url): Metadata {
         $this->validateUserInput($url);
 

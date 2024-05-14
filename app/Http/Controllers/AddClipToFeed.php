@@ -7,14 +7,14 @@ use App\Http\Routes\Web;
 use App\Jobs\DownloadAndStoreYoutubeVideo;
 use App\Models\AudioClip;
 use App\Models\Feed;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Route;
 
 class AddClipToFeed
 {
     public function __construct(private readonly SaveYoutubeVideo $saveYoutubeVideo) {}
 
-    public function __invoke(Request $request, Feed $feed) {
+    public function __invoke(Request $request, Feed $feed): RedirectResponse {
         $clipPlatformId = $request->post('id');
 
         // Find an existing audio clip in the database or get metadata from the platform and save the clip.

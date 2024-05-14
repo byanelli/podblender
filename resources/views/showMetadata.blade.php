@@ -15,7 +15,6 @@ $features = [
 ];
 @endphp
 
-
 <x-layouts.main title="Add clip to {{$feed->name}}" currentTab="Feeds">
     <div class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-5 sm:p-6">

@@ -46,6 +46,7 @@ class AudioClip extends Model
     const COL_PROCESSING = 'processing';
     const COL_SIZE = 'size';
     const REL_AUDIO_SOURCE = 'audioSource';
+    const COL_CREATED_AT = 'created_at';
 
     public function audioSource(): BelongsTo {
         return $this->belongsTo(AudioSource::class);
