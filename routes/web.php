@@ -4,7 +4,7 @@ use App\Http\Controllers;
 use App\Http\Middleware\Authenticate;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/rss/{feed}', Controllers\ShowRss::class)->name('rss');
+Route::get('/rss/{feed:uuid}', Controllers\ShowRss::class)->name('rss');
 Route::get('/login', fn() => view('login'))->name('showLogin');
 Route::post('/login', Controllers\AttemptLogin::class)->name('attemptLogin');
 

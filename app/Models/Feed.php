@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,15 +12,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $name
+ * @property string $uuid
  * @property User $user
  * @property Collection<int, AudioClip> $audioClips {@see self::audioClips()}
  * @property Collection<int, AudioClip> $audioClipsFinishedProcessing {@see self::audioClipsFinishedProcessing()}
  */
 class Feed extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuid;
 
     const COL_USER_ID = 'user_id';
+    const COL_UUID = 'uuid';
 
     /** {@see self::user()} */
     const REL_USER = 'user';

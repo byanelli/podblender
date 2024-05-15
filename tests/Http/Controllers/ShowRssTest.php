@@ -2,8 +2,6 @@
 
 namespace Tests\Http\Controllers;
 
-use App\Http\Routes;
-use App\Http\Routes\Web;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
@@ -26,12 +24,12 @@ class ShowRssTest extends TestCase
             AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
         ]));
 
-        $response = $this->get("rss/{$feed->id}")->content();
+        $response = $this->get("rss/{$feed->uuid}")->content();
 
         $h = fn($s) => htmlentities($s);
 
         $this->assertStringContainsString("<title>{$h($feed->name)}</title>", $response);
-        $this->assertStringContainsString("<link>".Web::rss($feed)."</link>", $response);
+        $this->assertStringContainsString("<link>".url("rss/{$feed->uuid}")."</link>", $response);
         $this->assertStringContainsString("<itunes:email>{$feed->user->email}</itunes:email>", $response);
         $this->assertStringContainsString("<itunes:author>{$h($feed->user->name)}</itunes:author>", $response);
         $this->assertStringContainsString("<title>{$h($clip->title)}</title>", $response);
