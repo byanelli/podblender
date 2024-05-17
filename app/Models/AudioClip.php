@@ -11,22 +11,28 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Traits\Tappable;
 
 /**
- * @property int $id
- * @property string $title
+ * Columns:
+ * @property int $audio_source_id
+ * @property \DateTimeInterface $created_at
  * @property string $description
+ * @property int $duration
+ * @property string $guid
+ * @property int $id
+ * @property string $platform_id
  * @property bool $processing
  * @property int $size
  * @property string $storage_path
- * @property string $guid
- * @property string $platform_id
- * @property int $duration
- * @property string $formatted_time {@see self::formattedTime()}
- * @property string $source_url {@see self::sourceUrl()}
- * @property string $audio_url {@see self::audioUrl()}
+ * @property string $title
+ * @property \DateTimeInterface $updated_at
+ *
+ * Relations:
  * @property AudioSource $audioSource {@see self::audioSource()}
+ *
+ * Attributes:
+ * @property string $audio_url {@see self::audioUrl()}
+ * @property string $formatted_time {@see self::formattedTime()}
  * @property Platform $platform {@see self::platform()}
- * @property \DateTimeInterface $created_at
- * @property bool $processed
+ * @property string $source_url {@see self::sourceUrl()}
  */
 class AudioClip extends Model
 {
@@ -36,17 +42,21 @@ class AudioClip extends Model
         'processing' => 'boolean',
     ];
 
-    const COL_PLATFORM_ID = 'platform_id';
+    // Columns
     const COL_AUDIO_SOURCE_ID = 'audio_source_id';
-    const COL_TITLE = 'title';
+    const COL_CREATED_AT = 'created_at';
     const COL_DESCRIPTION = 'description';
     const COL_DURATION = 'duration';
-    const COL_STORAGE_PATH = 'storage_path';
     const COL_GUID = 'guid';
+    const COL_ID = 'id';
+    const COL_PLATFORM_ID = 'platform_id';
     const COL_PROCESSING = 'processing';
     const COL_SIZE = 'size';
+    const COL_STORAGE_PATH = 'storage_path';
+    const COL_TITLE = 'title';
+
+    // Relations
     const REL_AUDIO_SOURCE = 'audioSource';
-    const COL_CREATED_AT = 'created_at';
 
     public function audioSource(): BelongsTo {
         return $this->belongsTo(AudioSource::class);
