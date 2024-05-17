@@ -8,21 +8,26 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('entries', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('feed_id');
-            $table->foreignId('youtube_video_id');
-            $table->timestamps();
+            $table->increments('id');
+            $table->integer('feed_id');
+            $table->integer('youtube_video_id');
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('entries');
     }
