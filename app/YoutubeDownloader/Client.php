@@ -42,12 +42,17 @@ class Client {
 
         // Return cached metadata if available.
         if (!is_null($cached = $this->cache->get(Platform::YouTube, $id))) {
-            $cached instanceof Metadata || throw new \RuntimeException('???');
+            $cached instanceof Metadata || throw new \RuntimeException('Invalid metadata in cache');
             return $cached;
         }
 
-        // Run process and convert output to JSON.
-        $jsonString = $this->run(self::METADATA_TIMEOUT, ['--dump-json', $this->normalizeUrl($url)])->output();
+        try {
+            // Run process and convert output to JSON.
+            $jsonString = $this->run(self::METADATA_TIMEOUT, ['--dump-json', $this->normalizeUrl($url)])->output();
+        } catch (\Throwable $t) {
+            // Wrap the exception so we don't expose the command line process to the user.
+            throw new DownloadException('Error downloading metadata from YouTube', previous: $t);
+        }
 
         $json = json_decode($jsonString, true);
 

@@ -33,11 +33,11 @@ abstract class Web
         return route('showFeed', [$feed]);
     }
 
-    public static function confirmAddClipToFeed(Feed $feed, ?string $url = null): string {
-        return route('confirmAddClipToFeed', array_filter([$feed, 'url' => $url]));
-    }
-
     public static function addClipToFeed(Feed $feed, ?string $url = null): string {
         return route('addClipToFeed', [$feed]);
+    }
+
+    public static function showMetadata(Feed $feed): string {
+        return route('showMetadata', [$feed]);
     }
 }
