@@ -5,17 +5,16 @@ namespace Tests\Jobs;
 use App\Jobs\DownloadAndStoreYoutubeVideo;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
-use App\YoutubeDownloader\Client;
-use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\FakesDispatcher;
 use Tests\Concerns\FakesStorage;
 use Tests\Concerns\FakesYoutubeDownloader;
 use Tests\TestCase;
 
 class DownloadAndStoreYoutubeVideoTest extends TestCase
 {
-    use FakesYoutubeDownloader, FakesStorage;
+    use FakesYoutubeDownloader, FakesStorage, FakesDispatcher;
 
     #[Test]
     public function it_downloads_and_stores_youtube_videos(): void
@@ -43,7 +42,7 @@ class DownloadAndStoreYoutubeVideoTest extends TestCase
         $this->assertFalse($clip->processing);
         $storage->assertExists($clip->storage_path);
         $this->assertEquals($downloadContents, $storage->get($clip->storage_path));
-        $this->assertFalse(file_exists($downloadPath));
+        $this->assertFileDoesNotExist($downloadPath);
     }
 
     #[Test]
@@ -63,14 +62,12 @@ class DownloadAndStoreYoutubeVideoTest extends TestCase
         $this->fakeYoutubeDownloader($downloadPath, $downloadContents);
         $this->fakeStorageThatThrowsExceptionOnPut();
 
-        // todo: why doesn't dispatch() work here?
-        try {
-            (new DownloadAndStoreYoutubeVideo($clip))->handle($this->app->make(Client::class), $this->app->make(Filesystem::class));
-        } catch (\Exception $e) {
-            //
-        }
+        // Laravel's fake dispatcher doesn't work here, presumably because we throw an exception during the job.
+        $this->fakeExceptionSuppressingDispatcher();
+
+        dispatch(new DownloadAndStoreYoutubeVideo($clip));
 
         $this->assertModelMissing($clip);
-        $this->assertFalse(file_exists($downloadPath));
+        $this->assertFileDoesNotExist($downloadPath);
     }
 }
