@@ -4,7 +4,7 @@ namespace App\Actions;
 
 use App\Models\AudioSource;
 use App\Models\AudioClip;
-use App\YoutubeDownloader\Client;
+use App\Apis\YoutubeDownloader\Client;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 

@@ -6,7 +6,7 @@ use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
-use App\YoutubeDownloader\Metadata;
+use App\Apis\YoutubeDownloader\Metadata;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesYoutubeDownloader;
 use Tests\TestCase;

@@ -2,8 +2,9 @@
 
 namespace Tests\Concerns;
 
-use App\YoutubeDownloader\Client;
-use App\YoutubeDownloader\Metadata;
+use App\Apis\YoutubeDownloader\Client;
+use App\Apis\YoutubeDownloader\Metadata;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Process;
 use Ramsey\Uuid\Uuid;
 
@@ -36,7 +37,7 @@ trait FakesYoutubeDownloader
                     private readonly string $downloadContents,
                     private readonly Metadata $metadata,
                 ) {
-                    parent::__construct(app(), app()->make(\App\Cache\Metadata::class), Process::fake());
+                    parent::__construct(app(), app()->make(Repository::class), Process::fake());
                 }
 
                 public function downloadAudio(string $url): string {

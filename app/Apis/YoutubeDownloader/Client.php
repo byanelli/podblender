@@ -1,9 +1,10 @@
 <?php
 
-namespace App\YoutubeDownloader;
+namespace App\Apis\YoutubeDownloader;
 
-use App\Cache\Metadata as MetadataCache;
 use App\Enums\Platform;
+use Carbon\CarbonInterval;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Process\Factory;
 use Illuminate\Contracts\Process\ProcessResult;
@@ -16,9 +17,9 @@ class Client {
     const DOWNLOAD_TIMEOUT = 1200;
 
     public function __construct(
-        private readonly Application   $app,
-        private readonly MetadataCache $cache,
-        private readonly Factory       $processFactory,
+        private readonly Application $app,
+        private readonly Repository  $cache,
+        private readonly Factory     $processFactory,
     ) {}
 
     private function getVendorBinPath(): string {
@@ -34,6 +35,18 @@ class Client {
             ->throw();
     }
 
+    private function getCacheKey(Platform $platform, string $id): string {
+        return "$platform->value:$id";
+    }
+
+    public function cacheMetadata(Platform $platform, string $id, object $metadata): void {
+        $this->cache->put($this->getCacheKey($platform, $id), $metadata, CarbonInterval::day());
+    }
+
+    public function getCachedMetadata(Platform $platform, string $id): ?object {
+        return $this->cache->get($this->getCacheKey($platform, $id));
+    }
+
     // todo: make this generic for different platforms
     public function getMetadata(string $url): Metadata {
         $this->validateUserInput($url);
@@ -41,7 +54,7 @@ class Client {
         $id = $this->normalizeId($url);
 
         // Return cached metadata if available.
-        if (!is_null($cached = $this->cache->get(Platform::YouTube, $id))) {
+        if (!is_null($cached = $this->getCachedMetadata(Platform::YouTube, $id))) {
             $cached instanceof Metadata || throw new \RuntimeException('Invalid metadata in cache');
             return $cached;
         }
@@ -66,7 +79,7 @@ class Client {
                 channel: $json['channel'],
                 duration: (int) $json['duration']
             ),
-            fn(Metadata $m) => $this->cache->put(Platform::YouTube, $m->id, $m)
+            fn(Metadata $m) => $this->cacheMetadata(Platform::YouTube, $m->id, $m)
         );
     }
 

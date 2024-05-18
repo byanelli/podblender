@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Feed;
-use App\YoutubeDownloader\Client;
+use App\Apis\YoutubeDownloader\Client;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 

@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\AudioClip;
-use App\YoutubeDownloader\Client;
+use App\Apis\YoutubeDownloader\Client;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Contracts\Queue\ShouldQueue;

@@ -4,8 +4,9 @@ namespace Tests\Actions;
 
 use App\Actions\SaveYoutubeVideo;
 use App\Models\AudioClip;
-use App\YoutubeDownloader\Client;
-use App\YoutubeDownloader\Metadata;
+use App\Apis\YoutubeDownloader\Client;
+use App\Apis\YoutubeDownloader\Metadata;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Process;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -17,7 +18,7 @@ class SaveYoutubeVideoTest extends TestCase
         $this->app->bind(Client::class, function () {
             return new class (
                 $this->app,
-                $this->app->make(\App\Cache\Metadata::class),
+                $this->app->make(Repository::class),
                 Process::fake()
             ) extends Client {
                 public function getMetadata(string $url): Metadata {

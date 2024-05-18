@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\YoutubeDownloader;
+namespace Tests\Apis\YoutubeDownloader;
 
-use App\YoutubeDownloader\Client;
+use App\Apis\YoutubeDownloader\Client;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
