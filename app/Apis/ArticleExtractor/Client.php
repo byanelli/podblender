@@ -68,7 +68,9 @@ readonly class Client
     }
 
     private function getPublisherFromUrl(string $url): string {
-        return Uri::new($url)->getHost();
+        return Str::of(Uri::new($url)->getHost())
+            ->replaceMatches('/^www\\./', '')
+            ->__toString();
     }
 
     private function getNameFromSlug(string $url): string {

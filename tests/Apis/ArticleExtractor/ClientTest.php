@@ -65,7 +65,7 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $article = $client->getArticle('https://nytimes.com/breaking-news');
+        $article = $client->getArticle('https://www.nytimes.com/breaking-news');
 
         $this->assertEquals('nytimes.com', $article->publisher);
     }
