@@ -3,6 +3,7 @@
 namespace Tests\Http\Controllers;
 
 use App\Models\AudioClip;
+use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
 use App\YoutubeDownloader\Metadata;
@@ -15,7 +16,7 @@ class AddClipToFeedTest extends TestCase
     use FakesYoutubeDownloader;
 
     #[Test]
-    public function it_adds_a_clip_to_the_feed() {
+    public function it_adds_a_new_clip_to_the_feed() {
         $this->assertTrue(true);
 
         $user = User::factory()->create();
@@ -44,5 +45,23 @@ class AddClipToFeedTest extends TestCase
         $this->assertEquals($metaChannelId, $clip->audioSource->platform_id);
         $this->assertEquals($metaChannel, $clip->audioSource->name);
         $this->assertEquals($metaDuration, $clip->duration);
+    }
+
+    #[Test]
+    public function it_attaches_an_existing_clip_to_the_feed() {
+        $this->assertTrue(true);
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id
+        ]);
+
+        $this->assertTrue($feed->audioClips()->doesntExist());
+
+        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['id' => $clip->platform_id]);
+
+        $this->assertEquals(1, AudioClip::count());
+        $this->assertTrue($feed->audioClips()->first()->is($clip));
     }
 }

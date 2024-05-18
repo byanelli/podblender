@@ -7,6 +7,7 @@
 @endphp
 
 <style>
+    /* Show hidden element(s) when selected by hx-indicator */
     .htmx-request { display: inline-block !important; }
 </style>
 
