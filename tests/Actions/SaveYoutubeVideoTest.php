@@ -16,7 +16,7 @@ class SaveYoutubeVideoTest extends TestCase
     #[Test]
     public function it_saves_a_youtube_video() {
         $this->app->bind(Client::class, function () {
-            return new class (
+            return new readonly class (
                 $this->app,
                 $this->app->make(Repository::class),
                 Process::fake()

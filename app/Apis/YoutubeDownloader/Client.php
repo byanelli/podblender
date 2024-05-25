@@ -12,14 +12,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
-class Client {
+readonly class Client {
     const METADATA_TIMEOUT = 30;
     const DOWNLOAD_TIMEOUT = 1200;
 
     public function __construct(
-        private readonly Application $app,
-        private readonly Repository  $cache,
-        private readonly Factory     $processFactory,
+        private Application $app,
+        private Repository  $cache,
+        private Factory     $processFactory,
     ) {}
 
     private function getVendorBinPath(): string {
@@ -31,7 +31,7 @@ class Client {
             ->newPendingProcess()
             ->timeout($timeout)
             ->path($this->getVendorBinPath())
-            ->run("./youtube-dl ".join(' ', $args))
+            ->run("./youtube-dl ".join(' ', $args)) // todo: use array
             ->throw();
     }
 

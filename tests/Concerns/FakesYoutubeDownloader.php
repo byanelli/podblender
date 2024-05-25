@@ -27,7 +27,7 @@ trait FakesYoutubeDownloader
         );
 
         $this->app->bind(Client::class, function () use ($downloadContents, $downloadPath, $metadata) {
-            return new class (
+            return new readonly class (
                 $downloadPath,
                 $downloadContents,
                 $metadata,
