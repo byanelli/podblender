@@ -1,5 +1,5 @@
 @use(App\Http\Routes\Web)
-@use(App\Enums\Platform)
+@use(App\Enums\PlatformType)
 
 @php
     /** @var \App\Models\Feed $feed */
@@ -90,7 +90,7 @@
 
         $features = [
             'URL' => $url,
-            'Platform' => Platform::YouTube->name,
+            'Platform' => PlatformType::YouTube->name,
             'Title' => $metadata->title,
             'Author' => $metadata->channel,
             'Description' => $metadata->description,

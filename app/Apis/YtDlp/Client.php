@@ -2,7 +2,7 @@
 
 namespace App\Apis\YtDlp;
 
-use App\Enums\Platform;
+use App\Enums\PlatformType;
 use Carbon\CarbonInterval;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
@@ -39,16 +39,16 @@ readonly class Client {
             ->throw();
     }
 
-    private function getCacheKey(Platform $platform, string $id): string {
-        return "$platform->value:$id";
+    private function getCacheKey(PlatformType $platformType, string $id): string {
+        return "$platformType->value:$id";
     }
 
-    private function cacheMetadata(Platform $platform, string $id, array $metadata): void {
-        $this->cache->put($this->getCacheKey($platform, $id), $metadata, CarbonInterval::day());
+    private function cacheMetadata(PlatformType $platformType, string $id, array $metadata): void {
+        $this->cache->put($this->getCacheKey($platformType, $id), $metadata, CarbonInterval::day());
     }
 
-    private function getCachedMetadata(Platform $platform, string $id): ?array {
-        return $this->cache->get($this->getCacheKey($platform, $id));
+    private function getCachedMetadata(PlatformType $platformType, string $id): ?array {
+        return $this->cache->get($this->getCacheKey($platformType, $id));
     }
 
     /**
@@ -60,7 +60,7 @@ readonly class Client {
         $id = $this->normalizeId($url);
 
         // Return cached metadata if available.
-        if (!is_null($cached = $this->getCachedMetadata(Platform::YouTube, $id))) {
+        if (!is_null($cached = $this->getCachedMetadata(PlatformType::YouTube, $id))) {
             return $cached;
         }
 
@@ -75,7 +75,7 @@ readonly class Client {
         // Cache metadata before returning.
         return tap(
             json_decode($jsonString, true),
-            fn(array $metadata) => $this->cacheMetadata(Platform::YouTube, $id, $metadata),
+            fn(array $metadata) => $this->cacheMetadata(PlatformType::YouTube, $id, $metadata),
         );
     }
 

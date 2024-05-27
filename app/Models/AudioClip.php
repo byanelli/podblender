@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\Platform;
+use App\Enums\PlatformType;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,7 +31,7 @@ use Illuminate\Support\Traits\Tappable;
  * Attributes:
  * @property string $audio_url {@see self::audioUrl()}
  * @property string $formatted_time {@see self::formattedTime()}
- * @property Platform $platform {@see self::platform()}
+ * @property PlatformType $platformType {@see self::platformType()}
  * @property string $source_url {@see self::sourceUrl()}
  */
 class AudioClip extends Model
@@ -70,12 +70,12 @@ class AudioClip extends Model
         );
     }
 
-    public function platform(): Attribute {
-        return Attribute::make(fn() => $this->audioSource->platform);
+    public function platformType(): Attribute {
+        return Attribute::make(fn() => $this->audioSource->platform_type);
     }
 
     public function sourceUrl(): Attribute {
-        return Attribute::make(fn() => $this->platform->formatUrl($this->platform_id));
+        return Attribute::make(fn() => $this->platformType->formatUrl($this->platform_id));
     }
 
     public function audioUrl(): Attribute {

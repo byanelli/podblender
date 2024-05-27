@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\Platform;
+use App\Enums\PlatformType;
 use App\Models\AudioSource;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -19,9 +19,9 @@ class AudioSourceFactory extends Factory
     public function definition(): array
     {
         return [
-            AudioSource::COL_NAME => $this->faker->name,
-            AudioSource::COL_PLATFORM_ID => $this->faker->uuid,
-            AudioSource::COL_PLATFORM => Platform::YouTube,
+            AudioSource::COL_NAME          => $this->faker->name,
+            AudioSource::COL_PLATFORM_ID   => $this->faker->uuid,
+            AudioSource::COL_PLATFORM_TYPE => PlatformType::YouTube,
         ];
     }
 }

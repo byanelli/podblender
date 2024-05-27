@@ -26,7 +26,7 @@
                             </p>
                         @endif
                         <p class="rounded-md whitespace-nowrap mt-0.5 px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset text-gray-600 bg-gray-50 ring-gray-500/10">
-                            {{$clip->platform->name}}
+                            {{$clip->platformType->name}}
                         </p>
                     </div>
                     <div class="mt-1 flex items-center gap-x-2 text-xs leading-5 text-gray-500">
