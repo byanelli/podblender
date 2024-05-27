@@ -2,8 +2,8 @@
 
 namespace Tests\Concerns;
 
-use App\Apis\YoutubeDownloader\Client;
-use App\Apis\YoutubeDownloader\Metadata;
+use App\Apis\YtDlp\Client;
+use App\Apis\YtDlp\Metadata;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Process;
 use Ramsey\Uuid\Uuid;
@@ -46,7 +46,7 @@ trait FakesYoutubeDownloader
                     return $this->downloadPath;
                 }
 
-                public function getMetadata(string $url): Metadata {
+                public function getYoutubeMetadata(string $url): Metadata {
                     return $this->metadata;
                 }
             };

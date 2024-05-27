@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Apis\YoutubeDownloader;
+namespace App\Apis\YtDlp;
 
 use Exception;
 

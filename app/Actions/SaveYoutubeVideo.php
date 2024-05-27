@@ -4,7 +4,7 @@ namespace App\Actions;
 
 use App\Models\AudioSource;
 use App\Models\AudioClip;
-use App\Apis\YoutubeDownloader\Client;
+use App\Apis\YtDlp\Client;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
@@ -16,7 +16,7 @@ class SaveYoutubeVideo
      * @throws \Exception
      */
     public function __invoke(string $id): AudioClip {
-        $metadata = $this->youtubeDownloader->getMetadata($id);
+        $metadata = $this->youtubeDownloader->getYoutubeMetadata($id);
 
         $storagePath = Uuid::uuid4()->toString();
 

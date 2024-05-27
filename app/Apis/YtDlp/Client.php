@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Apis\YoutubeDownloader;
+namespace App\Apis\YtDlp;
 
 use App\Enums\Platform;
 use Carbon\CarbonInterval;
@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
+/**
+ * From GitHub: "yt-dlp is a feature-rich command-line audio/video downloader with support for thousands of sites. The
+ * project is a fork of youtube-dl based on the now inactive youtube-dlc."
+ */
 readonly class Client {
     const METADATA_TIMEOUT = 30;
     const DOWNLOAD_TIMEOUT = 1200;
@@ -31,7 +35,7 @@ readonly class Client {
             ->newPendingProcess()
             ->timeout($timeout)
             ->path($this->getVendorBinPath())
-            ->run("./youtube-dl ".join(' ', $args)) // todo: use array
+            ->run("./yt-dlp ".join(' ', $args)) // todo: use array
             ->throw();
     }
 
@@ -39,23 +43,24 @@ readonly class Client {
         return "$platform->value:$id";
     }
 
-    public function cacheMetadata(Platform $platform, string $id, object $metadata): void {
+    private function cacheMetadata(Platform $platform, string $id, array $metadata): void {
         $this->cache->put($this->getCacheKey($platform, $id), $metadata, CarbonInterval::day());
     }
 
-    public function getCachedMetadata(Platform $platform, string $id): ?object {
+    private function getCachedMetadata(Platform $platform, string $id): ?array {
         return $this->cache->get($this->getCacheKey($platform, $id));
     }
 
-    // todo: make this generic for different platforms
-    public function getMetadata(string $url): Metadata {
+    /**
+     * @throws DownloadException
+     */
+    public function getRawMetadata(string $url): array {
         $this->validateUserInput($url);
 
         $id = $this->normalizeId($url);
 
         // Return cached metadata if available.
         if (!is_null($cached = $this->getCachedMetadata(Platform::YouTube, $id))) {
-            $cached instanceof Metadata || throw new \RuntimeException('Invalid metadata in cache');
             return $cached;
         }
 
@@ -67,19 +72,28 @@ readonly class Client {
             throw new DownloadException('Error downloading metadata from YouTube', previous: $t);
         }
 
-        $json = json_decode($jsonString, true);
-
-        // Build metadata object and cache before returning.
+        // Cache metadata before returning.
         return tap(
-            new Metadata(
-                id: $json['id'],
-                title: $json['title'],
-                description: $json['description'],
-                channel_id: $json['channel_id'],
-                channel: $json['channel'],
-                duration: (int) $json['duration']
-            ),
-            fn(Metadata $m) => $this->cacheMetadata(Platform::YouTube, $m->id, $m)
+            json_decode($jsonString, true),
+            fn(array $metadata) => $this->cacheMetadata(Platform::YouTube, $id, $metadata),
+        );
+    }
+
+    /**
+     * todo: make this generic for different platforms
+     * @throws DownloadException
+     * @deprecated
+     */
+    public function getYoutubeMetadata(string $url): Metadata {
+        $json = $this->getRawMetadata($url);
+
+        return new Metadata(
+            id: $json['id'],
+            title: $json['title'],
+            description: $json['description'],
+            channel_id: $json['channel_id'],
+            channel: $json['channel'],
+            duration: (int)$json['duration']
         );
     }
 
@@ -90,7 +104,7 @@ readonly class Client {
     }
 
     private function normalizeUrl(string $url): string {
-        // Some "URLs" passed to this class are actually video ids. When an id begins with "-", youtube-dl sees it as a
+        // Some "URLs" passed to this class are actually video ids. When an id begins with "-", yt-dlp sees it as a
         // command line option, not a video id, so we reformat it as a URL instead. An example of an id beginning with
         // "-": https://www.youtube.com/watch?v=-J_xL4IGhJA -- Note: also a great video :)
         return str_starts_with($url, '-')
@@ -99,7 +113,7 @@ readonly class Client {
     }
 
     private function validateUserInput(string $input): void {
-        // Ensure input contains no shell special characters that could hijack the youtube-dl command.
+        // Ensure input contains no shell special characters that could hijack the yt-dlp command.
         if (Str::of($input)->contains(['!', '@', '$', '&', '\\', '*', ' ', ';', '|', '%', '#'])) {
             Log::error("Possible shell injection attempt: $input");
             throw new \InvalidArgumentException('Invalid input');

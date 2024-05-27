@@ -45,7 +45,7 @@
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",
-            "@php ./scripts/install-youtube-dl.php",
+            "@php ./scripts/install-yt-dlp.php",
             "@php ./scripts/install-ffmpeg.php"
         ],
         "post-update-cmd": [

@@ -1,8 +1,9 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
 
 namespace Tests\Apis\YoutubeDownloader;
 
-use App\Apis\YoutubeDownloader\Client;
+use App\Apis\YtDlp\Client;
+use App\Apis\YtDlp\DownloadException;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
@@ -21,7 +22,7 @@ class ClientTest extends TestCase
     public function it_gets_metadata() {
         $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
 
-        Process::fake(["./youtube-dl --dump-json $url" => Process::result(json_encode($fakeMetadata = [
+        Process::fake(["./yt-dlp --dump-json $url" => Process::result(json_encode($fakeMetadata = [
             'id' => 1,
             'title' => 'Some video',
             'description' => 'Lorem ipsum',
@@ -33,14 +34,9 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $metadata = $client->getMetadata($url);
+        $metadata = $client->getRawMetadata($url);
 
-        $this->assertEquals($fakeMetadata['id'], $metadata->id);
-        $this->assertEquals($fakeMetadata['title'], $metadata->title);
-        $this->assertEquals($fakeMetadata['description'], $metadata->description);
-        $this->assertEquals($fakeMetadata['channel_id'], $metadata->channel_id);
-        $this->assertEquals($fakeMetadata['channel'], $metadata->channel);
-        $this->assertEquals($fakeMetadata['duration'], $metadata->duration);
+        $this->assertEquals($fakeMetadata, $metadata);
     }
 
     #[Test]
@@ -49,7 +45,7 @@ class ClientTest extends TestCase
 
         $file = '';
 
-        Process::fake(["./youtube-dl -x --audio-format=mp3 --audio-quality=2 -o * $url" => function (PendingProcess $process) use (&$file) {
+        Process::fake(["./yt-dlp -x --audio-format=mp3 --audio-quality=2 -o * $url" => function (PendingProcess $process) use (&$file) {
             $file = collect(explode(' ', $process->command))->first(fn($s) => Str::endsWith($s, '.mp3'));
 
             touch($file);
@@ -74,7 +70,7 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $client->getMetadata('https://youtube.com/watch?v=zzz; rm -rf /some/important/path #');
+        $client->getRawMetadata('https://youtube.com/watch?v=zzz; rm -rf /some/important/path #');
     }
 
     #[Test]

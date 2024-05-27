@@ -86,7 +86,7 @@
 @elseif ($state == 'metadata')
     @php
         /** @var string $url */
-        /** @var \App\Apis\YoutubeDownloader\Metadata $metadata */
+        /** @var \App\Apis\YtDlp\Metadata $metadata */
 
         $features = [
             'URL' => $url,

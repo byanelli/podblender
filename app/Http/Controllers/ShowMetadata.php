@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Feed;
-use App\Apis\YoutubeDownloader\Client;
+use App\Apis\YtDlp\Client;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,7 +15,7 @@ class ShowMetadata
         $url = $request->str('url');
 
         try {
-            $metadata = $this->youtube->getMetadata($url);
+            $metadata = $this->youtube->getYoutubeMetadata($url);
 
             return view('components.addClipForm', [
                 'feed' => $feed,
