@@ -8,13 +8,14 @@ use App\Models\AudioSource;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesDispatcher;
+use Tests\Concerns\FakesFfmpeg;
 use Tests\Concerns\FakesStorage;
 use Tests\Concerns\FakesYoutubeDownloader;
 use Tests\TestCase;
 
 class DownloadAndStoreYoutubeVideoTest extends TestCase
 {
-    use FakesYoutubeDownloader, FakesStorage, FakesDispatcher;
+    use FakesYoutubeDownloader, FakesStorage, FakesDispatcher, FakesFfmpeg;
 
     #[Test]
     public function it_downloads_and_stores_youtube_videos(): void
@@ -34,6 +35,7 @@ class DownloadAndStoreYoutubeVideoTest extends TestCase
         $storage->assertMissing($clip->storage_path);
 
         $this->fakeYoutubeDownloader($downloadPath, $downloadContents);
+        $this->fakeFfmpeg($duration = 100);
 
         dispatch(new DownloadAndStoreYoutubeVideo($clip));
 
@@ -41,6 +43,7 @@ class DownloadAndStoreYoutubeVideoTest extends TestCase
 
         $this->assertFalse($clip->processing);
         $storage->assertExists($clip->storage_path);
+        $this->assertEquals($duration, $clip->duration);
         $this->assertEquals($downloadContents, $storage->get($clip->storage_path));
         $this->assertFileDoesNotExist($downloadPath);
     }

@@ -8,12 +8,13 @@ use App\Models\Feed;
 use App\Models\User;
 use App\Apis\YtDlp\Metadata;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\FakesFfmpeg;
 use Tests\Concerns\FakesYoutubeDownloader;
 use Tests\TestCase;
 
 class AddClipToFeedTest extends TestCase
 {
-    use FakesYoutubeDownloader;
+    use FakesYoutubeDownloader, FakesFfmpeg;
 
     #[Test]
     public function it_adds_a_new_clip_to_the_feed() {
@@ -28,8 +29,8 @@ class AddClipToFeedTest extends TestCase
             description: $metaDescription = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
             channel_id: $metaChannelId = 'lwiejlwiejf',
             channel: $metaChannel = 'Some channel',
-            duration: $metaDuration = 100,
         ));
+        $this->fakeFfmpeg($duration = 100);
 
         $this->assertTrue($feed->audioClips()->doesntExist());
 
@@ -44,7 +45,7 @@ class AddClipToFeedTest extends TestCase
         $this->assertEquals($metaDescription, $clip->description);
         $this->assertEquals($metaChannelId, $clip->audioSource->platform_id);
         $this->assertEquals($metaChannel, $clip->audioSource->name);
-        $this->assertEquals($metaDuration, $clip->duration);
+        $this->assertEquals($duration, $clip->duration);
     }
 
     #[Test]

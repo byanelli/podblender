@@ -93,7 +93,6 @@ readonly class Client {
             description: $json['description'],
             channel_id: $json['channel_id'],
             channel: $json['channel'],
-            duration: (int)$json['duration']
         );
     }
 

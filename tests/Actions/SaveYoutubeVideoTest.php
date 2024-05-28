@@ -28,7 +28,6 @@ class SaveYoutubeVideoTest extends TestCase
                         description: 'zzz',
                         channel_id: '9340e9tjh490e5',
                         channel: 'bar',
-                        duration: 123,
                     );
                 }
             };
@@ -42,7 +41,7 @@ class SaveYoutubeVideoTest extends TestCase
         $this->assertEquals('lijwliejfwlef', $clip->platform_id);
         $this->assertEquals('foo', $clip->title);
         $this->assertEquals('zzz', $clip->description);
-        $this->assertEquals(123, $clip->duration);
+        $this->assertEquals(0, $clip->duration);
         $this->assertEquals('9340e9tjh490e5', $clip->audioSource->platform_id);
         $this->assertEquals('bar', $clip->audioSource->name);
         $this->assertTrue($clip->processing);

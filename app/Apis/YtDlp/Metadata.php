@@ -10,6 +10,5 @@ readonly class Metadata
         public string $description,
         public string $channel_id,
         public string $channel,
-        public int    $duration,
     ) {}
 }

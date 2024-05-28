@@ -35,7 +35,7 @@ class SaveYoutubeVideo
             AudioClip::COL_AUDIO_SOURCE_ID => $channel->id,
             AudioClip::COL_TITLE           => Str::limit($metadata->title, 500 - 3),
             AudioClip::COL_DESCRIPTION     => Str::limit($metadata->description, 1000 - 3),
-            AudioClip::COL_DURATION        => $metadata->duration,
+            AudioClip::COL_DURATION        => 0,
             AudioClip::COL_STORAGE_PATH    => $storagePath,
             AudioClip::COL_GUID            => Uuid::uuid4()->toString(),
             AudioClip::COL_PROCESSING      => true,

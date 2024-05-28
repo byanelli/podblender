@@ -23,7 +23,6 @@ trait FakesYoutubeDownloader
             description: 'iwjeflijwelf',
             channel_id: 'lwiejwleif',
             channel: 'lwiejlwiejf',
-            duration: 100,
         );
 
         $this->app->bind(Client::class, function () use ($downloadContents, $downloadPath, $metadata) {

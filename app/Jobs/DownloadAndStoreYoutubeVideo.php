@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Apis\Ffmpeg\Client as Ffmpeg;
 use App\Models\AudioClip;
 use App\Apis\YtDlp\Client;
 use Illuminate\Bus\Queueable;
@@ -21,11 +22,18 @@ class DownloadAndStoreYoutubeVideo implements ShouldQueue
 
     public function __construct(private readonly AudioClip $clip) {}
 
-    public function handle(Client $youtubeDownloader, Filesystem $storage): void {
+    public function handle(
+        Client     $youtubeDownloader,
+        Filesystem $storage,
+        Ffmpeg     $ffmpeg,
+    ): void {
         try {
             // Download the audio from YouTube into a temporary file and open the downloaded file.
             $downloadPath = $youtubeDownloader->downloadAudio($this->clip->platform_id);
             $downloadHandle = fopen($downloadPath, 'r');
+
+            // Use ffmpeg to get the duration.
+            $duration = $ffmpeg->getDuration($downloadPath);
 
             if (!$downloadHandle) {
                 throw new \Exception("Couldn't open $downloadPath as resource");
@@ -38,8 +46,10 @@ class DownloadAndStoreYoutubeVideo implements ShouldQueue
                 throw new \Exception("Couldn't store audio from $downloadPath");
             }
 
-            // Mark the clip as no longer processing and save the file size in the database (for use in the RSS feed).
+            // Mark the clip as no longer processing and save the file size and duration
+            // in the database (for use in the RSS feed).
             $this->clip->processing = false;
+            $this->clip->duration = $duration;
             $this->clip->size = $storage->size($this->clip->storage_path);
             $this->clip->save();
         } catch (\Throwable $t) {
