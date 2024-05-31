@@ -3,11 +3,12 @@
 namespace App\Apis\Whisper;
 
 use App\Apis\Ffmpeg\Client as FfmpegClient;
+use App\Apis\Whisper\Contracts\Client as ClientContract;
 use OpenAI\Contracts\ClientContract as OpenAiClient;
 use OpenAI\Responses\Audio\SpeechStreamResponse;
 use Ramsey\Uuid\Uuid;
 
-readonly class Client
+readonly class Client implements ClientContract
 {
     private const SEGMENT_LENGTH = 4096;
 

@@ -1,9 +1,8 @@
 <?php /** @noinspection PhpUnhandledExceptionInspection */
 
-namespace Tests\Apis\YoutubeDownloader;
+namespace Tests\Apis\YtDlp;
 
 use App\Apis\YtDlp\Client;
-use App\Apis\YtDlp\DownloadException;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
@@ -20,9 +19,9 @@ class ClientTest extends TestCase
 
     #[Test]
     public function it_gets_metadata() {
-        $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
+        $id = 'wp4i5g490wg7u';
 
-        Process::fake(["./yt-dlp --dump-json $url" => Process::result(json_encode($fakeMetadata = [
+        Process::fake(["./yt-dlp --dump-json $id" => Process::result(json_encode($fakeMetadata = [
             'id' => 1,
             'title' => 'Some video',
             'description' => 'Lorem ipsum',
@@ -34,14 +33,14 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $metadata = $client->getRawMetadata($url);
+        $metadata = $client->getMetadata($id);
 
         $this->assertEquals($fakeMetadata, $metadata);
     }
 
     #[Test]
     public function it_downloads_audio() {
-        $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
+        $url = 'wp4i5g490wg7u';
 
         $file = '';
 
@@ -70,7 +69,7 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $client->getRawMetadata('https://youtube.com/watch?v=zzz; rm -rf /some/important/path #');
+        $client->getMetadata('https://youtube.com/watch?v=zzz; rm -rf /some/important/path #');
     }
 
     #[Test]

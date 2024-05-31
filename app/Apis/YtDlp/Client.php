@@ -54,10 +54,10 @@ readonly class Client {
     /**
      * @throws DownloadException
      */
-    public function getRawMetadata(string $url): array {
-        $this->validateUserInput($url);
+    public function getMetadata(string $id): array {
+        $this->validateUserInput($id);
 
-        $id = $this->normalizeId($url);
+        $this->ensureStringIsNotUrl($id);
 
         // Return cached metadata if available.
         if (!is_null($cached = $this->getCachedMetadata(PlatformType::YouTube, $id))) {
@@ -66,9 +66,9 @@ readonly class Client {
 
         try {
             // Run process and convert output to JSON.
-            $jsonString = $this->run(self::METADATA_TIMEOUT, ['--dump-json', $this->normalizeUrl($url)])->output();
+            $jsonString = $this->run(self::METADATA_TIMEOUT, ['--dump-json', $this->normalizeUrl($id)])->output();
         } catch (\Throwable $t) {
-            // Wrap the exception so we don't expose the command line process to the user.
+            // Wrap the exception, so we don't expose the command line process to the user.
             throw new DownloadException('Error downloading metadata from YouTube', previous: $t);
         }
 
@@ -80,47 +80,36 @@ readonly class Client {
     }
 
     /**
-     * todo: make this generic for different platforms
-     * @throws DownloadException
-     * @deprecated
+     * When an id begins with "-", yt-dlp sees it as a command line option, not a video id, so we reformat it as a URL
+     * instead. An example of an id beginning with "-": https://www.youtube.com/watch?v=-J_xL4IGhJA -- Note: also a
+     * great video :)
+     *
+     * @param string $url
+     * @return string
      */
-    public function getYoutubeMetadata(string $url): Metadata {
-        $json = $this->getRawMetadata($url);
-
-        return new Metadata(
-            id: $json['id'],
-            title: $json['title'],
-            description: $json['description'],
-            channel_id: $json['channel_id'],
-            channel: $json['channel'],
-        );
-    }
-
-    private function normalizeId(string $url): string {
-        // todo: explain
-        // todo: make a real Youtube URL parser
-        return str_replace(['https://www.youtube.com/watch?v=' /*todo: others*/], '', $url);
-    }
-
     private function normalizeUrl(string $url): string {
-        // Some "URLs" passed to this class are actually video ids. When an id begins with "-", yt-dlp sees it as a
-        // command line option, not a video id, so we reformat it as a URL instead. An example of an id beginning with
-        // "-": https://www.youtube.com/watch?v=-J_xL4IGhJA -- Note: also a great video :)
         return str_starts_with($url, '-')
             ? 'https://www.youtube.com/watch?v='.$url
             : $url;
     }
 
+    /**
+     * Ensure the input contains no shell special characters that could hijack the yt-dlp command.
+     *
+     * @param string $input
+     * @return void
+     */
     private function validateUserInput(string $input): void {
-        // Ensure input contains no shell special characters that could hijack the yt-dlp command.
         if (Str::of($input)->contains(['!', '@', '$', '&', '\\', '*', ' ', ';', '|', '%', '#'])) {
             Log::error("Possible shell injection attempt: $input");
             throw new \InvalidArgumentException('Invalid input');
         }
     }
 
-    public function downloadAudio(string $url): string {
-        $this->validateUserInput($url);
+    public function downloadAudio(string $id): string {
+        $this->validateUserInput($id);
+
+        $this->ensureStringIsNotUrl($id);
 
         $filename = Uuid::uuid4()->toString();
 
@@ -131,9 +120,22 @@ readonly class Client {
             '--audio-format=mp3',
             '--audio-quality=2',
             "-o $outputPath",
-            $this->normalizeUrl($url),
+            $this->normalizeUrl($id),
         ]);
 
         return $outputPath;
+    }
+
+    /**
+     * To avoid cache misses, we need to pass ids, *not* URLs, to this class. One id could correspond to many valid
+     * URLs.
+     *
+     * @param string $id
+     * @return void
+     */
+    private function ensureStringIsNotUrl(string $id): void {
+        if (str_starts_with($id, 'http:') || str_starts_with($id, 'https:')) {
+            throw new \RuntimeException('Expected an id, not a URL');
+        }
     }
 }

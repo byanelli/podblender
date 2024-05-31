@@ -21,7 +21,7 @@ readonly class Client
         return 'article:'.$url;
     }
 
-    public function getApiKey(): string {
+    private function getApiKey(): string {
         return $this->config->get('apify.api_key');
     }
 

@@ -6,46 +6,50 @@ use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
-use App\Apis\YtDlp\Metadata;
+use App\Platforms\Metadata;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\Concerns\FakesFfmpeg;
-use Tests\Concerns\FakesYoutubeDownloader;
+use Tests\Concerns\FakesDispatcher;
+use Tests\Concerns\FakesPlatform;
 use Tests\TestCase;
 
 class AddClipToFeedTest extends TestCase
 {
-    use FakesYoutubeDownloader, FakesFfmpeg;
+    use FakesPlatform, FakesDispatcher;
 
     #[Test]
     public function it_adds_a_new_clip_to_the_feed() {
-        $this->assertTrue(true);
+        $this->fakePlatform(
+            id: $id = '123',
+            url: $url = 'https://youtube.com/watch?v='.$id,
+            metadata: new Metadata(
+                id: $id,
+                title: $title = 'Some title',
+                description: $description = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                sourceId: $sourceId = 'lwiejlwiejf',
+                sourceName: $sourceName = 'Some channel',
+            ),
+        );
+
+        // We don't want to run the DownloadAndStore job
+        $this->fakeNoOpDispatcher();
 
         $user = User::factory()->create();
         $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
 
-        $this->fakeYoutubeDownloader(metadata: new Metadata(
-            id: $metaId = '123',
-            title: $metaTitle = 'Some title',
-            description: $metaDescription = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            channel_id: $metaChannelId = 'lwiejlwiejf',
-            channel: $metaChannel = 'Some channel',
-        ));
-        $this->fakeFfmpeg($duration = 100);
-
         $this->assertTrue($feed->audioClips()->doesntExist());
 
-        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['id' => '123']);
+        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['url' => $url]);
 
         /** @var AudioClip $clip */
         $clip = $feed->audioClips()->first();
 
         $this->assertNotNull($clip);
-        $this->assertEquals($metaId, $clip->platform_id);
-        $this->assertEquals($metaTitle, $clip->title);
-        $this->assertEquals($metaDescription, $clip->description);
-        $this->assertEquals($metaChannelId, $clip->audioSource->platform_id);
-        $this->assertEquals($metaChannel, $clip->audioSource->name);
-        $this->assertEquals($duration, $clip->duration);
+        $this->assertEquals($id, $clip->platform_id);
+        $this->assertEquals($title, $clip->title);
+        $this->assertEquals($description, $clip->description);
+        $this->assertEquals($sourceId, $clip->audioSource->platform_id);
+        $this->assertEquals($sourceName, $clip->audioSource->name);
+        $this->assertEquals(0, $clip->duration);
     }
 
     #[Test]
@@ -60,7 +64,7 @@ class AddClipToFeedTest extends TestCase
 
         $this->assertTrue($feed->audioClips()->doesntExist());
 
-        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['id' => $clip->platform_id]);
+        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['url' => 'https://youtube.com/watch?v='.$clip->platform_id]);
 
         $this->assertEquals(1, AudioClip::count());
         $this->assertTrue($feed->audioClips()->first()->is($clip));

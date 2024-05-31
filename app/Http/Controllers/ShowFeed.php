@@ -8,7 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 
-class ShowFeed
+readonly class ShowFeed
 {
     public function __invoke(Request $request, Feed $feed): View {
         /* @see resources/views/feed.blade.php */

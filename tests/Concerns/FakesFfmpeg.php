@@ -13,6 +13,7 @@ use Tests\TestCase;
 trait FakesFfmpeg
 {
     protected function fakeFfmpeg(int $duration=1): void {
+        // todo implement interface
         $this->app->bind(Client::class, fn () => new readonly class ($this->app, $this->app->make(Factory::class), $duration) extends Client {
             public function __construct(Application $app, Factory $processFactory, private int $duration) {
                 parent::__construct($app, $processFactory);

@@ -2,30 +2,41 @@
 
 namespace App\Actions;
 
+use App\Enums\PlatformType;
 use App\Models\AudioSource;
 use App\Models\AudioClip;
-use App\Apis\YtDlp\Client;
+use App\Platforms\Contracts\PlatformFactory;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
-class SaveYoutubeVideo
+readonly class CreateAudioClip
 {
-    public function __construct(private readonly Client $youtubeDownloader) {}
+    public function __construct(private PlatformFactory $platformFactory) {}
 
     /**
      * @throws \Exception
      */
-    public function __invoke(string $id): AudioClip {
-        $metadata = $this->youtubeDownloader->getYoutubeMetadata($id);
+    public function __invoke(PlatformType $platformType, string $id): AudioClip {
+        $platform = $this->platformFactory->make($platformType);
+
+        // Download the metadata from the platform.
+        $metadata = $platform->getMetadata($id);
 
         $storagePath = Uuid::uuid4()->toString();
 
-        // Find an existing channel in the database or create one from the metadata.
+        // Find an existing audio source in the database or create one from the metadata.
         /** @var AudioSource $channel */
-        $channel = AudioSource::firstOrCreate([AudioSource::COL_PLATFORM_ID => $metadata->channel_id], [
-            AudioSource::COL_PLATFORM_ID => $metadata->channel_id,
-            AudioSource::COL_NAME        => $metadata->channel,
-        ]);
+        $channel = AudioSource::firstOrCreate(
+            [
+                AudioSource::COL_PLATFORM_TYPE => $platformType,
+                AudioSource::COL_PLATFORM_ID   => $metadata->sourceId,
+            ],
+            [
+                AudioSource::COL_PLATFORM_TYPE => $platformType,
+                AudioSource::COL_PLATFORM_ID   => $metadata->sourceId,
+                AudioSource::COL_NAME          => $metadata->sourceName,
+            ]
+        );
 
         // Create the audio clip from the metadata with processing=true. While this column is true, the clip will not
         // show up in RSS feeds. A queued job will be dispatched to download the audio and set processing=false.

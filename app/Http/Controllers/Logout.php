@@ -6,7 +6,7 @@ use App\Http\Routes\Web;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Http\RedirectResponse;
 
-class Logout
+readonly class Logout
 {
     public function __construct(private readonly AuthManager $auth) {}
 

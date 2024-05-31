@@ -6,6 +6,8 @@ use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
+use App\Platforms\Contracts\Platform;
+use App\Platforms\Contracts\PlatformFactory;
 use DateTimeInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -24,6 +26,9 @@ class ShowRssTest extends TestCase
             AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
         ]));
 
+        /** @var Platform $platform */
+        $platform = $this->app->make(PlatformFactory::class)->make($clip->platformType);
+
         $response = $this->get("rss/{$feed->uuid}")->content();
 
         $h = fn($s) => htmlentities($s);
@@ -33,7 +38,7 @@ class ShowRssTest extends TestCase
         $this->assertStringContainsString("<itunes:email>{$feed->user->email}</itunes:email>", $response);
         $this->assertStringContainsString("<itunes:author>{$h($feed->user->name)}</itunes:author>", $response);
         $this->assertStringContainsString("<title>{$h($clip->title)}</title>", $response);
-        $this->assertStringContainsString("<link>$clip->source_url</link>", $response);
+        $this->assertStringContainsString("<link>{$platform->getUrlFromId($clip->platform_id)}</link>", $response);
         $this->assertStringContainsString("<description>{$h($clip->description)}</description>", $response);
         $this->assertStringContainsString("<pubDate>{$clip->created_at->format(DateTimeInterface::RSS)}</pubDate>", $response);
         $this->assertStringContainsString("<itunes:duration>$clip->formatted_time</itunes:duration>", $response);

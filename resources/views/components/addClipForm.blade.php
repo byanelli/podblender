@@ -1,5 +1,6 @@
 @use(App\Http\Routes\Web)
 @use(App\Enums\PlatformType)
+@use(App\Platforms\Metadata)
 
 @php
     /** @var \App\Models\Feed $feed */
@@ -86,13 +87,14 @@
 @elseif ($state == 'metadata')
     @php
         /** @var string $url */
-        /** @var \App\Apis\YtDlp\Metadata $metadata */
+        /** @var PlatformType $platformType */
+        /** @var Metadata $metadata */
 
         $features = [
             'URL' => $url,
-            'Platform' => PlatformType::YouTube->name,
+            'Platform' => $platformType->name,
             'Title' => $metadata->title,
-            'Author' => $metadata->channel,
+            'Author' => $metadata->sourceName,
             'Description' => $metadata->description,
         ];
     @endphp
@@ -109,7 +111,7 @@
     </div>
     <form action="{{Web::addClipToFeed($feed)}}" method="post">
         @csrf
-        <input type="hidden" name="id" value="{{$metadata->id}}"/>
+        <input type="hidden" name="url" value="{{$metadata->id}}"/>
         <div class="mt-5">
             <button type="submit"
                     class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">

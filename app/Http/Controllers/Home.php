@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
-class Home
+readonly class Home
 {
     public function __invoke(Request $request): View {
         /* @see resources/views/home.blade.php */

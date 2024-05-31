@@ -63,7 +63,7 @@ readonly class Client
 
     public function getDuration(string $path): int {
         // We use "run" instead of "runSuccessfully" and parse the error output because ffmpeg throws an error without
-        // any decoder set. But we're only interested in the metadata it prints at the end of its run.
+        // any decoder set. Here we're only interested in the metadata it prints at the end of its run.
         $result = $this->run(5, ['-i', $path]);
 
         foreach (explode("\n", $result->errorOutput()) as $line) {
@@ -74,6 +74,6 @@ readonly class Client
             }
         }
 
-        throw new \RuntimeException('zzz');
+        throw new \RuntimeException("Couldn't parse duration from ffmpeg output");
     }
 }

@@ -32,7 +32,6 @@ use Illuminate\Support\Traits\Tappable;
  * @property string $audio_url {@see self::audioUrl()}
  * @property string $formatted_time {@see self::formattedTime()}
  * @property PlatformType $platformType {@see self::platformType()}
- * @property string $source_url {@see self::sourceUrl()}
  */
 class AudioClip extends Model
 {
@@ -72,10 +71,6 @@ class AudioClip extends Model
 
     public function platformType(): Attribute {
         return Attribute::make(fn() => $this->audioSource->platform_type);
-    }
-
-    public function sourceUrl(): Attribute {
-        return Attribute::make(fn() => $this->platformType->formatUrl($this->platform_id));
     }
 
     public function audioUrl(): Attribute {
