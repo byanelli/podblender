@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Platform;
+namespace Tests\Platforms;
 
 use App\Platforms\Web;
 use Illuminate\Support\Facades\Http;

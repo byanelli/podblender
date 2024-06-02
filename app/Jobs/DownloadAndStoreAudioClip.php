@@ -34,7 +34,7 @@ class DownloadAndStoreAudioClip implements ShouldQueue
             $platform = $platformFactory->make($this->clip->platformType);
 
             // Download the audio from the platform into a temporary file and open the downloaded file.
-            $downloadPath = $platform->downloadAudio($this->clip->platform_id);
+            $downloadPath = $platform->downloadAudio($this->clip->platform_url);
             $downloadHandle = fopen($downloadPath, 'r');
 
             // Use ffmpeg to get the duration.

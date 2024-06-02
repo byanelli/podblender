@@ -19,15 +19,11 @@ readonly class ShowMetadata
         $url = $request->str('url');
 
         try {
-            // Detect the platform type (e.g. YouTube or SoundCloud) from the URL.
             $platformType = $this->platformTypeResolver->fromUrl($url);
 
-            // Get the platform service by type.
             $platform = $this->platformFactory->make($platformType);
 
-            // Parse the content id from the URL and get the metadata.
-            $id = $platform->getIdFromUrl($url);
-            $metadata = $platform->getMetadata($id);
+            $metadata = $platform->getMetadata($url);
 
             return view('components.addClipForm', [
                 'feed' => $feed,

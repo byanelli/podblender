@@ -38,7 +38,7 @@ class ShowRssTest extends TestCase
         $this->assertStringContainsString("<itunes:email>{$feed->user->email}</itunes:email>", $response);
         $this->assertStringContainsString("<itunes:author>{$h($feed->user->name)}</itunes:author>", $response);
         $this->assertStringContainsString("<title>{$h($clip->title)}</title>", $response);
-        $this->assertStringContainsString("<link>{$platform->getUrlFromId($clip->platform_id)}</link>", $response);
+        $this->assertStringContainsString("<link>{$clip->platform_url}</link>", $response);
         $this->assertStringContainsString("<description>{$h($clip->description)}</description>", $response);
         $this->assertStringContainsString("<pubDate>{$clip->created_at->format(DateTimeInterface::RSS)}</pubDate>", $response);
         $this->assertStringContainsString("<itunes:duration>$clip->formatted_time</itunes:duration>", $response);

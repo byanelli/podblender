@@ -14,8 +14,12 @@ readonly class YouTube implements Platform
         private Client $ytDlp,
     ) {}
 
-    public function getMetadata(string $id): Metadata {
-        $meta = $this->ytDlp->getMetadata($id);
+    public function getCanonicalUrl(string $url): string {
+        return 'https://youtube.com/watch?v='.$this->getIdFromUrl($url);
+    }
+
+    public function getMetadata(string $url): Metadata {
+        $meta = $this->ytDlp->getMetadata($url);
 
         return new Metadata(
             id: $meta['id'],
@@ -26,11 +30,11 @@ readonly class YouTube implements Platform
         );
     }
 
-    public function getIdFromUrl(string $url): string {
+    private function getIdFromUrl(string $url): string {
         $uri = Uri::fromBaseUri($url);
 
-        $host = Helpers::removeWwwFromHost($uri->getHost())
-        ;
+        $host = Helpers::removeWwwFromHost($uri->getHost());
+
         if (!collect(['youtube.com', 'm.youtube.com', 'youtu.be', 'youtube-nocookie.com'])->contains($host)) {
             throw new \RuntimeException("Invalid host for YouTube URL: {$host}");
         }
@@ -65,11 +69,7 @@ readonly class YouTube implements Platform
         throw new \RuntimeException("Cannot parse URL: $url");
     }
 
-    public function getUrlFromId(string $id): string {
-        return 'https://www.youtube.com/watch?v='.$id;
-    }
-
-    public function downloadAudio(string $id): string {
-        return $this->ytDlp->downloadAudio($id);
+    public function downloadAudio(string $url): string {
+        return $this->ytDlp->downloadAudio($url);
     }
 }

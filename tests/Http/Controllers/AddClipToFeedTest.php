@@ -18,9 +18,9 @@ class AddClipToFeedTest extends TestCase
 
     #[Test]
     public function it_adds_a_new_clip_to_the_feed() {
+        $url = 'https://youtube.com/watch?v='.($id = 'lijwliejfwlef');
+
         $this->fakePlatform(
-            id: $id = '123',
-            url: $url = 'https://youtube.com/watch?v='.$id,
             metadata: new Metadata(
                 id: $id,
                 title: $title = 'Some title',
@@ -44,7 +44,7 @@ class AddClipToFeedTest extends TestCase
         $clip = $feed->audioClips()->first();
 
         $this->assertNotNull($clip);
-        $this->assertEquals($id, $clip->platform_id);
+        $this->assertEquals($url, $clip->platform_url);
         $this->assertEquals($title, $clip->title);
         $this->assertEquals($description, $clip->description);
         $this->assertEquals($sourceId, $clip->audioSource->platform_id);
@@ -64,7 +64,7 @@ class AddClipToFeedTest extends TestCase
 
         $this->assertTrue($feed->audioClips()->doesntExist());
 
-        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['url' => 'https://youtube.com/watch?v='.$clip->platform_id]);
+        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['url' => $clip->platform_url]);
 
         $this->assertEquals(1, AudioClip::count());
         $this->assertTrue($feed->audioClips()->first()->is($clip));

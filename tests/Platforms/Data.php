@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Platform;
+namespace Tests\Platforms;
 
 abstract class Data
 {

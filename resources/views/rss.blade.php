@@ -2,7 +2,6 @@
 
 @php
     /** @var \App\Models\Feed $feed */
-    /** @var \App\Platforms\Contracts\PlatformFactory $platformFactory */
 @endphp
 
 @php echo '<?xml version="1.0" encoding="UTF-8"?>\n'; @endphp
@@ -19,10 +18,9 @@
         <itunes:image href="{{$feed->imageUrl}}"/>
         <language>en-us</language>
         @foreach($feed->audioClipsFinishedProcessing as $clip)
-            @php($platform = $platformFactory->make($clip->platformType))
             <item>
                 <title>{{$clip->title}}</title>
-                <link>{{$platform->getUrlFromId($clip->platform_id)}}</link>
+                <link>{{$clip->platform_url}}</link>
                 <description>{{$clip->description}}</description>
                 {{--todo: this should come from the feed/clip pivot--}}
                 <pubDate>{{$clip->created_at->format(\DateTimeInterface::RSS)}}</pubDate>

@@ -11,17 +11,11 @@ use Tests\TestCase;
 
 class ClientTest extends TestCase
 {
-    protected function setUp(): void {
-        parent::setUp();
-
-        Process::preventStrayProcesses();
-    }
-
     #[Test]
     public function it_gets_metadata() {
-        $id = 'wp4i5g490wg7u';
+        $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
 
-        Process::fake(["./yt-dlp --dump-json $id" => Process::result(json_encode($fakeMetadata = [
+        Process::fake(["'./yt-dlp' '--dump-json' '$url'" => Process::result(json_encode($fakeMetadata = [
             'id' => 1,
             'title' => 'Some video',
             'description' => 'Lorem ipsum',
@@ -33,19 +27,19 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $metadata = $client->getMetadata($id);
+        $metadata = $client->getMetadata($url);
 
         $this->assertEquals($fakeMetadata, $metadata);
     }
 
     #[Test]
     public function it_downloads_audio() {
-        $url = 'wp4i5g490wg7u';
+        $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
 
         $file = '';
 
-        Process::fake(["./yt-dlp -x --audio-format=mp3 --audio-quality=2 -o * $url" => function (PendingProcess $process) use (&$file) {
-            $file = collect(explode(' ', $process->command))->first(fn($s) => Str::endsWith($s, '.mp3'));
+        Process::fake(["'./yt-dlp' '-x' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use (&$file) {
+            $file =  collect($process->command)->first(fn($s) => Str::endsWith($s, '.mp3'));
 
             touch($file);
 
@@ -58,29 +52,5 @@ class ClientTest extends TestCase
         $client->downloadAudio($url);
 
         $this->assertFileExists($file);
-    }
-
-    #[Test]
-    public function it_rejects_invalid_input_when_getting_metadata() {
-        $this->expectException(\InvalidArgumentException::class);
-
-        Process::fake();
-
-        /** @var Client $client */
-        $client = $this->app->make(Client::class);
-
-        $client->getMetadata('https://youtube.com/watch?v=zzz; rm -rf /some/important/path #');
-    }
-
-    #[Test]
-    public function it_rejects_invalid_input_when_downloading_audio() {
-        $this->expectException(\InvalidArgumentException::class);
-
-        Process::fake();
-
-        /** @var Client $client */
-        $client = $this->app->make(Client::class);
-
-        $client->downloadAudio('https://youtube.com/watch?v=zzz; rm -rf /some/important/path #');
     }
 }

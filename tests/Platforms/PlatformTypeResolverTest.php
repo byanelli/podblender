@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Platform;
+namespace Tests\Platforms;
 
 use App\Enums\PlatformType;
 use App\Platforms\PlatformTypeResolver;
@@ -31,6 +31,21 @@ class PlatformTypeResolverTest extends TestCase
 
         foreach ($urls as $url) {
             $this->assertEquals(PlatformType::Web, $resolver->fromUrl($url), "Failed to identify as a YouTube URL: $url");
+        }
+    }
+
+    #[Test]
+    public function it_resolves_soundcloud() {
+        /** @var PlatformTypeResolver $resolver */
+        $resolver = $this->app->make(PlatformTypeResolver::class);
+
+        $urls = [
+            'https://soundcloud.com/kendrick-lamar-music/not-like-us',
+            'https://on.soundcloud.com/TAdDMxWcmzCW8TMi8',
+        ];
+
+        foreach ($urls as $url) {
+            $this->assertEquals(PlatformType::SoundCloud, $resolver->fromUrl($url), "Failed to identify as a YouTube URL: $url");
         }
     }
 }

@@ -18,7 +18,7 @@ class AudioClipFactory extends Factory
     public function definition(): array
     {
         return [
-            AudioClip::COL_PLATFORM_ID => $this->faker->uuid,
+            AudioClip::COL_PLATFORM_URL => $this->faker->url(),
             AudioClip::COL_GUID => $this->faker->uuid,
             AudioClip::COL_TITLE => $this->faker->name,
             AudioClip::COL_DESCRIPTION => $this->faker->realText,

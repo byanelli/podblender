@@ -14,40 +14,30 @@ use Tests\TestCase;
 trait FakesPlatform
 {
     protected function fakePlatform(
-        string    $id = '',
-        string    $url = '',
         ?Metadata $metadata = null,
         string    $audioPath = '',
         string    $audioContent = '',
     ): void {
         $platform = new readonly class (
-            $id,
-            $url,
             $metadata,
             $audioPath,
             $audioContent,
         ) implements Platform {
             public function __construct(
-                private string    $id = '',
-                private string    $url = '',
                 private ?Metadata $metadata = null,
                 private string    $audioPath = '',
                 private string    $audioContent = '',
             ) {}
 
-            public function getIdFromUrl(string $url): string {
-                return $this->id;
+            public function getCanonicalUrl(string $url): string {
+                return $url;
             }
 
-            public function getUrlFromId(string $id): string {
-                return $this->url;
-            }
-
-            public function getMetadata(string $id): Metadata {
+            public function getMetadata(string $url): Metadata {
                 return $this->metadata;
             }
 
-            public function downloadAudio(string $id): string {
+            public function downloadAudio(string $url): string {
                 file_put_contents($this->audioPath, $this->audioContent);
 
                 return $this->audioPath;

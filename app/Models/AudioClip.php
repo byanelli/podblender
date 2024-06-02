@@ -18,7 +18,7 @@ use Illuminate\Support\Traits\Tappable;
  * @property int $duration
  * @property string $guid
  * @property int $id
- * @property string $platform_id
+ * @property string $platform_url
  * @property bool $processing
  * @property int $size
  * @property string $storage_path
@@ -48,7 +48,7 @@ class AudioClip extends Model
     const COL_DURATION = 'duration';
     const COL_GUID = 'guid';
     const COL_ID = 'id';
-    const COL_PLATFORM_ID = 'platform_id';
+    const COL_PLATFORM_URL= 'platform_url';
     const COL_PROCESSING = 'processing';
     const COL_SIZE = 'size';
     const COL_STORAGE_PATH = 'storage_path';

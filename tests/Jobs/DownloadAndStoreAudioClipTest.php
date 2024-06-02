@@ -22,7 +22,6 @@ class DownloadAndStoreAudioClipTest extends TestCase
     public function it_downloads_and_stores_audio_clips(): void
     {
         $this->fakePlatform(
-            id: $id = '123',
             audioPath: $downloadPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3',
             audioContent: $downloadContents = 'foo',
         );
@@ -31,7 +30,6 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_PLATFORM_ID => $id,
             AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
             AudioClip::COL_PROCESSING => true,
         ]);
@@ -56,7 +54,6 @@ class DownloadAndStoreAudioClipTest extends TestCase
     public function it_deletes_clip_and_temp_files_on_error(): void
     {
         $this->fakePlatform(
-            id: $id = '123',
             audioPath: $downloadPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3',
         );
 
@@ -67,7 +64,6 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_PLATFORM_ID => $id,
             AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
             AudioClip::COL_PROCESSING => true,
         ]);

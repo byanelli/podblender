@@ -33,14 +33,15 @@ readonly class AddClipToFeed
         // Get the platform service by type.
         $platform = $this->platformFactory->make($platformType);
 
-        // Parse the content id from the URL.
-        $id = $platform->getIdFromUrl($url);
+        // A platform will typically have many URLs pointing to the same content. Here we get the URL in a canonical
+        // form to avoid duplication.
+        $url = $platform->getCanonicalUrl($url);
 
         // Find an existing audio clip in the database or get metadata from the platform and save the clip.
         /** @var AudioClip $clip */
         $clip = AudioClip::query()
-            ->where(AudioClip::COL_PLATFORM_ID, $id)
-            ->firstOr(fn() => $this->createAudioClip->__invoke($platformType, $id));
+            ->where(AudioClip::COL_PLATFORM_URL, $url)
+            ->firstOr(fn() => $this->createAudioClip->__invoke($platformType, $url));
 
         // If we're creating the clip in this request, queue a job to download it.
         if ($clip->wasRecentlyCreated) {

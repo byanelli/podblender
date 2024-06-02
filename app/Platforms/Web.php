@@ -15,13 +15,18 @@ readonly class Web implements Platform
         private WhisperApi $whisper,
     ) {}
 
-    public function getMetadata(string $id): Metadata {
-        $article = $this->articleExtractor->getArticle($id);
+    public function getCanonicalUrl(string $url): string {
+        // todo remove UTM codes etc.
+        return $url;
+    }
 
-        $domain = Helpers::removeWwwFromHost(Uri::fromBaseUri($id)->getHost());
+    public function getMetadata(string $url): Metadata {
+        $article = $this->articleExtractor->getArticle($url);
+
+        $domain = Helpers::removeWwwFromHost(Uri::fromBaseUri($url)->getHost());
 
         return new Metadata(
-            id: $id,
+            id: $url,
             title: $article->title,
             description: 'Article by '.collect($article->authors)->join(' and '),
             sourceId: $domain,
@@ -29,16 +34,8 @@ readonly class Web implements Platform
         );
     }
 
-    public function getIdFromUrl(string $url): string {
-        return $url;
-    }
-
-    public function getUrlFromId(string $id): string {
-        return $id;
-    }
-
-    public function downloadAudio(string $id): string {
-        $article = $this->articleExtractor->getArticle($id);
+    public function downloadAudio(string $url): string {
+        $article = $this->articleExtractor->getArticle($url);
 
         return $this->whisper->convertTextToSpeech($article->text);
     }

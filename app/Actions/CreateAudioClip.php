@@ -16,11 +16,11 @@ readonly class CreateAudioClip
     /**
      * @throws \Exception
      */
-    public function __invoke(PlatformType $platformType, string $id): AudioClip {
+    public function __invoke(PlatformType $platformType, string $url): AudioClip {
         $platform = $this->platformFactory->make($platformType);
 
         // Download the metadata from the platform.
-        $metadata = $platform->getMetadata($id);
+        $metadata = $platform->getMetadata($url);
 
         $storagePath = Uuid::uuid4()->toString();
 
@@ -42,7 +42,7 @@ readonly class CreateAudioClip
         // show up in RSS feeds. A queued job will be dispatched to download the audio and set processing=false.
         /** @var AudioClip $clip */
         $clip = AudioClip::create([
-            AudioClip::COL_PLATFORM_ID     => $metadata->id,
+            AudioClip::COL_PLATFORM_URL    => $url,
             AudioClip::COL_AUDIO_SOURCE_ID => $channel->id,
             AudioClip::COL_TITLE           => Str::limit($metadata->title, 500 - 3),
             AudioClip::COL_DESCRIPTION     => Str::limit($metadata->description, 1000 - 3),

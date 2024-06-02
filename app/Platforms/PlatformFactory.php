@@ -11,12 +11,14 @@ readonly class PlatformFactory implements PlatformFactoryContract
     public function __construct(
         private YouTube $youTube,
         private Web $web,
+        private SoundCloud $soundCloud,
     ) {}
 
     public function make(PlatformType $platformType): Platform {
         return match ($platformType) {
             PlatformType::YouTube => $this->youTube,
             PlatformType::Web => $this->web,
+            PlatformType::SoundCloud => $this->soundCloud,
         };
     }
 }

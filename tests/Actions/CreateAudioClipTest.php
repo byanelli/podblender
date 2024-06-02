@@ -15,20 +15,24 @@ class CreateAudioClipTest extends TestCase
 
     #[Test]
     public function it_creates_an_audio_clip() {
-        $this->fakePlatform(metadata: new Metadata(
-            id: $id = 'lijwliejfwlef',
-            title: $title = 'foo',
-            description: $description = 'zzz',
-            sourceId: $sourceId = '9340e9tjh490e5',
-            sourceName: $sourceName = 'bar',
-        ));
+        $url = 'https://youtube.com/watch?v='.($id = 'lijwliejfwlef');
+
+        $this->fakePlatform(
+            metadata: new Metadata(
+                id: $id,
+                title: $title = 'foo',
+                description: $description = 'zzz',
+                sourceId: $sourceId = '9340e9tjh490e5',
+                sourceName: $sourceName = 'bar',
+            ),
+        );
 
         /** @var CreateAudioClip $createAudioClip */
         $createAudioClip = $this->app->make(CreateAudioClip::class);
 
-        $clip = $createAudioClip->__invoke(PlatformType::YouTube, $id);
+        $clip = $createAudioClip->__invoke(PlatformType::YouTube, $url);
 
-        $this->assertEquals($id, $clip->platform_id);
+        $this->assertEquals($url, $clip->platform_url);
         $this->assertEquals($title, $clip->title);
         $this->assertEquals($description, $clip->description);
         $this->assertEquals(0, $clip->duration);

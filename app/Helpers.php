@@ -9,4 +9,11 @@ abstract class Helpers
             ? substr($host, strlen('www.'))
             : $host;
     }
+
+    public static function unquote(string $str): string {
+        $str = (str_starts_with($str, "'") || str_starts_with($str, '"')) ? substr($str, 1) : $str;
+        $str = (str_ends_with($str, "'") || str_ends_with($str, '"')) ? substr($str, 0, -1) : $str;
+
+        return $str;
+    }
 }
