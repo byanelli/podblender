@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\AudioClip;
+use App\Concerns\FixesUrls;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class AudioClipFactory extends Factory
 {
+    use FixesUrls;
+
     /**
      * Define the model's default state.
      *
@@ -18,7 +21,7 @@ class AudioClipFactory extends Factory
     public function definition(): array
     {
         return [
-            AudioClip::COL_PLATFORM_URL => $this->faker->url(),
+            AudioClip::COL_PLATFORM_URL => $this->fixUrlSchemeAndHost($this->faker->url()),
             AudioClip::COL_GUID => $this->faker->uuid,
             AudioClip::COL_TITLE => $this->faker->name,
             AudioClip::COL_DESCRIPTION => $this->faker->realText,

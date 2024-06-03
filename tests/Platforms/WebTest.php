@@ -13,6 +13,17 @@ class WebTest extends TestCase
     use FakesWhisper;
 
     #[Test]
+    public function it_gets_canonical_urls() {
+        $url = 'http://www.theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260';
+        $canonicalUrl = 'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260';
+
+        /** @var Web $web */
+        $web = $this->app->make(Web::class);
+
+        $this->assertEquals($canonicalUrl, $web->getCanonicalUrl($url));
+    }
+
+    #[Test]
     public function it_gets_metadata() {
         Http::fake(['*' => Http::response(body: json_encode([
             [
@@ -26,7 +37,7 @@ class WebTest extends TestCase
         /** @var Web $web */
         $web = $this->app->make(Web::class);
 
-        $metadata = $web->getMetadata($url = 'https://www.theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260');
+        $metadata = $web->getMetadata($url = 'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260');
 
         $this->assertEquals($url, $metadata->id);
         $this->assertEquals($title, $metadata->title);

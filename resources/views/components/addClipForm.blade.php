@@ -111,7 +111,7 @@
     </div>
     <form action="{{Web::addClipToFeed($feed)}}" method="post">
         @csrf
-        <input type="hidden" name="url" value="{{$metadata->id}}"/>
+        <input type="hidden" name="url" value="{{$url}}"/>
         <div class="mt-5">
             <button type="submit"
                     class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">

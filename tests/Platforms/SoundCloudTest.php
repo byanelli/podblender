@@ -14,10 +14,10 @@ class SoundCloudTest extends TestCase
 {
     #[Test]
     public function it_gets_canonical_urls() {
-        $url = 'foo';
-        $canonicalUrl = 'bar';
+        $url = 'http://www.youtube.com/watch?v=foo&otherparam=bar';
+        $canonicalUrl = 'https://youtube.com/watch?v=foo';
 
-        Process::fake(["'./yt-dlp' '--dump-json' '$url'" => Process::result(output: json_encode([
+        Process::fake(["'./yt-dlp' '--dump-json' '*'" => Process::result(output: json_encode([
             'webpage_url' => $canonicalUrl,
         ]))]);
 

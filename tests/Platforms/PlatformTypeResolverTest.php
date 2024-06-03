@@ -45,7 +45,22 @@ class PlatformTypeResolverTest extends TestCase
         ];
 
         foreach ($urls as $url) {
-            $this->assertEquals(PlatformType::SoundCloud, $resolver->fromUrl($url), "Failed to identify as a YouTube URL: $url");
+            $this->assertEquals(PlatformType::SoundCloud, $resolver->fromUrl($url), "Failed to identify as a SoundCloud URL: $url");
+        }
+    }
+
+    #[Test]
+    public function it_resolves_twitch() {
+        /** @var PlatformTypeResolver $resolver */
+        $resolver = $this->app->make(PlatformTypeResolver::class);
+
+        $urls = [
+            'https://twitch.tv/user/video',
+            // todo
+        ];
+
+        foreach ($urls as $url) {
+            $this->assertEquals(PlatformType::Twitch, $resolver->fromUrl($url), "Failed to identify as a Twitch URL: $url");
         }
     }
 }

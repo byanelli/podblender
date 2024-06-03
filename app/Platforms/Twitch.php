@@ -6,7 +6,7 @@ use App\Apis\YtDlp\Client;
 use App\Concerns\FixesUrls;
 use App\Platforms\Contracts\Platform;
 
-readonly class SoundCloud implements Platform
+readonly class Twitch implements Platform
 {
     use FixesUrls;
 
@@ -15,7 +15,13 @@ readonly class SoundCloud implements Platform
     public function getCanonicalUrl(string $url): string {
         $url = $this->fixUrlSchemeAndHost($url);
 
-        return $this->ytDlp->getMetadata($url)['webpage_url'];
+        $meta = $this->ytDlp->getMetadata($url);
+
+        return match ($meta['extractor'] ?? null) {
+            'twitch:vod' => 'https://twitch.tv/videos/'.$meta['webpage_url_basename'],
+            'twitch:clips' => 'https://twitch.tv/'.strtolower($meta['uploader']).'/clip/'.$meta['webpage_url_basename'],
+            default => throw new \RuntimeException('zzz'),
+        };
     }
 
     public function getMetadata(string $url): Metadata {
@@ -24,10 +30,10 @@ readonly class SoundCloud implements Platform
         $meta = $this->ytDlp->getMetadata($url);
 
         return new Metadata(
-            id: $meta['webpage_url'],
+            id: $meta['id'],
             title: $meta['title'],
-            description: $meta['description'] ?: '',
-            sourceId: $meta['uploader_url'],
+            description: '',
+            sourceId: $meta['uploader_id'],
             sourceName: $meta['uploader'],
         );
     }

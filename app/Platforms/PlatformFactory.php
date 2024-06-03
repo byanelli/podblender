@@ -12,6 +12,7 @@ readonly class PlatformFactory implements PlatformFactoryContract
         private YouTube $youTube,
         private Web $web,
         private SoundCloud $soundCloud,
+        private Twitch $twitch,
     ) {}
 
     public function make(PlatformType $platformType): Platform {
@@ -19,6 +20,7 @@ readonly class PlatformFactory implements PlatformFactoryContract
             PlatformType::YouTube => $this->youTube,
             PlatformType::Web => $this->web,
             PlatformType::SoundCloud => $this->soundCloud,
+            PlatformType::Twitch => $this->twitch,
         };
     }
 }

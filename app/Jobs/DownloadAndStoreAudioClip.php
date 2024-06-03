@@ -51,8 +51,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
                 throw new \Exception("Couldn't store audio from $downloadPath");
             }
 
-            // Mark the clip as no longer processing and save the file size and duration
-            // in the database (for use in the RSS feed).
+            // Mark the clip as no longer processing and save the file size and duration in the database (for use in the
+            // RSS feed).
             $this->clip->processing = false;
             $this->clip->duration = $duration;
             $this->clip->size = $storage->size($this->clip->storage_path);

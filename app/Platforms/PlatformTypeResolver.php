@@ -2,12 +2,14 @@
 
 namespace App\Platforms;
 
+use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
-use App\Helpers;
 use League\Uri\Uri;
 
 readonly class PlatformTypeResolver
 {
+    use FixesUrls;
+
     const array YOUTUBE_HOSTS = [
         'youtube.com',
         'm.youtube.com',
@@ -20,12 +22,20 @@ readonly class PlatformTypeResolver
         'on.soundcloud.com',
     ];
 
+    const array TWITCH_HOSTS = [
+        'twitch.tv',
+        'twitch.com',
+    ];
+
     public function fromUrl(string $url): PlatformType {
-        $host = Helpers::removeWwwFromHost(Uri::fromBaseUri($url)->getHost());
+        $url = $this->fixUrlSchemeAndHost($url);
+
+        $host = Uri::fromBaseUri($url)->getHost();
 
         return match (true) {
-            (collect(self::YOUTUBE_HOSTS)->contains($host)) => PlatformType::YouTube,
-            (collect(self::SOUNDCLOUD_HOSTS)->contains($host)) => PlatformType::SoundCloud,
+            (in_array($host, self::YOUTUBE_HOSTS)) => PlatformType::YouTube,
+            (in_array($host, self::SOUNDCLOUD_HOSTS)) => PlatformType::SoundCloud,
+            (in_array($host, self::TWITCH_HOSTS)) => PlatformType::Twitch,
             default => PlatformType::Web,
         };
     }

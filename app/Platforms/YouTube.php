@@ -3,22 +3,26 @@
 namespace App\Platforms;
 
 use App\Apis\YtDlp\Client;
-use App\Helpers;
+use App\Concerns\FixesUrls;
 use App\Platforms\Contracts\Platform;
 use Illuminate\Support\Collection;
 use League\Uri\Uri;
 
 readonly class YouTube implements Platform
 {
-    public function __construct(
-        private Client $ytDlp,
-    ) {}
+    use FixesUrls;
+
+    public function __construct(private Client $ytDlp) {}
 
     public function getCanonicalUrl(string $url): string {
+        $url = $this->fixUrlSchemeAndHost($url);
+
         return 'https://youtube.com/watch?v='.$this->getIdFromUrl($url);
     }
 
     public function getMetadata(string $url): Metadata {
+        $url = $this->fixUrlSchemeAndHost($url);
+
         $meta = $this->ytDlp->getMetadata($url);
 
         return new Metadata(
@@ -31,12 +35,12 @@ readonly class YouTube implements Platform
     }
 
     private function getIdFromUrl(string $url): string {
+        $url = $this->fixUrlSchemeAndHost($url);
+
         $uri = Uri::fromBaseUri($url);
 
-        $host = Helpers::removeWwwFromHost($uri->getHost());
-
-        if (!collect(['youtube.com', 'm.youtube.com', 'youtu.be', 'youtube-nocookie.com'])->contains($host)) {
-            throw new \RuntimeException("Invalid host for YouTube URL: {$host}");
+        if (!collect(['youtube.com', 'm.youtube.com', 'youtu.be', 'youtube-nocookie.com'])->contains($uri->getHost())) {
+            throw new \RuntimeException("Invalid host for YouTube URL: {$uri->getHost()}");
         }
 
         parse_str($uri->getQuery(), $query);
@@ -70,6 +74,8 @@ readonly class YouTube implements Platform
     }
 
     public function downloadAudio(string $url): string {
+        $url = $this->fixUrlSchemeAndHost($url);
+
         return $this->ytDlp->downloadAudio($url);
     }
 }

@@ -23,7 +23,7 @@ readonly class AddClipToFeed
     ) {}
 
     public function __invoke(Request $request, Feed $feed): RedirectResponse {
-        $request->validate(['url' => 'required|url']);
+        $request->validate(['url' => 'required|url:http,https']);
 
         $url = $request->post('url');
 
