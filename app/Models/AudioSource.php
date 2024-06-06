@@ -19,11 +19,11 @@ class AudioSource extends Model
     use HasFactory;
 
     // Columns
-    const COL_CREATED_AT = 'created_at';
-    const COL_ID = 'id';
-    const COL_NAME = 'name';
-    const COL_PLATFORM_TYPE = 'platform_type';
-    const COL_PLATFORM_ID = 'platform_id';
+    const string COL_CREATED_AT = 'created_at';
+    const string COL_ID = 'id';
+    const string COL_NAME = 'name';
+    const string COL_PLATFORM_TYPE = 'platform_type';
+    const string COL_PLATFORM_ID = 'platform_id';
 
     protected $casts = [
         self::COL_PLATFORM_TYPE => PlatformType::class,

@@ -27,16 +27,16 @@ class Feed extends Model
 {
     use HasFactory, HasUuid;
 
-    const COL_CREATED_AT = 'created_at';
-    const COL_ID = 'id';
-    const COL_NAME = 'name';
-    const COL_UPDATED_AT = 'updated_at';
-    const COL_USER_ID = 'user_id';
-    const COL_UUID = 'uuid';
+    const string COL_CREATED_AT = 'created_at';
+    const string COL_ID = 'id';
+    const string COL_NAME = 'name';
+    const string COL_UPDATED_AT = 'updated_at';
+    const string COL_USER_ID = 'user_id';
+    const string COL_UUID = 'uuid';
 
-    const REL_AUDIO_CLIPS = 'audioClips';
-    const REL_AUDIO_CLIPS_FINISHED_PROCESSING = 'audioClipsFinishedProcessing';
-    const REL_USER = 'user';
+    const string REL_AUDIO_CLIPS = 'audioClips';
+    const string REL_AUDIO_CLIPS_FINISHED_PROCESSING = 'audioClipsFinishedProcessing';
+    const string REL_USER = 'user';
 
     // todo: add to database
     public string $description = 'Lorem ipsum dolor sit amet.';

@@ -2,19 +2,20 @@
 
 namespace Tests\Apis\Whisper;
 
-use App\Apis\Ffmpeg\Client as FfmpegClient;
 use App\Apis\Whisper\Client as WhisperClient;
-use Faker\Factory;
+use Faker\Factory as FakerFactory;
 use GuzzleHttp\Psr7\Response;
-use Illuminate\Support\Facades\Process;
 use OpenAI\Contracts\ClientContract as OpenAiClient;
 use OpenAI\Laravel\Facades\OpenAI;
 use OpenAI\Responses\Audio\SpeechStreamResponse;
 use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\FakesFfmpeg;
 use Tests\TestCase;
 
 class ClientTest extends TestCase
 {
+    use FakesFfmpeg;
+
     /**
      * @param string $str
      * @return resource
@@ -26,9 +27,7 @@ class ClientTest extends TestCase
     /** @noinspection PhpParamsInspection */
     #[Test]
     public function it_converts_text_to_speech() {
-        $faker = Factory::create();
-
-        $text = $faker->realText(8000);
+        $text = FakerFactory::create()->realText(8000);
 
         [$firstSegment, $secondSegment] = [substr($text, 0, 4096), substr($text, 4096)];
 
@@ -37,11 +36,7 @@ class ClientTest extends TestCase
            new SpeechStreamResponse(new Response(body: $this->convertStringToResource($secondSegment))),
         ]));
 
-        $this->app->bind(FfmpegClient::class, fn() => new readonly class ($this->app, Process::fake()) extends FfmpegClient {
-            public function combineMp3s(array $mp3s): string {
-                return collect($mp3s)->map(fn($mp3) => file_get_contents($mp3))->implode('');
-            }
-        });
+        $this->fakeFfmpeg();
 
         /** @var WhisperClient $client */
         $client = app(WhisperClient::class);

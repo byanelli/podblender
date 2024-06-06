@@ -8,7 +8,7 @@ use Illuminate\Http\RedirectResponse;
 
 readonly class Logout
 {
-    public function __construct(private readonly AuthManager $auth) {}
+    public function __construct(private AuthManager $auth) {}
 
     public function __invoke(): RedirectResponse {
         $this->auth->logout();

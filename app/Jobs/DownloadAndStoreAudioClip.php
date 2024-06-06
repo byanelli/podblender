@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Apis\Ffmpeg\Client as Ffmpeg;
+use App\Apis\Ffmpeg\Contracts\Client as Ffmpeg;
 use App\Models\AudioClip;
 use App\Apis\YtDlp\Client;
 use App\Platforms\Contracts\PlatformFactory;

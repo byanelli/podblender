@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -29,17 +28,17 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     // Columns
-    const COL_CREATED_AT = 'created_at';
-    const COL_EMAIL = 'email';
-    const COL_EMAIL_VERIFIED_AT = 'email_verified_at';
-    const COL_ID = 'id';
-    const COL_NAME = 'name';
-    const COL_PASSWORD = 'password';
-    const COL_REMEMBER_TOKEN = 'remember_token';
-    const COL_UPDATED_AT = 'updated_at';
+    const string COL_CREATED_AT = 'created_at';
+    const string COL_EMAIL = 'email';
+    const string COL_EMAIL_VERIFIED_AT = 'email_verified_at';
+    const string COL_ID = 'id';
+    const string COL_NAME = 'name';
+    const string COL_PASSWORD = 'password';
+    const string COL_REMEMBER_TOKEN = 'remember_token';
+    const string COL_UPDATED_AT = 'updated_at';
 
     // Relations
-    const REL_FEEDS = 'feeds';
+    const string REL_FEEDS = 'feeds';
 
     /**
      * The attributes that are mass assignable.
@@ -71,10 +70,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-
-    public static function auth(): User {
-        return Auth::user();
-    }
 
     public function feeds(): HasMany {
         return $this->hasMany(Feed::class);

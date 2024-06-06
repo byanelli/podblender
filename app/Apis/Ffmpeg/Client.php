@@ -2,6 +2,7 @@
 
 namespace App\Apis\Ffmpeg;
 
+use App\Apis\Ffmpeg\Contracts\Client as ClientContract;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Process\ProcessResult;
 use Illuminate\Process\Factory;
@@ -9,7 +10,7 @@ use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 use Spatie\Regex\Regex;
 
-readonly class Client
+readonly class Client implements ClientContract
 {
     public function __construct(
         private Application $app,

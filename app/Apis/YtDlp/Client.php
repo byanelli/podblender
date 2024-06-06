@@ -2,7 +2,6 @@
 
 namespace App\Apis\YtDlp;
 
-use App\Enums\PlatformType; // todo get PlatformType out of this class
 use Carbon\CarbonInterval;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
@@ -15,8 +14,8 @@ use Ramsey\Uuid\Uuid;
  * project is a fork of youtube-dl based on the now inactive youtube-dlc."
  */
 readonly class Client {
-    const METADATA_TIMEOUT = 30;
-    const DOWNLOAD_TIMEOUT = 1200;
+    const int METADATA_TIMEOUT = 30;
+    const int DOWNLOAD_TIMEOUT = 1200;
 
     public function __construct(
         private Application $app,
@@ -37,16 +36,16 @@ readonly class Client {
             ->throw();
     }
 
-    private function getCacheKey(PlatformType $platformType, string $id): string {
-        return "$platformType->value:$id";
+    private function getCacheKey(string $id): string {
+        return "metadata:$id";
     }
 
-    private function cacheMetadata(PlatformType $platformType, string $id, array $metadata): void {
-        $this->cache->put($this->getCacheKey($platformType, $id), $metadata, CarbonInterval::day());
+    private function cacheMetadata(string $id, array $metadata): void {
+        $this->cache->put($this->getCacheKey($id), $metadata, CarbonInterval::day());
     }
 
-    private function getCachedMetadata(PlatformType $platformType, string $id): ?array {
-        return $this->cache->get($this->getCacheKey($platformType, $id));
+    private function getCachedMetadata(string $id): ?array {
+        return $this->cache->get($this->getCacheKey($id));
     }
 
     /**
@@ -54,7 +53,7 @@ readonly class Client {
      */
     public function getMetadata(string $url): array {
         // Return cached metadata if available.
-        if (!is_null($cached = $this->getCachedMetadata(PlatformType::YouTube, $url))) {
+        if (!is_null($cached = $this->getCachedMetadata($url))) {
             return $cached;
         }
 
@@ -69,7 +68,7 @@ readonly class Client {
         // Cache metadata before returning.
         return tap(
             json_decode($jsonString, true),
-            fn(array $metadata) => $this->cacheMetadata(PlatformType::YouTube, $url, $metadata),
+            fn(array $metadata) => $this->cacheMetadata($url, $metadata),
         );
     }
 

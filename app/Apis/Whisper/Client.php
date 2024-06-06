@@ -2,7 +2,7 @@
 
 namespace App\Apis\Whisper;
 
-use App\Apis\Ffmpeg\Client as FfmpegClient;
+use App\Apis\Ffmpeg\Contracts\Client as FfmpegClient;
 use App\Apis\Whisper\Contracts\Client as ClientContract;
 use OpenAI\Contracts\ClientContract as OpenAiClient;
 use OpenAI\Responses\Audio\SpeechStreamResponse;

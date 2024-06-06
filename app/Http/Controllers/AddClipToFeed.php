@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Actions\CreateAudioClip;
+use App\Auth\Access\Gate;
 use App\Http\Routes\Web;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
 use App\Models\Feed;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\PlatformTypeResolver;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,14 +18,20 @@ use Illuminate\Http\Request;
 readonly class AddClipToFeed
 {
     public function __construct(
+        private Gate                 $gate,
         private Dispatcher           $dispatcher,
         private PlatformTypeResolver $platformTypeResolver,
         private PlatformFactory      $platformFactory,
         private CreateAudioClip      $createAudioClip,
     ) {}
 
+    /**
+     * @throws AuthorizationException
+     */
     public function __invoke(Request $request, Feed $feed): RedirectResponse {
         $request->validate(['url' => 'required|url:http,https']);
+
+        $this->gate->authorizeUpdate($feed);
 
         $url = $request->post('url');
 

@@ -42,20 +42,20 @@ class AudioClip extends Model
     ];
 
     // Columns
-    const COL_AUDIO_SOURCE_ID = 'audio_source_id';
-    const COL_CREATED_AT = 'created_at';
-    const COL_DESCRIPTION = 'description';
-    const COL_DURATION = 'duration';
-    const COL_GUID = 'guid';
-    const COL_ID = 'id';
-    const COL_PLATFORM_URL= 'platform_url';
-    const COL_PROCESSING = 'processing';
-    const COL_SIZE = 'size';
-    const COL_STORAGE_PATH = 'storage_path';
-    const COL_TITLE = 'title';
+    const string COL_AUDIO_SOURCE_ID = 'audio_source_id';
+    const string COL_CREATED_AT = 'created_at';
+    const string COL_DESCRIPTION = 'description';
+    const string COL_DURATION = 'duration';
+    const string COL_GUID = 'guid';
+    const string COL_ID = 'id';
+    const string COL_PLATFORM_URL= 'platform_url';
+    const string COL_PROCESSING = 'processing';
+    const string COL_SIZE = 'size';
+    const string COL_STORAGE_PATH = 'storage_path';
+    const string COL_TITLE = 'title';
 
     // Relations
-    const REL_AUDIO_SOURCE = 'audioSource';
+    const string REL_AUDIO_SOURCE = 'audioSource';
 
     public function audioSource(): BelongsTo {
         return $this->belongsTo(AudioSource::class);
