@@ -24,9 +24,9 @@ readonly class ShowMetadata
      * @throws AuthorizationException
      */
     public function __invoke(Feed $feed, Request $request): View {
-        $this->gate->authorizeUpdate($feed);
+        $this->gate->authorizeUpdate($feed); // todo test authorization
 
-        $url = $request->str('url');
+        $url = $request->str('url'); // todo validate. UrlRequest?
 
         try {
             $platformType = $this->platformTypeResolver->fromUrl($url);

@@ -19,7 +19,7 @@ readonly class Home
     public function __invoke(Request $request): View {
         $user = $this->authUserResolver->get();
 
-        $user->load(User::REL_FEEDS.'.'.Feed::REL_AUDIO_CLIPS_FINISHED_PROCESSING);
+        $user->load(User::REL_FEEDS);
 
         return $this->views->home($user);
     }

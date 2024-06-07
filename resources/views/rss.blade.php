@@ -10,12 +10,12 @@
     <channel>
         <title>{{$feed->name}}</title>
         <link>{{Web::rss($feed)}}</link>
-        <description>{{$feed->description}}</description>
+        <description>{{$feed->getDescription()}}</description>
         <itunes:owner>
             <itunes:email>{{$feed->user->email}}</itunes:email>
         </itunes:owner>
         <itunes:author>{{$feed->user->name}}</itunes:author>
-        <itunes:image href="{{$feed->imageUrl}}"/>
+        <itunes:image href="{{$feed->getImageUrl()}}"/>
         <language>en-us</language>
         @foreach($feed->audioClipsFinishedProcessing as $clip)
             <item>

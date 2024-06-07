@@ -4,6 +4,7 @@ namespace Tests\Actions;
 
 use App\Actions\CreateAudioClip;
 use App\Enums\PlatformType;
+use App\Models\AudioClip;
 use App\Platforms\Metadata;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesPlatform;
@@ -30,7 +31,8 @@ class CreateAudioClipTest extends TestCase
         /** @var CreateAudioClip $createAudioClip */
         $createAudioClip = $this->app->make(CreateAudioClip::class);
 
-        $clip = $createAudioClip->__invoke(PlatformType::YouTube, $url);
+        $clip = $createAudioClip->__invoke(PlatformType::YouTube, $url)
+            ->load(AudioClip::REL_AUDIO_SOURCE);
 
         $this->assertEquals($url, $clip->platform_url);
         $this->assertEquals($title, $clip->title);

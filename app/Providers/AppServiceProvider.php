@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::unguard();
         Model::shouldBeStrict();
+        Model::preventLazyLoading();
         Date::use(CarbonImmutable::class);
 
         $this->app->bind(PlatformFactoryContract::class, PlatformFactory::class);

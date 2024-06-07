@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Based\Fluent\Fluent;
+use Based\Fluent\Relations\Relation;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -9,47 +12,41 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 
-/**
- * Columns:
- * @property \DateTimeInterface $created_at
- * @property string $email
- * @property \DateTimeInterface $email_verified_at
- * @property int $id
- * @property string $name
- * @property string $password
- * @property string $remember_token
- * @property \DateTimeInterface $updated_at
- *
- * Relations:
- * @property Collection<int, Feed> $feeds
- */
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, Fluent;
 
-    // Columns
+    public CarbonImmutable $created_at;
     const string COL_CREATED_AT = 'created_at';
+
+    public string $email;
     const string COL_EMAIL = 'email';
+
+    public CarbonImmutable $email_verified_at;
     const string COL_EMAIL_VERIFIED_AT = 'email_verified_at';
+
+    public int $id;
     const string COL_ID = 'id';
+
+    public string $name;
     const string COL_NAME = 'name';
+
+    public string $password;
     const string COL_PASSWORD = 'password';
+
+    public string $remember_token;
     const string COL_REMEMBER_TOKEN = 'remember_token';
+
+    public string $updated_at;
     const string COL_UPDATED_AT = 'updated_at';
 
-    // Relations
-    const string REL_FEEDS = 'feeds';
-
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
+     * @var Collection<int, Feed>
+     * @see self::feeds()
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    #[Relation]
+    public Collection $feeds;
+    const string REL_FEEDS = 'feeds';
 
     /**
      * The attributes that should be hidden for serialization.
@@ -57,18 +54,8 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
+        self::COL_PASSWORD,
+        self::COL_REMEMBER_TOKEN,
     ];
 
     public function feeds(): HasMany {

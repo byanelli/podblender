@@ -24,10 +24,7 @@ readonly class ShowFeed
     public function __invoke(Request $request, Feed $feed): View {
         $this->gate->authorizeView($feed);
 
-        $feed->load([Feed::REL_AUDIO_CLIPS =>  function (Relation $query) {
-            $query->orderByDesc(AudioClip::COL_CREATED_AT); // todo: this should be pivot created at
-            $query->with(AudioClip::REL_AUDIO_SOURCE);
-        }]);
+        $feed->load([Feed::REL_AUDIO_CLIPS =>  fn(Relation $q) => $q->orderByDesc(AudioClip::COL_CREATED_AT)]);
 
         return $this->views->feed($feed);
     }

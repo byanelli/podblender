@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e01541c00517eec8fce4bed9bfd7c23c",
+    "content-hash": "92cf98bb3c3a0ea5e5438e5c9c531206",
     "packages": [
         {
             "name": "brick/math",
@@ -129,6 +129,64 @@
                 }
             ],
             "time": "2023-12-11T17:09:12+00:00"
+        },
+        {
+            "name": "davpyu/laravel-fluent",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Davpyu/laravel-fluent.git",
+                "reference": "28a76f311c06042e7b6d0ba06645efe3475138a0"
+            },
+            "require": {
+                "illuminate/support": "^10.0",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "nunomaduro/larastan": "^2.1.10",
+                "orchestra/testbench": "^7.5",
+                "pestphp/pest": "^1.2",
+                "pestphp/pest-plugin-laravel": "^1.2"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Based\\Fluent\\FluentServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Based\\Fluent\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Based\\Fluent\\Tests\\": "tests/",
+                    "Based\\Fluent\\Tests\\Models\\": "tests/Pest/Models"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "./vendor/bin/pest"
+                ],
+                "stan": [
+                    "./vendor/bin/phpstan analyse"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Boris Lepikhin",
+                    "email": "boris@lepikhin.com"
+                }
+            ],
+            "description": "Define model attributes the fluent way. Automatically cast properties to native types.",
+            "time": "2024-01-30T17:44:38+00:00"
         },
         {
             "name": "dflydev/dot-access-data",
@@ -9355,11 +9413,14 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "davpyu/laravel-fluent": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.2"
+        "php": "^8.3",
+        "ext-zip": "*"
     },
     "platform-dev": [],
     "plugin-api-version": "2.6.0"

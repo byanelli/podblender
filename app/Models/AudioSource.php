@@ -3,29 +3,27 @@
 namespace App\Models;
 
 use App\Enums\PlatformType;
+use Based\Fluent\Fluent;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * Columns:
- * @property \DateTimeInterface $created_at
- * @property int $id
- * @property string $name
- * @property PlatformType $platform_type
- * @property string $platform_id
- */
 class AudioSource extends Model
 {
-    use HasFactory;
+    use HasFactory, Fluent;
 
-    // Columns
+    public CarbonImmutable $created_at;
     const string COL_CREATED_AT = 'created_at';
-    const string COL_ID = 'id';
-    const string COL_NAME = 'name';
-    const string COL_PLATFORM_TYPE = 'platform_type';
-    const string COL_PLATFORM_ID = 'platform_id';
 
-    protected $casts = [
-        self::COL_PLATFORM_TYPE => PlatformType::class,
-    ];
+    public int $id;
+    const string COL_ID = 'id';
+
+    public string $name;
+    const string COL_NAME = 'name';
+
+    public PlatformType $platform_type;
+    const string COL_PLATFORM_TYPE = 'platform_type';
+
+    public string $platform_id;
+    const string COL_PLATFORM_ID = 'platform_id';
 }

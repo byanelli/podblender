@@ -31,7 +31,7 @@ class DownloadAndStoreAudioClip implements ShouldQueue
         Ffmpeg          $ffmpeg,
     ): void {
         try {
-            $platform = $platformFactory->make($this->clip->platformType);
+            $platform = $platformFactory->make($this->clip->platform_type);
 
             // Download the audio from the platform into a temporary file and open the downloaded file.
             $downloadPath = $platform->downloadAudio($this->clip->platform_url);

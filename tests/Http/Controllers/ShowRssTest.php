@@ -6,8 +6,6 @@ use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
-use App\Platforms\Contracts\Platform;
-use App\Platforms\Contracts\PlatformFactory;
 use DateTimeInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -17,17 +15,17 @@ class ShowRssTest extends TestCase
     #[Test]
     public function it_shows_the_feed() {
         /** @var Feed $feed */
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id]);
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id])
+            ->load(Feed::REL_USER);
+
         /** @var AudioSource $source */
         $source = AudioSource::factory()->create();
 
         /** @var AudioClip $clip */
-        $feed->audioClips()->attach($clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-        ]));
+        $clip = AudioClip::factory()->create([AudioClip::COL_AUDIO_SOURCE_ID => $source->id])
+            ->load(AudioClip::REL_AUDIO_SOURCE);
 
-        /** @var Platform $platform */
-        $platform = $this->app->make(PlatformFactory::class)->make($clip->platformType);
+        $feed->audioClips()->attach($clip);
 
         $response = $this->get("rss/{$feed->uuid}")->content();
 

@@ -41,7 +41,7 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         dispatch(new DownloadAndStoreAudioClip($clip));
 
-        $clip->refresh();
+        $clip = $clip->fresh();
 
         $this->assertFalse($clip->processing);
         $storage->assertExists($clip->storage_path);
