@@ -26,11 +26,12 @@ class PlatformTypeResolverTest extends TestCase
 
         $urls = [
             'https://www.theonion.com/fuck-everything-were-doing-five-blades-1819584036',
-            // todo: more
+            'https://www.engadget.com/2010-06-24-apple-responds-over-iphone-4-reception-issues-youre-holding-th.html',
+            'https://www.nytimes.com/2024/04/13/movies/ai-blu-ray-true-lies.html',
         ];
 
         foreach ($urls as $url) {
-            $this->assertEquals(PlatformType::Web, $resolver->fromUrl($url), "Failed to identify as a YouTube URL: $url");
+            $this->assertEquals(PlatformType::Web, $resolver->fromUrl($url), "Failed to identify as a Web URL: $url");
         }
     }
 
@@ -55,8 +56,10 @@ class PlatformTypeResolverTest extends TestCase
         $resolver = $this->app->make(PlatformTypeResolver::class);
 
         $urls = [
-            'https://twitch.tv/user/video',
-            // todo
+            'https://twitch.tv/video/12345',
+            'https://twitch.tv/clip/FooBarBaz-lwjeiwljg90gj3wgjijr',
+            'https://twitch.com/video/12345',
+            'https://twitch.com/clip/FooBarBaz-lwjeiwljg90gj3wgjijr',
         ];
 
         foreach ($urls as $url) {

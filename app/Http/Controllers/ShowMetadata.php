@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Auth\Access\Gate;
+use App\Http\Requests\AudioClipUrlRequest;
 use App\Http\Views;
 use App\Models\Feed;
 use App\Platforms\PlatformFactory;
 use App\Platforms\PlatformTypeResolver;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 readonly class ShowMetadata
@@ -23,10 +23,10 @@ readonly class ShowMetadata
     /**
      * @throws AuthorizationException
      */
-    public function __invoke(Feed $feed, Request $request): View {
+    public function __invoke(Feed $feed, AudioClipUrlRequest $request): View {
         $this->gate->authorizeUpdate($feed); // todo test authorization
 
-        $url = $request->str('url'); // todo validate. UrlRequest?
+        $url = $request->getUrl();
 
         try {
             $platformType = $this->platformTypeResolver->fromUrl($url);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\CreateAudioClip;
 use App\Auth\Access\Gate;
+use App\Http\Requests\AudioClipUrlRequest;
 use App\Http\Routes\Web;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
@@ -28,12 +29,12 @@ readonly class AddClipToFeed
     /**
      * @throws AuthorizationException
      */
-    public function __invoke(Request $request, Feed $feed): RedirectResponse {
+    public function __invoke(AudioClipUrlRequest $request, Feed $feed): RedirectResponse {
         $request->validate(['url' => 'required|url:http,https']);
 
         $this->gate->authorizeUpdate($feed);
 
-        $url = $request->post('url');
+        $url = $request->getUrl();
 
         // Detect the platform type (e.g. YouTube or SoundCloud) from the URL.
         $platformType = $this->platformTypeResolver->fromUrl($url);

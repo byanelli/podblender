@@ -2,6 +2,7 @@
 
 namespace App\Concerns;
 
+use http\Url;
 use League\Uri\Uri;
 
 trait FixesUrls
@@ -22,5 +23,19 @@ trait FixesUrls
 
     protected function fixUrlSchemeAndHost(string $url): string {
         return $this->removeWwwFromHost($this->ensureSchemeIsHttps($url));
+    }
+
+    protected function removeUtmCodesFromUrl(string $url): string {
+        $url = Uri::fromBaseUri($url);
+
+        if (empty($url->getQuery())) {
+            return $url;
+        } else {
+            parse_str($url->getQuery(), $query);
+
+            $query = collect($query)->filter(fn($val, $key) => !str_starts_with($key, 'utm_'))->all();
+
+            return $url->withQuery(http_build_query($query))->toString();
+        }
     }
 }

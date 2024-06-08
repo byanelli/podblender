@@ -18,10 +18,7 @@ readonly class Web implements Platform
     ) {}
 
     public function getCanonicalUrl(string $url): string {
-        $url = $this->fixUrlSchemeAndHost($url);
-
-        // todo remove UTM codes etc.
-        return $url;
+        return $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($url));
     }
 
     public function getMetadata(string $url): Metadata {

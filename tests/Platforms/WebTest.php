@@ -14,13 +14,19 @@ class WebTest extends TestCase
 
     #[Test]
     public function it_gets_canonical_urls() {
-        $url = 'http://www.theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260';
-        $canonicalUrl = 'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260';
+        $urls = [
+            'http://www.theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260' =>
+                'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260',
+            'https://nytimes.com/article?utm_medium=foo&utm_term=bar&other_query_param=test' =>
+                'https://nytimes.com/article?other_query_param=test',
+        ];
 
         /** @var Web $web */
         $web = $this->app->make(Web::class);
 
-        $this->assertEquals($canonicalUrl, $web->getCanonicalUrl($url));
+        foreach ($urls as $url => $canonicalUrl) {
+            $this->assertEquals($canonicalUrl, $web->getCanonicalUrl($url));
+        }
     }
 
     #[Test]
