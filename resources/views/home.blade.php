@@ -16,7 +16,7 @@
                                         <a href="{{Web::showFeed($feed)}}">{{$feed->name}}</a>
                                     </h3>
                                     <p class="text-sm text-gray-500">
-                                        {{$feed->getDescription()}}
+                                        {{$feed->description}}
                                     </p>
                                 </div>
                             </div>

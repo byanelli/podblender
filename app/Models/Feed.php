@@ -34,6 +34,9 @@ class Feed extends Model
     public string $uuid;
     const string COL_UUID = 'uuid';
 
+    public string $description;
+    const string COL_DESCRIPTION = 'description';
+
     /**
      * @var Collection<int, AudioClip>
      * @see self::audioClips()
@@ -56,14 +59,6 @@ class Feed extends Model
     #[Relation]
     public User $user;
     const string REL_USER = 'user';
-
-    public function getDescription(): string {
-        return 'Lorem ipsum dolor sit amet.';
-    }
-
-    public function getImageUrl(): string {
-        return 'https://placehold.co/400';
-    }
 
     public function user(): BelongsTo {
         return $this->belongsTo(User::class);

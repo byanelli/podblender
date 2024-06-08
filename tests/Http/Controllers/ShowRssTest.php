@@ -33,6 +33,7 @@ class ShowRssTest extends TestCase
 
         $this->assertStringContainsString("<title>{$h($feed->name)}</title>", $response);
         $this->assertStringContainsString("<link>".url("rss/{$feed->uuid}")."</link>", $response);
+        $this->assertStringContainsString("<description>{$feed->description}</description>", $response);
         $this->assertStringContainsString("<itunes:email>{$feed->user->email}</itunes:email>", $response);
         $this->assertStringContainsString("<itunes:author>{$h($feed->user->name)}</itunes:author>", $response);
         $this->assertStringContainsString("<title>{$h($clip->title)}</title>", $response);
