@@ -7,6 +7,7 @@ use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
 use App\Platforms\Metadata;
+use Illuminate\Auth\Access\AuthorizationException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesDispatcher;
 use Tests\Concerns\FakesPlatform;
@@ -54,8 +55,6 @@ class AddClipToFeedTest extends TestCase
 
     #[Test]
     public function it_attaches_an_existing_clip_to_the_feed() {
-        $this->assertTrue(true);
-
         $user = User::factory()->create();
         $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
         $clip = AudioClip::factory()->create([
@@ -68,5 +67,18 @@ class AddClipToFeedTest extends TestCase
 
         $this->assertEquals(1, AudioClip::count());
         $this->assertTrue($feed->audioClips()->first()->is($clip));
+    }
+
+    #[Test]
+    public function it_does_not_add_a_clip_to_another_users_feed() {
+        $this->expectException(AuthorizationException::class);
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id+1]);
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id
+        ]);
+
+        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['url' => $clip->platform_url]);
     }
 }

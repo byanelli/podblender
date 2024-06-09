@@ -6,7 +6,7 @@ use App\Auth\Access\Gate;
 use App\Http\Requests\AudioClipUrlRequest;
 use App\Http\Views;
 use App\Models\Feed;
-use App\Platforms\PlatformFactory;
+use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\PlatformTypeResolver;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\View\View;
@@ -24,7 +24,7 @@ readonly class ShowMetadata
      * @throws AuthorizationException
      */
     public function __invoke(Feed $feed, AudioClipUrlRequest $request): View {
-        $this->gate->authorizeUpdate($feed); // todo test authorization
+        $this->gate->authorizeUpdate($feed);
 
         $url = $request->getUrl();
 
