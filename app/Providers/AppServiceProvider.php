@@ -10,7 +10,6 @@ use App\Platforms\PlatformFactory;
 use App\Platforms\Contracts\PlatformFactory as PlatformFactoryContract;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
 

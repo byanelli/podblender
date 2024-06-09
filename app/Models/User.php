@@ -34,7 +34,7 @@ class User extends Authenticatable
     public string $password;
     const string COL_PASSWORD = 'password';
 
-    public string $remember_token;
+    public ?string $remember_token;
     const string COL_REMEMBER_TOKEN = 'remember_token';
 
     public string $updated_at;

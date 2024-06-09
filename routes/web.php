@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers;
-use App\Http\Middleware\Authenticate;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/rss/{feed:uuid}', Controllers\ShowRss::class)->name('rss');

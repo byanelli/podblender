@@ -34,7 +34,7 @@ class Feed extends Model
     public string $uuid;
     const string COL_UUID = 'uuid';
 
-    public string $description;
+    public ?string $description;
     const string COL_DESCRIPTION = 'description';
 
     /**

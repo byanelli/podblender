@@ -2,7 +2,8 @@
 
 namespace App\Concerns;
 
-use http\Url;
+use Illuminate\Pipeline\Pipeline;
+use Illuminate\Process\Pipe;
 use League\Uri\Uri;
 
 trait FixesUrls
@@ -37,5 +38,13 @@ trait FixesUrls
 
             return $url->withQuery(http_build_query($query))->toString();
         }
+    }
+
+    protected function fixUrl(string $url): string {
+        return (new Pipeline())->send($url)->through([
+            $this->ensureSchemeIsHttps(...),
+            $this->removeWwwFromHost(...),
+            $this->removeUtmCodesFromUrl(...),
+        ])->thenReturn();
     }
 }

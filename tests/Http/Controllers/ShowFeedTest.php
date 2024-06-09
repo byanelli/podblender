@@ -25,7 +25,7 @@ class ShowFeedTest extends TestCase
 
         $response = $this->get("/feeds/{$feed->id}");
 
-        $this->assertStringContainsString("{$clip->title}</p>", $response->getContent());
+        $this->assertStringContainsString(e($clip->title)."</p>", $response->getContent());
     }
 
     #[Test]

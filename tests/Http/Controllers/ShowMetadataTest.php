@@ -33,11 +33,13 @@ class ShowMetadataTest extends TestCase
 
         $response = $this->actingAs($user)->post("feeds/{$feed->id}/show-metadata", ['url' => $url]);
 
-        $this->assertStringContainsString(">{$url}</dd>", $response->getContent());
+        $e = fn($s) => e($s);
+
+        $this->assertStringContainsString(">{$e($url)}</dd>", $response->getContent());
         $this->assertStringContainsString(">YouTube</dd>", $response->getContent());
-        $this->assertStringContainsString(">{$title}</dd>", $response->getContent());
-        $this->assertStringContainsString(">{$description}</dd>", $response->getContent());
-        $this->assertStringContainsString(">{$sourceName}</dd>", $response->getContent());
+        $this->assertStringContainsString(">{$e($title)}</dd>", $response->getContent());
+        $this->assertStringContainsString(">{$e($description)}</dd>", $response->getContent());
+        $this->assertStringContainsString(">{$e($sourceName)}</dd>", $response->getContent());
     }
 
     #[Test]
