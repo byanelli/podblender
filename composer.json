@@ -16,18 +16,21 @@
         "byanelli/laravel-fluent": "dev-master",
         "doctrine/dbal": "^3.8",
         "guzzlehttp/guzzle": "^7.2",
+        "inertiajs/inertia-laravel": "^1.0",
         "laravel/framework": "^11.9",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "league/uri": "^7.0",
         "ohseesoftware/laravel-schema-list": "^1.3",
         "openai-php/laravel": "^0.8.1",
-        "spatie/regex": "^3.1"
+        "spatie/regex": "^3.1",
+        "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
         "jn-jairo/laravel-ngrok": "^3.0.2",
         "kitloong/laravel-migrations-generator": "^7.0.3",
+        "laravel/breeze": "^2.0",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",
