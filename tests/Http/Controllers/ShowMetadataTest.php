@@ -13,7 +13,8 @@ class ShowMetadataTest extends TestCase
     use FakesPlatform;
 
     #[Test]
-    public function it_shows_metadata() {
+    public function it_shows_metadata()
+    {
         $url = 'https://youtube.com/watch?v='.($id = 'lijwliejfwlef');
 
         $this->fakePlatform(
@@ -28,14 +29,14 @@ class ShowMetadataTest extends TestCase
 
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->post("api/fetch-metadata", ['url' => $url]);
+        $response = $this->actingAs($user)->post('api/fetch-metadata', ['url' => $url]);
 
         $response->assertJsonFragment([
             'metadata' => compact('id', 'title', 'description', 'sourceId', 'sourceName'),
             'platformType' => [
                 'name' => 'YouTube',
                 'value' => 1,
-            ]
+            ],
         ]);
     }
 }

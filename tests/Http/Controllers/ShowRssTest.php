@@ -13,7 +13,8 @@ use Tests\TestCase;
 class ShowRssTest extends TestCase
 {
     #[Test]
-    public function it_shows_the_feed() {
+    public function it_shows_the_feed()
+    {
         /** @var Feed $feed */
         $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id])
             ->load(Feed::REL_USER);
@@ -29,10 +30,10 @@ class ShowRssTest extends TestCase
 
         $response = $this->get("rss/{$feed->uuid}")->content();
 
-        $h = fn($s) => htmlentities($s);
+        $h = fn ($s) => htmlentities($s);
 
         $this->assertStringContainsString("<title>{$h($feed->name)}</title>", $response);
-        $this->assertStringContainsString("<link>".url("rss/{$feed->uuid}")."</link>", $response);
+        $this->assertStringContainsString('<link>'.url("rss/{$feed->uuid}").'</link>', $response);
         $this->assertStringContainsString("<description>{$feed->description}</description>", $response);
         $this->assertStringContainsString("<itunes:email>{$feed->user->email}</itunes:email>", $response);
         $this->assertStringContainsString("<itunes:author>{$h($feed->user->name)}</itunes:author>", $response);

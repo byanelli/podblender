@@ -13,9 +13,9 @@ trait IsArrayable
 {
     /**
      * @implements Arrayable::toArray()
-     * @return array
      */
-    public function toArray(): array {
+    public function toArray(): array
+    {
         $result = ['name' => $this->name];
 
         if ($this instanceof \BackedEnum) {

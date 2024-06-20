@@ -15,7 +15,8 @@ readonly class Twitch implements Platform
 
     public function __construct(private Client $ytDlp) {}
 
-    public function getCanonicalUrl(string $url): string {
+    public function getCanonicalUrl(string $url): string
+    {
         $url = $this->fixUrlSchemeAndHost($url);
 
         $meta = $this->ytDlp->getMetadata($url);
@@ -27,7 +28,8 @@ readonly class Twitch implements Platform
         };
     }
 
-    public function getMetadata(string $url): Metadata {
+    public function getMetadata(string $url): Metadata
+    {
         try {
             $url = $this->fixUrlSchemeAndHost($url);
 
@@ -45,7 +47,8 @@ readonly class Twitch implements Platform
         }
     }
 
-    public function downloadAudio(string $url): string {
+    public function downloadAudio(string $url): string
+    {
         try {
             $url = $this->fixUrlSchemeAndHost($url);
 

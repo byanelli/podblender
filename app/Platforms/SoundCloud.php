@@ -15,13 +15,15 @@ readonly class SoundCloud implements Platform
 
     public function __construct(private Client $ytDlp) {}
 
-    public function getCanonicalUrl(string $url): string {
+    public function getCanonicalUrl(string $url): string
+    {
         $url = $this->fixUrlSchemeAndHost($url);
 
         return $this->ytDlp->getMetadata($url)['webpage_url'];
     }
 
-    public function getMetadata(string $url): Metadata {
+    public function getMetadata(string $url): Metadata
+    {
         try {
             $url = $this->fixUrlSchemeAndHost($url);
 
@@ -39,7 +41,8 @@ readonly class SoundCloud implements Platform
         }
     }
 
-    public function downloadAudio(string $url): string {
+    public function downloadAudio(string $url): string
+    {
         try {
             $url = $this->fixUrlSchemeAndHost($url);
 

@@ -14,7 +14,8 @@ readonly class MetadataResponse implements Responsable
         private PlatformType $platformType,
     ) {}
 
-    public function toResponse($request): JsonResponse {
+    public function toResponse($request): JsonResponse
+    {
         return new JsonResponse([
             'metadata' => $this->metadata,
             'platformType' => $this->platformType->toArray(),

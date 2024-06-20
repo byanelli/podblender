@@ -17,13 +17,15 @@ readonly class YouTube implements Platform
 
     public function __construct(private Client $ytDlp) {}
 
-    public function getCanonicalUrl(string $url): string {
+    public function getCanonicalUrl(string $url): string
+    {
         $url = $this->fixUrlSchemeAndHost($url);
 
         return 'https://youtube.com/watch?v='.$this->getIdFromUrl($url);
     }
 
-    public function getMetadata(string $url): Metadata {
+    public function getMetadata(string $url): Metadata
+    {
         try {
             $url = $this->fixUrlSchemeAndHost($url);
 
@@ -41,12 +43,13 @@ readonly class YouTube implements Platform
         }
     }
 
-    private function getIdFromUrl(string $url): string {
+    private function getIdFromUrl(string $url): string
+    {
         $url = $this->fixUrlSchemeAndHost($url);
 
         $uri = Uri::fromBaseUri($url);
 
-        if (!collect(['youtube.com', 'm.youtube.com', 'youtu.be', 'youtube-nocookie.com'])->contains($uri->getHost())) {
+        if (! collect(['youtube.com', 'm.youtube.com', 'youtu.be', 'youtube-nocookie.com'])->contains($uri->getHost())) {
             throw new \RuntimeException("Invalid host for YouTube URL: {$uri->getHost()}");
         }
 
@@ -56,10 +59,10 @@ readonly class YouTube implements Platform
             return $query['v'];
         }
 
-        $splitPathPiece = fn(string $piece): string => explode('&', $piece)[0];
+        $splitPathPiece = fn (string $piece): string => explode('&', $piece)[0];
 
         /** @var Collection $pathPieces */
-        $pathPieces =  collect(explode('/', $uri->getPath()))->filter()->values();
+        $pathPieces = collect(explode('/', $uri->getPath()))->filter()->values();
 
         if ($pathPieces->count() == 2 && collect(['watch', 'v', 'embed', 'e', 'shorts', 'live'])->contains($pathPieces->first())) {
             return $splitPathPiece($pathPieces[1]);
@@ -80,7 +83,8 @@ readonly class YouTube implements Platform
         throw new \RuntimeException("Cannot parse URL: $url");
     }
 
-    public function downloadAudio(string $url): string {
+    public function downloadAudio(string $url): string
+    {
         try {
             $url = $this->fixUrlSchemeAndHost($url);
 

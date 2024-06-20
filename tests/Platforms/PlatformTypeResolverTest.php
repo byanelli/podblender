@@ -10,7 +10,8 @@ use Tests\TestCase;
 class PlatformTypeResolverTest extends TestCase
 {
     #[Test]
-    public function it_resolves_youtube() {
+    public function it_resolves_youtube()
+    {
         /** @var PlatformTypeResolver $resolver */
         $resolver = $this->app->make(PlatformTypeResolver::class);
 
@@ -20,7 +21,8 @@ class PlatformTypeResolverTest extends TestCase
     }
 
     #[Test]
-    public function it_resolves_web() {
+    public function it_resolves_web()
+    {
         /** @var PlatformTypeResolver $resolver */
         $resolver = $this->app->make(PlatformTypeResolver::class);
 
@@ -36,7 +38,8 @@ class PlatformTypeResolverTest extends TestCase
     }
 
     #[Test]
-    public function it_resolves_soundcloud() {
+    public function it_resolves_soundcloud()
+    {
         /** @var PlatformTypeResolver $resolver */
         $resolver = $this->app->make(PlatformTypeResolver::class);
 
@@ -51,7 +54,8 @@ class PlatformTypeResolverTest extends TestCase
     }
 
     #[Test]
-    public function it_resolves_twitch() {
+    public function it_resolves_twitch()
+    {
         /** @var PlatformTypeResolver $resolver */
         $resolver = $this->app->make(PlatformTypeResolver::class);
 

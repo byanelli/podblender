@@ -10,14 +10,17 @@ use Illuminate\Support\Facades\DB;
 /**
  * @mixin Migration
  */
-trait DetectsConnectionType {
-    protected function isSqlite(): bool {
+trait DetectsConnectionType
+{
+    protected function isSqlite(): bool
+    {
         $conn = DB::connection($this->getConnection());
 
         return $conn instanceof SQLiteConnection;
     }
 
-    protected function nullableIfSqlite(ColumnDefinition $column): ColumnDefinition {
+    protected function nullableIfSqlite(ColumnDefinition $column): ColumnDefinition
+    {
         return $this->isSqlite()
             ? $column->nullable()
             : $column;

@@ -14,13 +14,14 @@ readonly class Metadata implements Arrayable
         public string $sourceName,
     ) {}
 
-    public function toArray(): array {
+    public function toArray(): array
+    {
         return [
-            'id'          => $this->id,
-            'title'       => $this->title,
+            'id' => $this->id,
+            'title' => $this->title,
             'description' => $this->description,
-            'sourceId'    => $this->sourceId,
-            'sourceName'  => $this->sourceName,
+            'sourceId' => $this->sourceId,
+            'sourceName' => $this->sourceName,
         ];
     }
 }

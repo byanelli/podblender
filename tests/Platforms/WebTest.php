@@ -13,12 +13,11 @@ class WebTest extends TestCase
     use FakesWhisper;
 
     #[Test]
-    public function it_gets_canonical_urls() {
+    public function it_gets_canonical_urls()
+    {
         $urls = [
-            'http://www.theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260' =>
-                'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260',
-            'https://nytimes.com/article?utm_medium=foo&utm_term=bar&other_query_param=test' =>
-                'https://nytimes.com/article?other_query_param=test',
+            'http://www.theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260' => 'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260',
+            'https://nytimes.com/article?utm_medium=foo&utm_term=bar&other_query_param=test' => 'https://nytimes.com/article?other_query_param=test',
         ];
 
         /** @var Web $web */
@@ -30,14 +29,15 @@ class WebTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_metadata() {
+    public function it_gets_metadata()
+    {
         Http::fake(['*' => Http::response(body: json_encode([
             [
                 'title' => $title = 'Kitten Thinks Of Nothing But Murder All Day',
                 'publisher' => $publisher = 'The Onion',
                 'author' => ['foo', 'bar'],
                 'text' => 'zzz',
-            ]
+            ],
         ]))]);
 
         /** @var Web $web */
@@ -53,14 +53,15 @@ class WebTest extends TestCase
     }
 
     #[Test]
-    public function it_downloads_audio() {
+    public function it_downloads_audio()
+    {
         Http::fake(['*' => Http::response(body: json_encode([
             [
                 'title' => 'Kitten Thinks Of Nothing But Murder All Day',
                 'publisher' => 'The Onion',
                 'author' => ['foo', 'bar'],
                 'text' => $text = 'zzz',
-            ]
+            ],
         ]))]);
 
         $this->fakeWhisper();

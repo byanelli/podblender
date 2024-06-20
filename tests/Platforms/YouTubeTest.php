@@ -12,7 +12,8 @@ use Tests\TestCase;
 class YouTubeTest extends TestCase
 {
     #[Test]
-    public function it_gets_canonical_urls() {
+    public function it_gets_canonical_urls()
+    {
         /** @var YouTube $youtube */
         $youtube = $this->app->make(YouTube::class);
 
@@ -22,7 +23,8 @@ class YouTubeTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_metadata() {
+    public function it_gets_metadata()
+    {
         Process::fake([Process::result(output: json_encode([
             'id' => $id = 'foo',
             'title' => $title = 'some video',
@@ -44,13 +46,14 @@ class YouTubeTest extends TestCase
     }
 
     #[Test]
-    public function it_downloads_audio() {
+    public function it_downloads_audio()
+    {
         $url = 'https://youtube.com/watch?v=foo';
 
         $content = 'mp3 content';
 
         Process::fake(["'./yt-dlp' '-x' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use ($content) {
-            $file = collect($process->command)->first(fn($s) => Str::endsWith($s, '.mp3'));
+            $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));
 
             file_put_contents($file, $content);
 

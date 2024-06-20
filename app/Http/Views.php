@@ -16,17 +16,20 @@ readonly class Views
         private ResponseFactory $inertiaPages,
     ) {}
 
-    public function home(User $user): Response {
+    public function home(User $user): Response
+    {
         /* @see resources/js/Pages/Dashboard.vue */
         return $this->inertiaPages->render('Dashboard', compact('user'));
     }
 
-    public function feed(Feed $feed): Response {
+    public function feed(Feed $feed): Response
+    {
         /* @see resources/js/Pages/Feed.vue */
         return $this->inertiaPages->render('Feed', compact('feed'));
     }
 
-    public function rss(Feed $feed): View {
+    public function rss(Feed $feed): View
+    {
         /* @see resources/views/rss.blade.php */
         return $this->viewFactory->make('rss', compact('feed'));
     }

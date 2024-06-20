@@ -13,7 +13,8 @@ use Tests\TestCase;
 class SoundCloudTest extends TestCase
 {
     #[Test]
-    public function it_gets_canonical_urls() {
+    public function it_gets_canonical_urls()
+    {
         $url = 'http://www.youtube.com/watch?v=foo&otherparam=bar';
         $canonicalUrl = 'https://youtube.com/watch?v=foo';
 
@@ -28,7 +29,8 @@ class SoundCloudTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_metadata() {
+    public function it_gets_metadata()
+    {
         $url = 'https://soundcloud.com/artist/track';
 
         Process::fake(["'./yt-dlp' '--dump-json' '$url'" => Process::result(output: json_encode([
@@ -52,13 +54,14 @@ class SoundCloudTest extends TestCase
     }
 
     #[Test]
-    public function it_downloads_audio() {
+    public function it_downloads_audio()
+    {
         $url = 'https://youtube.com/watch?v=foo';
 
         $content = 'mp3 content';
 
         Process::fake(["'./yt-dlp' '-x' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use ($content) {
-            $file = collect($process->command)->first(fn($s) => Str::endsWith($s, '.mp3'));
+            $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));
 
             file_put_contents($file, $content);
 

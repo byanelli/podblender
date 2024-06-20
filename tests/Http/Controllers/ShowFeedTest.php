@@ -14,7 +14,8 @@ use Tests\TestCase;
 class ShowFeedTest extends TestCase
 {
     #[Test]
-    public function it_shows_the_feed() {
+    public function it_shows_the_feed()
+    {
 
         $user = User::factory()->create();
         $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
@@ -42,11 +43,12 @@ class ShowFeedTest extends TestCase
     }
 
     #[Test]
-    public function it_does_not_show_another_users_feed() {
+    public function it_does_not_show_another_users_feed()
+    {
         $this->expectException(AuthorizationException::class);
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id+1]);
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id + 1]);
 
         $this->actingAs($user);
 

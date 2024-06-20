@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\AudioClip;
 use App\Concerns\FixesUrls;
+use App\Models\AudioClip;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

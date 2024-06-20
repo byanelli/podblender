@@ -14,14 +14,16 @@ readonly class Client implements ClientContract
 {
     public function __construct(
         private Application $app,
-        private Factory $processFactory
+        private Factory $processFactory,
     ) {}
 
-    private function getVendorBinPath(): string {
+    private function getVendorBinPath(): string
+    {
         return $this->app->basePath('vendor/bin');
     }
 
-    private function run(int $timeout, array $args): ProcessResult {
+    private function run(int $timeout, array $args): ProcessResult
+    {
         return $this->processFactory
             ->newPendingProcess()
             ->timeout($timeout)
@@ -29,11 +31,13 @@ readonly class Client implements ClientContract
             ->run(array_merge(['./ffmpeg'], $args));
     }
 
-    private function runSuccessfully(int $timeout, array $args): ProcessResult {
+    private function runSuccessfully(int $timeout, array $args): ProcessResult
+    {
         return $this->run($timeout, $args)->throw();
     }
 
-    public function combineMp3s(array $mp3s): string {
+    public function combineMp3s(array $mp3s): string
+    {
         if (count($mp3s) === 1) {
             return collect($mp3s)->firstOrFail();
         }
@@ -45,13 +49,14 @@ readonly class Client implements ClientContract
             'concat:'.collect($mp3s)->implode('|'),
             '-acodec',
             'copy',
-            $outputPath
+            $outputPath,
         ]);
 
         return $outputPath;
     }
 
-    private function parseDurationString(string $duration): int {
+    private function parseDurationString(string $duration): int
+    {
         $match = Regex::match('/(\d\d):(\d\d):(\d\d).(\d\d)/', $duration);
 
         $hours = (int) $match->group(1);
@@ -62,7 +67,8 @@ readonly class Client implements ClientContract
         return ($hours * 3600) + ($minutes * 60) + $seconds;
     }
 
-    public function getDuration(string $path): int {
+    public function getDuration(string $path): int
+    {
         // We use "run" instead of "runSuccessfully" and parse the error output because ffmpeg throws an error without
         // any decoder set. Here we're only interested in the metadata it prints at the end of its run.
         $result = $this->run(5, ['-i', $path]);

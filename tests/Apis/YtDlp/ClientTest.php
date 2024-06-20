@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnhandledExceptionInspection */
+<?php
+
+/** @noinspection PhpUnhandledExceptionInspection */
 
 namespace Tests\Apis\YtDlp;
 
@@ -12,7 +14,8 @@ use Tests\TestCase;
 class ClientTest extends TestCase
 {
     #[Test]
-    public function it_gets_metadata() {
+    public function it_gets_metadata()
+    {
         $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
 
         Process::fake(["'./yt-dlp' '--dump-json' '$url'" => Process::result(json_encode($fakeMetadata = [
@@ -33,13 +36,14 @@ class ClientTest extends TestCase
     }
 
     #[Test]
-    public function it_downloads_audio() {
+    public function it_downloads_audio()
+    {
         $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
 
         $file = '';
 
         Process::fake(["'./yt-dlp' '-x' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use (&$file) {
-            $file =  collect($process->command)->first(fn($s) => Str::endsWith($s, '.mp3'));
+            $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));
 
             touch($file);
 

@@ -17,7 +17,8 @@ readonly class Client implements ClientContract
         private FfmpegClient $ffmpeg,
     ) {}
 
-    private function getSpeechStream(string $text): SpeechStreamResponse {
+    private function getSpeechStream(string $text): SpeechStreamResponse
+    {
         return $this->openAi->audio()->speechStreamed([
             'model' => 'tts-1',
             'input' => $text,
@@ -25,7 +26,8 @@ readonly class Client implements ClientContract
         ]);
     }
 
-    private function writeStreamResponseToFile(string $file, SpeechStreamResponse $stream): void {
+    private function writeStreamResponseToFile(string $file, SpeechStreamResponse $stream): void
+    {
         (file_put_contents($file, '') !== false) || throw new \RuntimeException("Error initializing file: $file");
 
         $handle = fopen($file, 'w');
@@ -39,7 +41,8 @@ readonly class Client implements ClientContract
         fclose($handle) || throw new \RuntimeException("Error closing file: $file");
     }
 
-    private function segmentText(string $text): \Generator {
+    private function segmentText(string $text): \Generator
+    {
         $currentSegment = '';
         $currentLength = 0;
 
@@ -58,16 +61,16 @@ readonly class Client implements ClientContract
             }
         }
 
-        if (!empty($currentSegment)) {
+        if (! empty($currentSegment)) {
             yield $currentSegment;
         }
     }
 
     /**
-     * @param string $text
      * @return string -- returns the path to an MP3 file
      */
-    public function convertTextToSpeech(string $text): string {
+    public function convertTextToSpeech(string $text): string
+    {
         $mp3s = [];
 
         try {
@@ -81,7 +84,7 @@ readonly class Client implements ClientContract
 
             return $this->ffmpeg->combineMp3s($mp3s);
         } finally {
-            collect($mp3s)->each(fn($mp3) => unlink($mp3));
+            collect($mp3s)->each(fn ($mp3) => unlink($mp3));
         }
     }
 }

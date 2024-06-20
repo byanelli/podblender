@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnhandledExceptionInspection */
+<?php
+
+/** @noinspection PhpUnhandledExceptionInspection */
 
 namespace Tests\Actions;
 
@@ -15,7 +17,8 @@ class CreateAudioClipTest extends TestCase
     use FakesPlatform;
 
     #[Test]
-    public function it_creates_an_audio_clip() {
+    public function it_creates_an_audio_clip()
+    {
         $url = 'https://youtube.com/watch?v='.($id = 'lijwliejfwlef');
 
         $this->fakePlatform(

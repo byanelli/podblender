@@ -20,7 +20,8 @@ readonly class FetchMetadata
     /**
      * @throws MetadataException
      */
-    public function __invoke(AudioClipUrlRequest $request): Response|Responsable {
+    public function __invoke(AudioClipUrlRequest $request): Response|Responsable
+    {
         $url = $request->getUrl();
 
         $platformType = $this->platformTypeResolver->fromUrl($url);

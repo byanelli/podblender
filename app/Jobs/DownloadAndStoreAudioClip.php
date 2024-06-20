@@ -3,9 +3,9 @@
 namespace App\Jobs;
 
 use App\Apis\Ffmpeg\Contracts\Client as Ffmpeg;
+use App\Apis\YtDlp\Client;
 use App\Events\FinishedProcessingClip;
 use App\Models\AudioClip;
-use App\Apis\YtDlp\Client;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Exceptions\DownloadException;
 use Illuminate\Bus\Queueable;
@@ -22,7 +22,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
     public int $timeout;
 
-    public function __construct(private readonly AudioClip $clip) {
+    public function __construct(private readonly AudioClip $clip)
+    {
         // Allow this job to run twice as long as the download process runs, because we also have to store the downloaded
         // file and update the database.
         $this->timeout = Client::DOWNLOAD_TIMEOUT * 2;
@@ -33,9 +34,9 @@ class DownloadAndStoreAudioClip implements ShouldQueue
      */
     public function handle(
         PlatformFactory $platformFactory,
-        Filesystem      $storage,
-        Ffmpeg          $ffmpeg,
-        Dispatcher      $events,
+        Filesystem $storage,
+        Ffmpeg $ffmpeg,
+        Dispatcher $events,
     ): void {
         try {
             // Load related feeds (we'll need these later to dispatch events).
@@ -50,14 +51,14 @@ class DownloadAndStoreAudioClip implements ShouldQueue
             // Use ffmpeg to get the duration.
             $duration = $ffmpeg->getDuration($downloadPath);
 
-            if (!$downloadHandle) {
+            if (! $downloadHandle) {
                 throw new \Exception("Couldn't open $downloadPath as resource");
             }
 
             // Store the file.
             $storageResult = $storage->put($this->clip->storage_path, $downloadHandle);
 
-            if (!$storageResult) {
+            if (! $storageResult) {
                 throw new \Exception("Couldn't store audio from $downloadPath");
             }
 

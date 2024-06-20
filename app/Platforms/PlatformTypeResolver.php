@@ -27,7 +27,8 @@ readonly class PlatformTypeResolver
         'twitch.com',
     ];
 
-    public function fromUrl(string $url): PlatformType {
+    public function fromUrl(string $url): PlatformType
+    {
         $url = $this->fixUrlSchemeAndHost($url);
 
         $host = Uri::fromBaseUri($url)->getHost();

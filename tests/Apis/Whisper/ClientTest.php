@@ -17,23 +17,24 @@ class ClientTest extends TestCase
     use FakesFfmpeg;
 
     /**
-     * @param string $str
      * @return resource
      */
-    private function convertStringToResource(string $str): mixed {
+    private function convertStringToResource(string $str): mixed
+    {
         return fopen('data://text/plain;base64,'.base64_encode($str), 'r');
     }
 
     /** @noinspection PhpParamsInspection */
     #[Test]
-    public function it_converts_text_to_speech() {
+    public function it_converts_text_to_speech()
+    {
         $text = FakerFactory::create()->realText(8000);
 
         [$firstSegment, $secondSegment] = [substr($text, 0, 4096), substr($text, 4096)];
 
-        $this->app->bind(OpenAiClient::class, fn() => OpenAI::fake([
-           new SpeechStreamResponse(new Response(body: $this->convertStringToResource($firstSegment))),
-           new SpeechStreamResponse(new Response(body: $this->convertStringToResource($secondSegment))),
+        $this->app->bind(OpenAiClient::class, fn () => OpenAI::fake([
+            new SpeechStreamResponse(new Response(body: $this->convertStringToResource($firstSegment))),
+            new SpeechStreamResponse(new Response(body: $this->convertStringToResource($secondSegment))),
         ]));
 
         $this->fakeFfmpeg();

@@ -8,7 +8,8 @@ use Inertia\Inertia;
 
 readonly class Welcome
 {
-    public function __invoke() {
+    public function __invoke()
+    {
         return Inertia::render('Welcome', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),

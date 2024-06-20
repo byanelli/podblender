@@ -11,7 +11,8 @@ readonly class ShowRss
 {
     public function __construct(private Views $views) {}
 
-    public function __invoke(Request $request, Feed $feed): View {
+    public function __invoke(Request $request, Feed $feed): View
+    {
         $feed->load(Feed::REL_USER, Feed::REL_AUDIO_CLIPS_FINISHED_PROCESSING);
 
         return $this->views->rss($feed);

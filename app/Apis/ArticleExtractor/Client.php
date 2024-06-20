@@ -13,28 +13,33 @@ readonly class Client
 {
     public function __construct(
         private Factory $http,
-        private Config  $config,
-        private Cache   $cache,
+        private Config $config,
+        private Cache $cache,
     ) {}
 
-    private function getCacheKey(string $url): string {
+    private function getCacheKey(string $url): string
+    {
         return 'article:'.$url;
     }
 
-    private function getApiKey(): string {
+    private function getApiKey(): string
+    {
         return $this->config->get('apify.api_key');
     }
 
-    private function getCachedResponse(string $url): ?array {
+    private function getCachedResponse(string $url): ?array
+    {
         return $this->cache->get($this->getCacheKey($url));
     }
 
-    private function cacheResponse(string $url, array $response): void {
+    private function cacheResponse(string $url, array $response): void
+    {
         $this->cache->put($this->getCacheKey($url), $response);
     }
 
-    private function getArticleFromApi(string $url): array {
-        if (!is_null($cached = $this->getCachedResponse($url))) {
+    private function getArticleFromApi(string $url): array
+    {
+        if (! is_null($cached = $this->getCachedResponse($url))) {
             return $cached;
         }
 
@@ -45,7 +50,7 @@ readonly class Client
             ->post('https://api.apify.com/v2/acts/lukaskrivka~article-extractor-smart/run-sync-get-dataset-items')
             ->json();
 
-        !empty($response) || throw new \RuntimeException("Failed to retrieve article: $url");
+        ! empty($response) || throw new \RuntimeException("Failed to retrieve article: $url");
         count($response) == 1 || throw new \RuntimeException("Unexpected found more than one result for article: $url");
 
         $response = $response[0];
@@ -55,7 +60,8 @@ readonly class Client
         return $response;
     }
 
-    public function getArticle(string $url): Article {
+    public function getArticle(string $url): Article
+    {
         $response = $this->getArticleFromApi($url);
 
         return new Article(
@@ -67,31 +73,35 @@ readonly class Client
         );
     }
 
-    private function getPublisherFromUrl(string $url): string {
+    private function getPublisherFromUrl(string $url): string
+    {
         return Str::of(Uri::new($url)->getHost())
             ->replaceMatches('/^www\\./', '')
             ->__toString();
     }
 
-    private function getNameFromSlug(string $url): string {
+    private function getNameFromSlug(string $url): string
+    {
         $path = Uri::new($url)->getPath();
 
         $slug = Arr::last(explode('/', $path));
 
         return str_contains($slug, '-')
-            ? collect(explode('-', $slug))->map(fn($s) => ucfirst($s))->implode(' ')
+            ? collect(explode('-', $slug))->map(fn ($s) => ucfirst($s))->implode(' ')
             : $slug;
     }
 
-    private function isUrl(string $url): bool {
+    private function isUrl(string $url): bool
+    {
         return Str::startsWith($url, ['http://', 'https://']);
     }
 
     /**
-     * @param array<int, string> $authors
+     * @param  array<int, string>  $authors
      * @return array<int, string>
      */
-    private function parseAuthors(array $authors): array {
+    private function parseAuthors(array $authors): array
+    {
         return collect($authors)->map(function (string $author) {
             return $this->isUrl($author)
                 ? $this->getNameFromSlug($author)

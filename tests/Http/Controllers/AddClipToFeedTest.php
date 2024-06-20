@@ -15,10 +15,11 @@ use Tests\TestCase;
 
 class AddClipToFeedTest extends TestCase
 {
-    use FakesPlatform, FakesDispatcher;
+    use FakesDispatcher, FakesPlatform;
 
     #[Test]
-    public function it_adds_a_new_clip_to_the_feed() {
+    public function it_adds_a_new_clip_to_the_feed()
+    {
         $url = 'https://youtube.com/watch?v='.($id = 'lijwliejfwlef');
 
         $this->fakePlatform(
@@ -54,11 +55,12 @@ class AddClipToFeedTest extends TestCase
     }
 
     #[Test]
-    public function it_attaches_an_existing_clip_to_the_feed() {
+    public function it_attaches_an_existing_clip_to_the_feed()
+    {
         $user = User::factory()->create();
         $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
         ]);
 
         $this->assertTrue($feed->audioClips()->doesntExist());
@@ -70,13 +72,14 @@ class AddClipToFeedTest extends TestCase
     }
 
     #[Test]
-    public function it_does_not_add_a_clip_to_another_users_feed() {
+    public function it_does_not_add_a_clip_to_another_users_feed()
+    {
         $this->expectException(AuthorizationException::class);
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id+1]);
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id + 1]);
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
         ]);
 
         $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $clip->platform_url]);

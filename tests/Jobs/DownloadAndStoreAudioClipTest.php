@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class DownloadAndStoreAudioClipTest extends TestCase
 {
-    use FakesPlatform, FakesStorage, FakesDispatcher, FakesFfmpeg;
+    use FakesDispatcher, FakesFfmpeg, FakesPlatform, FakesStorage;
 
     #[Test]
     public function it_downloads_and_stores_audio_clips(): void

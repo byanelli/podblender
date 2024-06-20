@@ -15,7 +15,8 @@ readonly class PlatformFactory implements PlatformFactoryContract
         private Twitch $twitch,
     ) {}
 
-    public function make(PlatformType $platformType): Platform {
+    public function make(PlatformType $platformType): Platform
+    {
         return match ($platformType) {
             PlatformType::YouTube => $this->youTube,
             PlatformType::Web => $this->web,

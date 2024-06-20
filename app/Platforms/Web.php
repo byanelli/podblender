@@ -20,11 +20,13 @@ readonly class Web implements Platform
         private WhisperApi $whisper,
     ) {}
 
-    public function getCanonicalUrl(string $url): string {
+    public function getCanonicalUrl(string $url): string
+    {
         return $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($url));
     }
 
-    public function getMetadata(string $url): Metadata {
+    public function getMetadata(string $url): Metadata
+    {
         try {
             $url = $this->fixUrlSchemeAndHost($url);
 
@@ -33,7 +35,7 @@ readonly class Web implements Platform
             return new Metadata(
                 id: $url,
                 title: $article->title,
-                description: 'Article by ' . collect($article->authors)->join(' and '),
+                description: 'Article by '.collect($article->authors)->join(' and '),
                 sourceId: Uri::fromBaseUri($url)->getHost(),
                 sourceName: $article->publisher,
             );
@@ -42,7 +44,8 @@ readonly class Web implements Platform
         }
     }
 
-    public function downloadAudio(string $url): string {
+    public function downloadAudio(string $url): string
+    {
         try {
             $url = $this->fixUrlSchemeAndHost($url);
 

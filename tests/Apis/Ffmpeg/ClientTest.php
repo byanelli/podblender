@@ -13,14 +13,16 @@ use Tests\TestCase;
 
 class ClientTest extends TestCase
 {
-    protected function setUp(): void {
+    protected function setUp(): void
+    {
         parent::setUp();
 
         Process::preventStrayProcesses();
     }
 
     #[Test]
-    public function it_combines_mp3s() {
+    public function it_combines_mp3s()
+    {
         $mp3s = [
             sys_get_temp_dir().'/'.Uuid::uuid4().'.mp3',
             sys_get_temp_dir().'/'.Uuid::uuid4().'.mp3',
@@ -43,11 +45,12 @@ class ClientTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_duration() {
+    public function it_gets_duration()
+    {
         $mp3 = sys_get_temp_dir().'/'.Uuid::uuid4().'.mp3';
 
         Process::fake(["'./ffmpeg' '-i' '{$mp3}'" => function (PendingProcess $process) {
-            return Process::result(errorOutput: <<<HEREDOC
+            return Process::result(errorOutput: <<<'HEREDOC'
 Input #0, mp3, from '/path/to/storage/f556d3ed-fd1e-486c-aec8-8dfff0657cf6':
   Metadata:
     encoder         : Lavf58.29.100
@@ -56,7 +59,7 @@ Input #0, mp3, from '/path/to/storage/f556d3ed-fd1e-486c-aec8-8dfff0657cf6':
     Metadata:
       encoder         : Lavc58.54
 HEREDOC
-);
+            );
         }]);
 
         /** @var Client $client */

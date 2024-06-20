@@ -12,7 +12,8 @@ trait HasUuid
 {
     protected string $uuidColumnName = 'uuid';
 
-    public static function bootHasUuid() {
+    public static function bootHasUuid()
+    {
         self::creating(function (Model $model) {
             $model->setAttribute((new self)->uuidColumnName, Uuid::uuid4()->toString());
         });

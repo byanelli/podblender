@@ -18,18 +18,19 @@ use Illuminate\Http\Response;
 readonly class AddClipToFeed
 {
     public function __construct(
-        private Gate                 $gate,
-        private Dispatcher           $dispatcher,
+        private Gate $gate,
+        private Dispatcher $dispatcher,
         private PlatformTypeResolver $platformTypeResolver,
-        private PlatformFactory      $platformFactory,
-        private CreateAudioClip      $createAudioClip,
-        private ResponseFactory      $responseFactory,
+        private PlatformFactory $platformFactory,
+        private CreateAudioClip $createAudioClip,
+        private ResponseFactory $responseFactory,
     ) {}
 
     /**
      * @throws AuthorizationException
      */
-    public function __invoke(AudioClipUrlRequest $request, Feed $feed): Response {
+    public function __invoke(AudioClipUrlRequest $request, Feed $feed): Response
+    {
         $request->validate(['url' => 'required|url:http,https']);
 
         $this->gate->authorizeUpdate($feed);
@@ -50,7 +51,7 @@ readonly class AddClipToFeed
         /** @var AudioClip $clip */
         $clip = AudioClip::query()
             ->where(AudioClip::COL_PLATFORM_URL, $url)
-            ->firstOr(fn() => $this->createAudioClip->__invoke($platformType, $url));
+            ->firstOr(fn () => $this->createAudioClip->__invoke($platformType, $url));
 
         // If we're creating the clip in this request, queue a job to download it.
         if ($clip->wasRecentlyCreated) {
