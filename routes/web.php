@@ -1,27 +1,23 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::get('/rss/{feed:uuid}', Controllers\ShowRss::class)->name('rss');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::middleware(Authenticate::class)->group(function () {
+    Route::get('/', Controllers\Welcome::class)->name('welcome');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/dashboard', Controllers\Home::class)->name('dashboard');
+
+    Route::get('/feeds/{feed}', Controllers\ShowFeed::class)->name('showFeed');
+
+    Route::prefix('api')->group(function () {
+        // todo next
+        Route::post('/fetch-metadata', Controllers\FetchMetadata::class)->name('fetchMetadata');
+        Route::post('/feeds/{feed}/add', Controllers\AddClipToFeed::class)->name('addClipToFeed');
+    });
 });
 
 require __DIR__.'/auth.php';

@@ -5,6 +5,7 @@ namespace App\Models;
 use Based\Fluent\Fluent;
 use Based\Fluent\Relations\Relation;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, Fluent;
 
@@ -22,7 +23,7 @@ class User extends Authenticatable
     public string $email;
     const string COL_EMAIL = 'email';
 
-    public CarbonImmutable $email_verified_at;
+    public ?CarbonImmutable $email_verified_at;
     const string COL_EMAIL_VERIFIED_AT = 'email_verified_at';
 
     public int $id;

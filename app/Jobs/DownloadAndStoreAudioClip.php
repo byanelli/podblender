@@ -3,10 +3,12 @@
 namespace App\Jobs;
 
 use App\Apis\Ffmpeg\Contracts\Client as Ffmpeg;
+use App\Events\FinishedProcessingClip;
 use App\Models\AudioClip;
 use App\Apis\YtDlp\Client;
 use App\Platforms\Contracts\PlatformFactory;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -29,8 +31,12 @@ class DownloadAndStoreAudioClip implements ShouldQueue
         PlatformFactory $platformFactory,
         Filesystem      $storage,
         Ffmpeg          $ffmpeg,
+        Dispatcher      $events,
     ): void {
         try {
+            // Load related feeds (we'll need these later to dispatch events).
+            $this->clip->load(AudioClip::REL_FEEDS);
+
             $platform = $platformFactory->make($this->clip->platform_type);
 
             // Download the audio from the platform into a temporary file and open the downloaded file.
@@ -67,6 +73,11 @@ class DownloadAndStoreAudioClip implements ShouldQueue
             // Whether the operation succeeded or failed, delete the temporary file.
             if (isset($downloadPath) && file_exists($downloadPath)) {
                 unlink($downloadPath);
+            }
+
+            // Dispatch an event to each feed indicating the clip is finished processing.
+            foreach ($this->clip->feeds as $feed) {
+                $events->dispatch(new FinishedProcessingClip($feed));
             }
         }
     }

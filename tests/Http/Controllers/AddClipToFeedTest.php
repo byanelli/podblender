@@ -39,7 +39,7 @@ class AddClipToFeedTest extends TestCase
 
         $this->assertTrue($feed->audioClips()->doesntExist());
 
-        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['url' => $url]);
+        $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $url]);
 
         /** @var AudioClip $clip */
         $clip = $feed->audioClips()->first();
@@ -63,7 +63,7 @@ class AddClipToFeedTest extends TestCase
 
         $this->assertTrue($feed->audioClips()->doesntExist());
 
-        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['url' => $clip->platform_url]);
+        $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $clip->platform_url]);
 
         $this->assertEquals(1, AudioClip::count());
         $this->assertTrue($feed->audioClips()->first()->is($clip));
@@ -79,6 +79,6 @@ class AddClipToFeedTest extends TestCase
             AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id
         ]);
 
-        $this->actingAs($user)->postJson("/feeds/$feed->id/add", ['url' => $clip->platform_url]);
+        $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $clip->platform_url]);
     }
 }

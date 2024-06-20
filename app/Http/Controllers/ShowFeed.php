@@ -10,6 +10,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Inertia\Response;
 
 readonly class ShowFeed
 {
@@ -21,7 +22,7 @@ readonly class ShowFeed
     /**
      * @throws AuthorizationException
      */
-    public function __invoke(Request $request, Feed $feed): View {
+    public function __invoke(Request $request, Feed $feed): Response {
         $this->gate->authorizeView($feed);
 
         $feed->load([Feed::REL_AUDIO_CLIPS => fn(Relation $q) => $q->orderByDesc(AudioClip::COL_CREATED_AT)]);

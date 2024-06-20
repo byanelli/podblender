@@ -2,40 +2,28 @@
 
 namespace App\Http;
 
-use App\Enums\PlatformType;
 use App\Models\Feed;
 use App\Models\User;
-use App\Platforms\Metadata;
 use Illuminate\Contracts\View\Factory;
-use Illuminate\View\View;
+use Illuminate\Contracts\View\View;
+use Inertia\Response;
+use Inertia\ResponseFactory;
 
 readonly class Views
 {
-    public function __construct(private Factory $viewFactory) {}
+    public function __construct(
+        private Factory $viewFactory,
+        private ResponseFactory $inertiaPages,
+    ) {}
 
-    public function home(User $user): View {
-        /* @see resources/views/home.blade.php */
-        return $this->viewFactory->make('home', compact('user'));
+    public function home(User $user): Response {
+        /* @see resources/js/Pages/Dashboard.vue */
+        return $this->inertiaPages->render('Dashboard', compact('user'));
     }
 
-    public function feed(Feed $feed): View {
-        /* @see resources/views/feed.blade.php */
-        return $this->viewFactory->make('feed', compact('feed'));
-    }
-
-    public function componentAddClipForm(
-        Feed $feed,
-        string $state,
-        ?PlatformType $platformType=null,
-        ?string $error=null,
-        ?Metadata $metadata=null,
-        ?string $url=null,
-    ): View {
-        /** @see resources/views/components/addClipForm.blade.php */
-        return $this->viewFactory->make(
-            'components.addClipForm',
-            compact('feed', 'state', 'platformType', 'error', 'metadata', 'url')
-        );
+    public function feed(Feed $feed): Response {
+        /* @see resources/js/Pages/Feed.vue */
+        return $this->inertiaPages->render('Feed', compact('feed'));
     }
 
     public function rss(Feed $feed): View {

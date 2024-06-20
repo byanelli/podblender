@@ -9,6 +9,7 @@ use App\Apis\Whisper\Contracts\Client as WhisperClientContract;
 use App\Platforms\PlatformFactory;
 use App\Platforms\Contracts\PlatformFactory as PlatformFactoryContract;
 use Carbon\CarbonImmutable;
+use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
@@ -36,5 +37,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PlatformFactoryContract::class, PlatformFactory::class);
         $this->app->bind(WhisperClientContract::class, WhisperClient::class);
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
+
+        $this->app->make(BroadcastManager::class)->routes();
     }
 }

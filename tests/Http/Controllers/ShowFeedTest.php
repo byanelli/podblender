@@ -7,6 +7,7 @@ use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Inertia\Testing\AssertableInertia as Assert;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -21,11 +22,23 @@ class ShowFeedTest extends TestCase
 
         $feed->audioClips()->attach($clip);
 
+        $clip->load(AudioClip::REL_AUDIO_SOURCE);
+
         $this->actingAs($user);
 
-        $response = $this->get("/feeds/{$feed->id}");
-
-        $this->assertStringContainsString(e($clip->title)."</p>", $response->getContent());
+        $this->get("/feeds/{$feed->id}")
+            ->assertInertia(function (Assert $page) use ($clip, $feed) {
+                $page->component('Feed')
+                    ->has('feed')
+                    ->where('feed.id', $feed->id)
+                    ->where('feed.name', $feed->name)
+                    ->has('feed.audio_clips', 1)
+                    ->where('feed.audio_clips.0.id', $clip->id)
+                    ->where('feed.audio_clips.0.title', $clip->title)
+                    ->where('feed.audio_clips.0.processing', $clip->processing)
+                    ->where('feed.audio_clips.0.audio_source.name', $clip->audioSource->name)
+                    ->where('feed.audio_clips.0.audio_source.platform_type.name', $clip->audioSource->platform_type->name);
+            });
     }
 
     #[Test]

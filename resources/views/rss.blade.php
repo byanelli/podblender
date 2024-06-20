@@ -9,7 +9,7 @@
      xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
     <channel>
         <title>{{$feed->name}}</title>
-        <link>{{Web::rss($feed)}}</link>
+        <link>{{route('rss', [$feed])}}</link>
         <description>{{$feed->description}}</description>
         <itunes:owner>
             <itunes:email>{{$feed->user->email}}</itunes:email>

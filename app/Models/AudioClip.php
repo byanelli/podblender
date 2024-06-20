@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Traits\Tappable;
 
@@ -69,6 +71,14 @@ class AudioClip extends Model
     public AudioSource $audioSource;
     const string REL_AUDIO_SOURCE = 'audioSource';
 
+    /**
+     * @see self::feeds()
+     * @var Collection<int, Feed> $feeds
+     */
+    #[Relation]
+    public Collection $feeds;
+    const string REL_FEEDS = 'feeds';
+
     public function audioSource(): BelongsTo {
         return $this->belongsTo(AudioSource::class);
     }
@@ -87,5 +97,9 @@ class AudioClip extends Model
 
     public function audioUrl(): Attribute {
         return Attribute::make(fn() => url(Storage::url($this->storage_path)));
+    }
+
+    public function feeds(): BelongsToMany {
+        return $this->belongsToMany(Feed::class);
     }
 }

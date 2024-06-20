@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\CreateAudioClip;
 use App\Auth\Access\Gate;
 use App\Http\Requests\AudioClipUrlRequest;
-use App\Http\Routes\Web;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
 use App\Models\Feed;
@@ -13,8 +12,8 @@ use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\PlatformTypeResolver;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Bus\Dispatcher;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Http\Response;
 
 readonly class AddClipToFeed
 {
@@ -24,12 +23,13 @@ readonly class AddClipToFeed
         private PlatformTypeResolver $platformTypeResolver,
         private PlatformFactory      $platformFactory,
         private CreateAudioClip      $createAudioClip,
+        private ResponseFactory      $responseFactory,
     ) {}
 
     /**
      * @throws AuthorizationException
      */
-    public function __invoke(AudioClipUrlRequest $request, Feed $feed): RedirectResponse {
+    public function __invoke(AudioClipUrlRequest $request, Feed $feed): Response {
         $request->validate(['url' => 'required|url:http,https']);
 
         $this->gate->authorizeUpdate($feed);
@@ -60,7 +60,6 @@ readonly class AddClipToFeed
         // Attach the clip to the feed.
         $feed->audioClips()->attach($clip);
 
-        // Redirect to the feed view.
-        return redirect(Web::showFeed($feed));
+        return $this->responseFactory->make(status: Response::HTTP_OK);
     }
 }
