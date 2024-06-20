@@ -5,6 +5,7 @@ namespace App\Apis\YtDlp;
 use Carbon\CarbonInterval;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Process\Factory;
 use Illuminate\Contracts\Process\ProcessResult;
 use Ramsey\Uuid\Uuid;
@@ -49,7 +50,9 @@ readonly class Client {
     }
 
     /**
-     * @throws DownloadException
+     * @param string $url
+     * @return array
+     * @throws ProcessFailedException
      */
     public function getMetadata(string $url): array {
         // Return cached metadata if available.
@@ -57,13 +60,8 @@ readonly class Client {
             return $cached;
         }
 
-        try {
-            // Run process and convert output to JSON.
-            $jsonString = $this->run(self::METADATA_TIMEOUT, ['--dump-json', $url])->output();
-        } catch (\Throwable $t) {
-            // Wrap the exception, so we don't expose the command line process to the user.
-            throw new DownloadException('Error downloading metadata from YouTube', previous: $t);
-        }
+        // Run process and convert output to JSON.
+        $jsonString = $this->run(self::METADATA_TIMEOUT, ['--dump-json', $url])->output();
 
         // Cache metadata before returning.
         return tap(
@@ -72,6 +70,11 @@ readonly class Client {
         );
     }
 
+    /**
+     * @param string $url
+     * @return string
+     * @throws ProcessFailedException
+     */
     public function downloadAudio(string $url): string {
         $filename = Uuid::uuid4()->toString();
 

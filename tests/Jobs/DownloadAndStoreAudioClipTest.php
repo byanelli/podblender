@@ -57,6 +57,8 @@ class DownloadAndStoreAudioClipTest extends TestCase
             audioPath: $downloadPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3',
         );
 
+        $this->fakeFfmpeg();
+
         $this->fakeStorageThatThrowsExceptionOnPut();
 
         // Laravel's fake dispatcher doesn't work here, presumably because we throw an exception during the job.

@@ -4,7 +4,10 @@ namespace App\Platforms;
 
 use App\Apis\YtDlp\Client;
 use App\Concerns\FixesUrls;
+use App\Enums\PlatformType;
 use App\Platforms\Contracts\Platform;
+use App\Platforms\Exceptions\DownloadException;
+use App\Platforms\Exceptions\MetadataException;
 
 readonly class Twitch implements Platform
 {
@@ -25,22 +28,30 @@ readonly class Twitch implements Platform
     }
 
     public function getMetadata(string $url): Metadata {
-        $url = $this->fixUrlSchemeAndHost($url);
+        try {
+            $url = $this->fixUrlSchemeAndHost($url);
 
-        $meta = $this->ytDlp->getMetadata($url);
+            $meta = $this->ytDlp->getMetadata($url);
 
-        return new Metadata(
-            id: $meta['id'],
-            title: $meta['title'],
-            description: '',
-            sourceId: $meta['uploader_id'],
-            sourceName: $meta['uploader'],
-        );
+            return new Metadata(
+                id: $meta['id'],
+                title: $meta['title'],
+                description: '',
+                sourceId: $meta['uploader_id'],
+                sourceName: $meta['uploader'],
+            );
+        } catch (\Exception $e) {
+            throw new MetadataException(PlatformType::Twitch, $e);
+        }
     }
 
     public function downloadAudio(string $url): string {
-        $url = $this->fixUrlSchemeAndHost($url);
+        try {
+            $url = $this->fixUrlSchemeAndHost($url);
 
-        return $this->ytDlp->downloadAudio($url);
+            return $this->ytDlp->downloadAudio($url);
+        } catch (\Exception $e) {
+            throw new DownloadException(PlatformType::Twitch, $e);
+        }
     }
 }

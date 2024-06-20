@@ -7,6 +7,7 @@ use App\Events\FinishedProcessingClip;
 use App\Models\AudioClip;
 use App\Apis\YtDlp\Client;
 use App\Platforms\Contracts\PlatformFactory;
+use App\Platforms\Exceptions\DownloadException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -27,6 +28,9 @@ class DownloadAndStoreAudioClip implements ShouldQueue
         $this->timeout = Client::DOWNLOAD_TIMEOUT * 2;
     }
 
+    /**
+     * @throws DownloadException
+     */
     public function handle(
         PlatformFactory $platformFactory,
         Filesystem      $storage,
@@ -35,7 +39,7 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     ): void {
         try {
             // Load related feeds (we'll need these later to dispatch events).
-            $this->clip->load(AudioClip::REL_FEEDS);
+            $this->clip->load(AudioClip::REL_FEEDS, AudioClip::REL_AUDIO_SOURCE);
 
             $platform = $platformFactory->make($this->clip->platform_type);
 
@@ -63,12 +67,12 @@ class DownloadAndStoreAudioClip implements ShouldQueue
             $this->clip->duration = $duration;
             $this->clip->size = $storage->size($this->clip->storage_path);
             $this->clip->save();
-        } catch (\Throwable $t) {
+        } catch (\Exception $e) {
             // If there was an error, delete the clip so we don't leave it around in an intermediate state.
             // Todo: provide an option to retry a failed download?
             $this->clip->delete();
 
-            throw $t;
+            throw $e;
         } finally {
             // Whether the operation succeeded or failed, delete the temporary file.
             if (isset($downloadPath) && file_exists($downloadPath)) {
