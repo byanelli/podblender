@@ -72,6 +72,9 @@
         ],
         "test": [
             "./vendor/bin/phpunit"
+        ],
+        "pint": [
+            "./vendor/bin/pint"
         ]
     },
     "extra": {

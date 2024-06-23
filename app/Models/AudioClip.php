@@ -29,51 +29,39 @@ class AudioClip extends Model
     ];
 
     public int $audio_source_id;
-
     const string COL_AUDIO_SOURCE_ID = 'audio_source_id';
 
     public CarbonImmutable $created_at;
-
     const string COL_CREATED_AT = 'created_at';
 
     public string $description;
-
     const string COL_DESCRIPTION = 'description';
 
     public int $duration;
-
     const string COL_DURATION = 'duration';
 
     public string $guid;
-
     const string COL_GUID = 'guid';
 
     public int $id;
-
     const string COL_ID = 'id';
 
     public string $platform_url;
-
     const string COL_PLATFORM_URL = 'platform_url';
 
     public bool $processing;
-
     const string COL_PROCESSING = 'processing';
 
     public int $size;
-
     const string COL_SIZE = 'size';
 
     public string $storage_path;
-
     const string COL_STORAGE_PATH = 'storage_path';
 
     public string $title;
-
     const string COL_TITLE = 'title';
 
     public CarbonImmutable $updated_at;
-
     const string COL_UPDATED_AT = 'updated_at';
 
     /**
@@ -81,7 +69,6 @@ class AudioClip extends Model
      */
     #[Relation]
     public AudioSource $audioSource;
-
     const string REL_AUDIO_SOURCE = 'audioSource';
 
     /**
@@ -91,7 +78,6 @@ class AudioClip extends Model
      */
     #[Relation]
     public Collection $feeds;
-
     const string REL_FEEDS = 'feeds';
 
     public function audioSource(): BelongsTo
