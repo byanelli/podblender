@@ -3,6 +3,8 @@
 namespace Tests\Http\Controllers;
 
 use App\Models\User;
+use App\Platforms\Contracts\ClipMetadata;
+use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Metadata;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesPlatform;
@@ -18,12 +20,14 @@ class ShowMetadataTest extends TestCase
         $url = 'https://youtube.com/watch?v='.($id = 'lijwliejfwlef');
 
         $this->fakePlatform(
-            metadata: new Metadata(
-                id: $id,
+            clipMetadata: new ClipMetadata(
                 title: $title = 'Some title',
                 description: $description = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                sourceId: $sourceId = 'lwiejlwiejf',
-                sourceName: $sourceName = 'Some channel',
+                canonicalUrl: $url,
+                source: new SourceMetadata(
+                    name: $sourceName = 'Some channel',
+                    canonicalUrl: $sourceUrl = 'https://youtube.com/channel/lwefjiritlrth',
+                ),
             ),
         );
 
@@ -32,7 +36,15 @@ class ShowMetadataTest extends TestCase
         $response = $this->actingAs($user)->post('api/fetch-metadata', ['url' => $url]);
 
         $response->assertJsonFragment([
-            'metadata' => compact('id', 'title', 'description', 'sourceId', 'sourceName'),
+            'metadata' => [
+                'title' => $title,
+                'description' => $description,
+                'canonicalUrl' => $url,
+                'source' => [
+                    'name' => $sourceName,
+                    'canonicalUrl' => $sourceUrl,
+                ],
+            ],
             'platformType' => [
                 'name' => 'YouTube',
                 'value' => 1,

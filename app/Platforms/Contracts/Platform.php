@@ -4,19 +4,27 @@ namespace App\Platforms\Contracts;
 
 use App\Platforms\Exceptions\DownloadException;
 use App\Platforms\Exceptions\MetadataException;
-use App\Platforms\Metadata;
+use App\Platforms\Exceptions\ListException;
 
 interface Platform
 {
-    public function getCanonicalUrl(string $url): string;
+    /**
+     * @throws MetadataException
+     */
+    public function getClipMetadata(string $clipUrl): ClipMetadata;
 
     /**
      * @throws MetadataException
      */
-    public function getMetadata(string $url): Metadata;
+    public function getSourceMetadata(string $sourceUrl): SourceMetadata;
 
     /**
      * @throws DownloadException
      */
-    public function downloadAudio(string $url): string;
+    public function downloadAudio(string $clipUrl): string;
+
+    /**
+     * @throws ListException
+     */
+    public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array;
 }

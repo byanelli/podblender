@@ -12,60 +12,53 @@ use Tests\TestCase;
 class TwitchTest extends TestCase
 {
     #[Test]
-    public function it_gets_canonical_url_for_vod()
+    public function it_gets_clip_metadata_for_twitch_vod()
     {
-        Process::fake(['*' => Process::result(output: json_encode([
-            'extractor' => 'twitch:vod',
-            'webpage_url_basename' => '12345',
-        ]))]);
+        $url = 'https://twitch.tv/videos/'.($id = '12345');
 
-        /** @var Twitch $twitch */
-        $twitch = $this->app->make(Twitch::class);
-
-        $url = 'http://www.twitch.tv/videos/12345?junk=queryparams#andhash';
-        $canonicalUrl = 'https://twitch.tv/videos/12345';
-
-        $this->assertEquals($canonicalUrl, $twitch->getCanonicalUrl($url));
-    }
-
-    #[Test]
-    public function it_gets_canonical_url_for_clip()
-    {
-        Process::fake(['*' => Process::result(output: json_encode([
-            'extractor' => 'twitch:clips',
-            'webpage_url_basename' => 'MeanBanana-12345',
-            'uploader' => 'SomeStreamer',
-        ]))]);
-
-        /** @var Twitch $twitch */
-        $twitch = $this->app->make(Twitch::class);
-
-        $url = 'https://www.twitch.tv/somestreamer/clip/MeanBanana-12345?junk=queryparams#andhash';
-        $canonicalUrl = 'https://twitch.tv/somestreamer/clip/MeanBanana-12345';
-
-        $this->assertEquals($canonicalUrl, $twitch->getCanonicalUrl($url));
-    }
-
-    #[Test]
-    public function it_gets_metadata()
-    {
         Process::fake([Process::result(output: json_encode([
-            'id' => $id = 'foo',
+            'extractor' => 'twitch:vod',
+            'webpage_url_basename' => $id,
             'title' => $title = 'some video',
-            'uploader_id' => $uploaderId = 'eiorjg90ej',
-            'uploader' => $uploader = 'some channel',
+            'uploader' => $sourceName = 'somechannel',
+            'uploader_url' => $sourceUrl = 'https://twitch.tv/somechannel',
         ]))]);
 
         /** @var Twitch $twitch */
         $twitch = $this->app->make(Twitch::class);
 
-        $metadata = $twitch->getMetadata('https://twitch.tv/videos/12345');
+        $metadata = $twitch->getClipMetadata($url);
 
-        $this->assertEquals($id, $metadata->id);
         $this->assertEquals($title, $metadata->title);
         $this->assertEquals('', $metadata->description);
-        $this->assertEquals($uploaderId, $metadata->sourceId);
-        $this->assertEquals($uploader, $metadata->sourceName);
+        $this->assertEquals($url, $metadata->canonicalUrl);
+        $this->assertEquals($sourceName, $metadata->source->name);
+        $this->assertEquals($sourceUrl, $metadata->source->canonicalUrl);
+    }
+
+    #[Test]
+    public function it_gets_clip_metadata_for_twitch_clips()
+    {
+        $url = 'https://twitch.tv/somechannel/clip/'.($id = '12345');
+
+        Process::fake([Process::result(output: json_encode([
+            'extractor' => 'twitch:clips',
+            'webpage_url_basename' => $id,
+            'title' => $title = 'some video',
+            'uploader' => $sourceName = 'somechannel',
+            'uploader_url' => $sourceUrl = 'https://twitch.tv/somechannel',
+        ]))]);
+
+        /** @var Twitch $twitch */
+        $twitch = $this->app->make(Twitch::class);
+
+        $metadata = $twitch->getClipMetadata($url);
+
+        $this->assertEquals($title, $metadata->title);
+        $this->assertEquals('', $metadata->description);
+        $this->assertEquals($url, $metadata->canonicalUrl);
+        $this->assertEquals($sourceName, $metadata->source->name);
+        $this->assertEquals($sourceUrl, $metadata->source->canonicalUrl);
     }
 
     #[Test]

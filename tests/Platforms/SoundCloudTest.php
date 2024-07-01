@@ -13,23 +13,7 @@ use Tests\TestCase;
 class SoundCloudTest extends TestCase
 {
     #[Test]
-    public function it_gets_canonical_urls()
-    {
-        $url = 'http://www.youtube.com/watch?v=foo&otherparam=bar';
-        $canonicalUrl = 'https://youtube.com/watch?v=foo';
-
-        Process::fake(["'./yt-dlp' '--dump-json' '*'" => Process::result(output: json_encode([
-            'webpage_url' => $canonicalUrl,
-        ]))]);
-
-        /** @var SoundCloud $soundCloud */
-        $soundCloud = $this->app->make(SoundCloud::class);
-
-        $this->assertEquals($canonicalUrl, $soundCloud->getCanonicalUrl($url));
-    }
-
-    #[Test]
-    public function it_gets_metadata()
+    public function it_gets_clip_metadata()
     {
         $url = 'https://soundcloud.com/artist/track';
 
@@ -44,13 +28,13 @@ class SoundCloudTest extends TestCase
         /** @var SoundCloud $soundCloud */
         $soundCloud = $this->app->make(SoundCloud::class);
 
-        $metadata = $soundCloud->getMetadata($url);
+        $metadata = $soundCloud->getClipMetadata($url);
 
-        $this->assertEquals($metadata->id, $url);
         $this->assertEquals($metadata->title, $title);
         $this->assertEquals($metadata->description, $description);
-        $this->assertEquals($metadata->sourceId, $uploaderUrl);
-        $this->assertEquals($metadata->sourceName, $uploader);
+        $this->assertEquals($metadata->canonicalUrl, $url);
+        $this->assertEquals($metadata->source->canonicalUrl, $uploaderUrl);
+        $this->assertEquals($metadata->source->name, $uploader);
     }
 
     #[Test]

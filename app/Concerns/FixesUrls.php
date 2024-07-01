@@ -39,7 +39,13 @@ trait FixesUrls
 
             $query = collect($query)->filter(fn ($val, $key) => ! str_starts_with($key, 'utm_'))->all();
 
-            return $url->withQuery(http_build_query($query))->toString();
+            $withoutUtm = $url->withQuery(http_build_query($query))->toString();
+
+            // If every query param in the URL was a UTM code, it will end with a superfluous "?" which we remove before
+            // returning.
+            return str_ends_with($withoutUtm, '?')
+                ? substr($withoutUtm, 0, strlen($withoutUtm) - 1)
+                : $withoutUtm;
         }
     }
 

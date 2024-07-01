@@ -13,23 +13,7 @@ class WebTest extends TestCase
     use FakesWhisper;
 
     #[Test]
-    public function it_gets_canonical_urls()
-    {
-        $urls = [
-            'http://www.theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260' => 'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260',
-            'https://nytimes.com/article?utm_medium=foo&utm_term=bar&other_query_param=test' => 'https://nytimes.com/article?other_query_param=test',
-        ];
-
-        /** @var Web $web */
-        $web = $this->app->make(Web::class);
-
-        foreach ($urls as $url => $canonicalUrl) {
-            $this->assertEquals($canonicalUrl, $web->getCanonicalUrl($url));
-        }
-    }
-
-    #[Test]
-    public function it_gets_metadata()
+    public function it_gets_clip_metadata()
     {
         Http::fake(['*' => Http::response(body: json_encode([
             [
@@ -43,13 +27,13 @@ class WebTest extends TestCase
         /** @var Web $web */
         $web = $this->app->make(Web::class);
 
-        $metadata = $web->getMetadata($url = 'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260');
+        $metadata = $web->getClipMetadata($url = 'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260');
 
-        $this->assertEquals($url, $metadata->id);
+        $this->assertEquals($url, $metadata->canonicalUrl);
         $this->assertEquals($title, $metadata->title);
         $this->assertEquals('Article by foo and bar', $metadata->description);
-        $this->assertEquals('theonion.com', $metadata->sourceId);
-        $this->assertEquals($publisher, $metadata->sourceName);
+        $this->assertEquals('https://theonion.com', $metadata->source->canonicalUrl);
+        $this->assertEquals($publisher, $metadata->source->name);
     }
 
     #[Test]

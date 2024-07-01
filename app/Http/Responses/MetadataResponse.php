@@ -3,6 +3,7 @@
 namespace App\Http\Responses;
 
 use App\Enums\PlatformType;
+use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Metadata;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
@@ -10,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 readonly class MetadataResponse implements Responsable
 {
     public function __construct(
-        private Metadata $metadata,
+        private ClipMetadata $metadata,
         private PlatformType $platformType,
     ) {}
 

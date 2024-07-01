@@ -6,22 +6,31 @@ use App\Enums\PlatformType;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Platforms\Contracts\PlatformFactory;
+use App\Platforms\Exceptions\MetadataException;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
-readonly class CreateAudioClip
+readonly class FindOrCreateAudioClip
 {
     public function __construct(private PlatformFactory $platformFactory) {}
 
     /**
-     * @throws \Exception
+     * @throws MetadataException
      */
     public function __invoke(PlatformType $platformType, string $url): AudioClip
     {
         $platform = $this->platformFactory->make($platformType);
 
         // Download the metadata from the platform.
-        $metadata = $platform->getMetadata($url);
+        $metadata = $platform->getClipMetadata($url);
+
+        // If a clip already exists for this URL, return it instead of creating a new one. NOTE: A platform will
+        // typically have many URL formats pointing to the same content. Here we use the canonical form of the URL,
+        // retrieved during the metadata request, to avoid duplication.
+        /** @var AudioClip $existing */
+        if ($existing = AudioClip::query()->where(AudioClip::COL_PLATFORM_URL, $metadata->canonicalUrl)->first()) {
+            return $existing;
+        }
 
         $storagePath = Uuid::uuid4()->toString();
 
@@ -30,12 +39,12 @@ readonly class CreateAudioClip
         $source = AudioSource::query()->firstOrCreate(
             [
                 AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_ID => $metadata->sourceId,
+                AudioSource::COL_PLATFORM_ID => $metadata->source->canonicalUrl,
             ],
             [
                 AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_ID => $metadata->sourceId,
-                AudioSource::COL_NAME => $metadata->sourceName,
+                AudioSource::COL_PLATFORM_ID => $metadata->source->canonicalUrl,
+                AudioSource::COL_NAME => $metadata->source->name,
             ]
         );
 
@@ -43,7 +52,7 @@ readonly class CreateAudioClip
         // show up in RSS feeds. A queued job will be dispatched to download the audio and set processing=false.
         /** @var AudioClip $clip */
         $clip = AudioClip::query()->create([
-            AudioClip::COL_PLATFORM_URL => $url,
+            AudioClip::COL_PLATFORM_URL => $metadata->canonicalUrl,
             AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
             AudioClip::COL_TITLE => Str::limit($metadata->title, 500 - 3),
             AudioClip::COL_DESCRIPTION => Str::limit($metadata->description, 1000 - 3),

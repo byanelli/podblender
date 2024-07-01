@@ -28,7 +28,7 @@ readonly class FetchMetadata
 
         $platform = $this->platformFactory->make($platformType);
 
-        $metadata = $platform->getMetadata($url);
+        $metadata = $platform->getClipMetadata($url);
 
         return new MetadataResponse($metadata, $platformType);
     }

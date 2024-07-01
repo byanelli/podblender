@@ -7,7 +7,7 @@ use Throwable;
 
 /**
  * If an error occurs while downloading, we want to report a generic message to the user while hiding details of the
- * previous exception, since it may have occurred while running a shell command on the server.
+ * previous exception, since it may have occurred while running a shell command or API request  on the server.
  */
 class DownloadException extends \Exception
 {

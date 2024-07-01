@@ -6,12 +6,24 @@ export type Metadata = {
     sourceName: string,
 };
 
+export type ClipMetadata = {
+    title: string,
+    description: string,
+    canonicalUrl: string,
+    source: SourceMetadata,
+};
+
+export type SourceMetadata = {
+    name: string,
+    canonicalUrl: string,
+};
+
 export type PlatformType = {
     name: string;
 };
 
 export type MetadataResponse = {
-    metadata: Metadata;
+    metadata: ClipMetadata;
     platformType: PlatformType;
 };
 

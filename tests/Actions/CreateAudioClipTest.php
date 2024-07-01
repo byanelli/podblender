@@ -4,9 +4,11 @@
 
 namespace Tests\Actions;
 
-use App\Actions\CreateAudioClip;
+use App\Actions\FindOrCreateAudioClip;
 use App\Enums\PlatformType;
 use App\Models\AudioClip;
+use App\Platforms\Contracts\ClipMetadata;
+use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Metadata;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesPlatform;
@@ -22,17 +24,19 @@ class CreateAudioClipTest extends TestCase
         $url = 'https://youtube.com/watch?v='.($id = 'lijwliejfwlef');
 
         $this->fakePlatform(
-            metadata: new Metadata(
-                id: $id,
+            clipMetadata: new ClipMetadata(
                 title: $title = 'foo',
                 description: $description = 'zzz',
-                sourceId: $sourceId = '9340e9tjh490e5',
-                sourceName: $sourceName = 'bar',
+                canonicalUrl: $canonicalUrl = $url,
+                source: new SourceMetadata(
+                    name: $sourceName = 'bar',
+                    canonicalUrl: $souceUrl = 'https://youtube.com/channel/9340e9tjh490e5'
+                ),
             ),
         );
 
-        /** @var CreateAudioClip $createAudioClip */
-        $createAudioClip = $this->app->make(CreateAudioClip::class);
+        /** @var FindOrCreateAudioClip $createAudioClip */
+        $createAudioClip = $this->app->make(FindOrCreateAudioClip::class);
 
         $clip = $createAudioClip->__invoke(PlatformType::YouTube, $url)
             ->load(AudioClip::REL_AUDIO_SOURCE);
@@ -41,7 +45,7 @@ class CreateAudioClipTest extends TestCase
         $this->assertEquals($title, $clip->title);
         $this->assertEquals($description, $clip->description);
         $this->assertEquals(0, $clip->duration);
-        $this->assertEquals($sourceId, $clip->audioSource->platform_id);
+        $this->assertEquals($souceUrl, $clip->audioSource->platform_id);
         $this->assertEquals($sourceName, $clip->audioSource->name);
         $this->assertTrue($clip->processing);
     }

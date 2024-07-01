@@ -24,10 +24,10 @@ const resetForm = () => { url.value = '' };
 const displayMetadata = computed(() => {
     return (metadataResponse.value != null)
         ? {
-            URL: url.value,
+            URL: metadataResponse.value.metadata.canonicalUrl,
             Platform: metadataResponse.value.platformType.name,
             Title: metadataResponse.value.metadata.title,
-            Author: metadataResponse.value.metadata.sourceName,
+            Author: metadataResponse.value.metadata.source.name,
             Description: metadataResponse.value.metadata.description,
         }
         : {}

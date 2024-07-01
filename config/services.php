@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'youtube_data_api' => [
+        'key' => env('YOUTUBE_DATA_API_KEY'),
+    ],
+
 ];
