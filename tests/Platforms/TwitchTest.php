@@ -62,7 +62,8 @@ class TwitchTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_source_metadata() {
+    public function it_gets_source_metadata()
+    {
         $name = 'ThePrimeagen';
         $url = 'https://twitch.tv/ThePrimeagen';
 

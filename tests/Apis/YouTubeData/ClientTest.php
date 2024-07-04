@@ -70,27 +70,28 @@ class ClientTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_video_ids_for_channel() {
-        list($videoId1, $videoId2, $videoId3) = ['eilrijgegr', 'orjtriojtb', 'wtertntrnt'];
+    public function it_gets_video_ids_for_channel()
+    {
+        [$videoId1, $videoId2, $videoId3] = ['eilrijgegr', 'orjtriojtb', 'wtertntrnt'];
 
         $apiUrl1 = 'https://www.googleapis.com/youtube/v3/search?'.http_build_query([
-                'maxResults'     => 50,
-                'type'           => 'video',
-                'order'          => 'date',
-                'channelId'      => $channelId = 'wlifjlwjf',
-                'publishedAfter' => ($publishedAfter = now()->subDay())->format(DateTimeInterface::RFC3339),
-                'key'            => config('services.youtube_data_api.key'),
-            ]);
+            'maxResults' => 50,
+            'type' => 'video',
+            'order' => 'date',
+            'channelId' => $channelId = 'wlifjlwjf',
+            'publishedAfter' => ($publishedAfter = now()->subDay())->format(DateTimeInterface::RFC3339),
+            'key' => config('services.youtube_data_api.key'),
+        ]);
 
         $apiUrl2 = 'https://www.googleapis.com/youtube/v3/search?'.http_build_query([
-                'maxResults'     => 50,
-                'type'           => 'video',
-                'order'          => 'date',
-                'channelId'      => $channelId,
-                'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
-                'pageToken'      => $nextPageToken = 'liwfljwifljw',
-                'key'            => config('services.youtube_data_api.key'),
-            ]);
+            'maxResults' => 50,
+            'type' => 'video',
+            'order' => 'date',
+            'channelId' => $channelId,
+            'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
+            'pageToken' => $nextPageToken = 'liwfljwifljw',
+            'key' => config('services.youtube_data_api.key'),
+        ]);
 
         Http::fake([
             $apiUrl1 => Http::response([
@@ -113,7 +114,6 @@ class ClientTest extends TestCase
                 'nextPageToken' => null,
             ]),
         ]);
-
 
         /** @var Client $client */
         $client = $this->app->make(Client::class);

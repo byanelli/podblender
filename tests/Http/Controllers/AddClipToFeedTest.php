@@ -8,7 +8,6 @@ use App\Models\Feed;
 use App\Models\User;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
-use App\Platforms\Metadata;
 use Illuminate\Auth\Access\AuthorizationException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesDispatcher;
@@ -31,7 +30,7 @@ class AddClipToFeedTest extends TestCase
                 canonicalUrl: $url,
                 source: new SourceMetadata(
                     name: $sourceName = 'Some channel',
-                    canonicalUrl:  $sourceUrl = 'https://youtube.com/channel/lwiejlwiejf'
+                    canonicalUrl: $sourceUrl = 'https://youtube.com/channel/lwiejlwiejf'
                 ),
             ),
         );
@@ -68,7 +67,7 @@ class AddClipToFeedTest extends TestCase
                 canonicalUrl: $url = 'https://youtube.com/watch?v=lijwliejfwlef',
                 source: new SourceMetadata(
                     name: 'Some channel',
-                    canonicalUrl:  'https://youtube.com/channel/lwiejlwiejf'
+                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf'
                 ),
             ),
         );

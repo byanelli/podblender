@@ -4,7 +4,6 @@ namespace App\Http\Responses;
 
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
-use App\Platforms\Metadata;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\JsonResponse;
 

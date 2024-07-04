@@ -39,7 +39,8 @@ class SoundCloudTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_source_metadata() {
+    public function it_gets_source_metadata()
+    {
         $name = 'Kendrick Lamar';
         $url = 'https://soundcloud.com/kendrick-lamar';
 

@@ -17,11 +17,11 @@ use Illuminate\Http\Response;
 readonly class AddClipToFeed
 {
     public function __construct(
-        private Gate                  $gate,
-        private Dispatcher            $dispatcher,
-        private PlatformTypeResolver  $platformTypeResolver,
+        private Gate $gate,
+        private Dispatcher $dispatcher,
+        private PlatformTypeResolver $platformTypeResolver,
         private FindOrCreateAudioClip $findOrCreateAudioClip,
-        private ResponseFactory       $responseFactory,
+        private ResponseFactory $responseFactory,
     ) {}
 
     /**

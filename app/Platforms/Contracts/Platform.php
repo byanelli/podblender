@@ -3,8 +3,8 @@
 namespace App\Platforms\Contracts;
 
 use App\Platforms\Exceptions\DownloadException;
-use App\Platforms\Exceptions\MetadataException;
 use App\Platforms\Exceptions\ListException;
+use App\Platforms\Exceptions\MetadataException;
 
 interface Platform
 {

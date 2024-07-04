@@ -45,7 +45,8 @@ class YouTubeTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_source_metadata() {
+    public function it_gets_source_metadata()
+    {
         $url = 'https://youtube.com/channel/'.($id = 'lwjflwjfwljfw');
 
         $this->fakeYouTubeData(channelMetadata: new ChannelMetadata(
@@ -87,7 +88,8 @@ class YouTubeTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_clip_urls() {
+    public function it_gets_clip_urls()
+    {
         $url1 = 'https://youtube.com/watch?v='.($videoId1 = 'leirjieljrg');
         $url2 = 'https://youtube.com/watch?v='.($videoId2 = 'wlefjlwifjw');
         $url3 = 'https://youtube.com/watch?v='.($videoId3 = 'ergeligjleg');

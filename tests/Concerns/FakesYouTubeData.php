@@ -14,11 +14,12 @@ use Tests\TestCase;
 trait FakesYouTubeData
 {
     protected function fakeYouTubeData(
-        array $videoIdsForChannel=[],
-        ?ChannelMetadata $channelMetadata=null,
-        ?VideoMetadata $videoMetadata=null,
+        array $videoIdsForChannel = [],
+        ?ChannelMetadata $channelMetadata = null,
+        ?VideoMetadata $videoMetadata = null,
     ) {
-        $this->app->bind(Client::class, fn() => new readonly class ($videoIdsForChannel, $channelMetadata, $videoMetadata) implements Client {
+        $this->app->bind(Client::class, fn () => new readonly class($videoIdsForChannel, $channelMetadata, $videoMetadata) implements Client
+        {
             public function __construct(
                 private array $videoIdsForChannel,
                 private ?ChannelMetadata $channelMetadata,

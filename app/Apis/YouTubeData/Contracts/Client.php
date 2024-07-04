@@ -10,8 +10,8 @@ interface Client
 {
     public function getVideoIdsForChannel(
         string $channelId,
-        ?DateTimeInterface $publishedAfter=null,
-        ?int $limit=null,
+        ?DateTimeInterface $publishedAfter = null,
+        ?int $limit = null,
     ): array;
 
     public function getChannelMetadataForHandle(string $handle): ChannelMetadata;

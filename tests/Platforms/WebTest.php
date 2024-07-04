@@ -36,7 +36,6 @@ class WebTest extends TestCase
         $this->assertEquals($publisher, $metadata->source->name);
     }
 
-
     #[Test]
     public function it_gets_source_metadata()
     {

@@ -38,7 +38,7 @@ readonly class Client implements Contracts\Client
         $nextPageToken = null;
 
         while (true) {
-            if (!is_null($nextPageToken)) {
+            if (! is_null($nextPageToken)) {
                 $queryParams['pageToken'] = $nextPageToken;
             }
 
@@ -67,8 +67,8 @@ readonly class Client implements Contracts\Client
 
     public function getVideoIdsForChannel(
         string $channelId,
-        ?DateTimeInterface $publishedAfter=null,
-        ?int $limit=null,
+        ?DateTimeInterface $publishedAfter = null,
+        ?int $limit = null,
     ): array {
         $publishedAfter ??= CarbonImmutable::parse(0);
         $limit ??= PHP_INT_MAX;
@@ -101,7 +101,7 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('channels', [
             'forHandle' => $handle,
-            'part'      => 'id,brandingSettings',
+            'part' => 'id,brandingSettings',
         ]);
 
         return $this->getChannelMetadataFromResponse($response);
@@ -110,7 +110,7 @@ readonly class Client implements Contracts\Client
     public function getChannelMetadataForId(string $id): ChannelMetadata
     {
         $response = $this->apiGet('channels', [
-            'id'   => $id,
+            'id' => $id,
             'part' => 'id,brandingSettings',
         ]);
 
@@ -120,7 +120,7 @@ readonly class Client implements Contracts\Client
     public function getVideoMetadata(string $id): VideoMetadata
     {
         $response = $this->apiGet('videos', [
-            'id'   => $id,
+            'id' => $id,
             'part' => 'id,snippet',
         ]);
 

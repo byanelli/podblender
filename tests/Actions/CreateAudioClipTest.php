@@ -9,7 +9,6 @@ use App\Enums\PlatformType;
 use App\Models\AudioClip;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
-use App\Platforms\Metadata;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesPlatform;
 use Tests\TestCase;

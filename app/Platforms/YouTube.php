@@ -21,7 +21,7 @@ readonly class YouTube implements Platform
     use FixesUrls;
 
     public function __construct(
-        private YtDlpClient       $ytDlp,
+        private YtDlpClient $ytDlp,
         private YouTubeDataClient $youTubeData,
     ) {}
 
@@ -45,7 +45,6 @@ readonly class YouTube implements Platform
             throw new MetadataException(PlatformType::YouTube, $e);
         }
     }
-
 
     private function getIdFromUrl(string $url): string
     {
@@ -99,7 +98,7 @@ readonly class YouTube implements Platform
     }
 
     // todo: this was public and part of the Platform interface. Delete?
-    private function getAllClipUrls(string $sourceUrl, ?int $limit=null): array
+    private function getAllClipUrls(string $sourceUrl, ?int $limit = null): array
     {
         $videoIds = $this->youTubeData->getVideoIdsForChannel(
             channelId: $this->getChannelIdFromSourceUrl($sourceUrl),
@@ -129,7 +128,8 @@ readonly class YouTube implements Platform
         return collect(explode('/', Uri::fromBaseUri($url)->getPath()))->last();
     }
 
-    private function convertChannelMetadataToSourceMetadata(ChannelMetadata $channel): SourceMetadata {
+    private function convertChannelMetadataToSourceMetadata(ChannelMetadata $channel): SourceMetadata
+    {
         return new SourceMetadata(
             name: $channel->name,
             canonicalUrl: "https://youtube.com/channel/{$channel->id}",
