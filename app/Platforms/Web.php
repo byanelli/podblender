@@ -11,6 +11,7 @@ use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Exceptions\DownloadException;
 use App\Platforms\Exceptions\MetadataException;
+use Illuminate\Http\Client\Factory;
 use League\Uri\Uri;
 use Spatie\Regex\Regex;
 
@@ -21,6 +22,7 @@ readonly class Web implements Platform
     public function __construct(
         private ArticlesApi $articleExtractor,
         private WhisperApi $whisper,
+        private Factory $http,
     ) {}
 
     public function getClipMetadata(string $clipUrl): ClipMetadata
@@ -48,7 +50,7 @@ readonly class Web implements Platform
     {
         $sourceUrl = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($sourceUrl));
 
-        $page = file_get_contents($sourceUrl);
+        $page = $this->http->get($sourceUrl)->throw()->body();
 
         $name = html_entity_decode(trim(Regex::match('/>([^<]+)<\/title>/m', $page)->group(1)));
 

@@ -5,6 +5,7 @@ namespace Tests\Platforms;
 use App\Platforms\SoundCloud;
 use App\Platforms\YouTube;
 use Illuminate\Process\PendingProcess;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
@@ -35,6 +36,25 @@ class SoundCloudTest extends TestCase
         $this->assertEquals($metadata->canonicalUrl, $url);
         $this->assertEquals($metadata->source->canonicalUrl, $uploaderUrl);
         $this->assertEquals($metadata->source->name, $uploader);
+    }
+
+    #[Test]
+    public function it_gets_source_metadata() {
+        $name = 'Kendrick Lamar';
+        $url = 'https://soundcloud.com/kendrick-lamar';
+
+        Http::fake([$url => Http::response(
+            "<meta property=\"twitter:title\" content=\"$name\"/>".
+            "<meta property=\"twitter:url\" content=\"$url\"/>"
+        )]);
+
+        /** @var SoundCloud $soundCloud */
+        $soundCloud = $this->app->make(SoundCloud::class);
+
+        $metadata = $soundCloud->getSourceMetadata($url);
+
+        $this->assertEquals($name, $metadata->name);
+        $this->assertEquals($url, $metadata->canonicalUrl);
     }
 
     #[Test]

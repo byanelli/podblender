@@ -9,7 +9,7 @@ use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
-readonly class Client
+readonly class Client implements Contracts\Client
 {
     private const string BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
@@ -23,7 +23,8 @@ readonly class Client
         return $this->config->get('services.youtube_data_api.key');
     }
 
-    private function apiGet(string $url, array $params): array {
+    private function apiGet(string $url, array $params): array
+    {
         return $this->http->get(
             url: self::BASE_URL.'/'.$url,
             query: array_merge($params, ['key' => $this->getApiKey()]),
@@ -96,7 +97,8 @@ readonly class Client
         );
     }
 
-    public function getChannelMetadataForHandle(string $handle): ChannelMetadata {
+    public function getChannelMetadataForHandle(string $handle): ChannelMetadata
+    {
         $response = $this->apiGet('channels', [
             'forHandle' => $handle,
             'part'      => 'id,brandingSettings',
@@ -105,7 +107,8 @@ readonly class Client
         return $this->getChannelMetadataFromResponse($response);
     }
 
-    public function getChannelMetadataForId(string $id): ChannelMetadata {
+    public function getChannelMetadataForId(string $id): ChannelMetadata
+    {
         $response = $this->apiGet('channels', [
             'id'   => $id,
             'part' => 'id,brandingSettings',
@@ -114,7 +117,8 @@ readonly class Client
         return $this->getChannelMetadataFromResponse($response);
     }
 
-    public function getVideoMetadata(string $id): VideoMetadata {
+    public function getVideoMetadata(string $id): VideoMetadata
+    {
         $response = $this->apiGet('videos', [
             'id'   => $id,
             'part' => 'id,snippet',

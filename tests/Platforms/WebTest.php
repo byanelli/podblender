@@ -36,6 +36,24 @@ class WebTest extends TestCase
         $this->assertEquals($publisher, $metadata->source->name);
     }
 
+
+    #[Test]
+    public function it_gets_source_metadata()
+    {
+        $name = 'The Onion';
+        $url = 'https://theonion.com';
+
+        Http::fake([$url => Http::response("<title>$name</title>")]);
+
+        /** @var Web $web */
+        $web = $this->app->make(Web::class);
+
+        $metadata = $web->getSourceMetadata($url);
+
+        $this->assertEquals($name, $metadata->name);
+        $this->assertEquals($url, $metadata->canonicalUrl);
+    }
+
     #[Test]
     public function it_downloads_audio()
     {

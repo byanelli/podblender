@@ -3,7 +3,8 @@
 namespace App\Platforms;
 
 use App\Apis\YouTubeData\ChannelMetadata;
-use App\Apis\YouTubeData\Client as YouTubeDataClient;
+use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClient;
+use App\Apis\YouTubeData\VideoMetadata;
 use App\Apis\YtDlp\Client as YtDlpClient;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
@@ -24,19 +25,21 @@ readonly class YouTube implements Platform
         private YouTubeDataClient $youTubeData,
     ) {}
 
+    private function convertVideoMetadataToClipMetadata(VideoMetadata $video): ClipMetadata
+    {
+        return new ClipMetadata(
+            title: $video->title,
+            description: $video->description,
+            canonicalUrl: "https://youtube.com/watch?v=$video->id",
+            source: $this->convertChannelMetadataToSourceMetadata($video->channel),
+        );
+    }
+
     public function getClipMetadata(string $clipUrl): ClipMetadata
     {
         try {
-            $video = $this->youTubeData->getVideoMetadata($this->getIdFromUrl($clipUrl));
-
-            return new ClipMetadata(
-                title: $video->title,
-                description: $video->description,
-                canonicalUrl: "https://youtube.com/watch?v=$video->id",
-                source: new SourceMetadata(
-                    name: $video->channel->name,
-                    canonicalUrl: "https://youtube.com/channel/{$video->channel->id}",
-                ),
+            return $this->convertVideoMetadataToClipMetadata(
+                $this->youTubeData->getVideoMetadata($this->getIdFromUrl($clipUrl))
             );
         } catch (\Exception $e) {
             throw new MetadataException(PlatformType::YouTube, $e);

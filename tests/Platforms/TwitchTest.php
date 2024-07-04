@@ -62,6 +62,20 @@ class TwitchTest extends TestCase
     }
 
     #[Test]
+    public function it_gets_source_metadata() {
+        $name = 'ThePrimeagen';
+        $url = 'https://twitch.tv/ThePrimeagen';
+
+        /** @var Twitch $twitch */
+        $twitch = $this->app->make(Twitch::class);
+
+        $metadata = $twitch->getSourceMetadata($url);
+
+        $this->assertEquals($name, $metadata->name);
+        $this->assertEquals($url, $metadata->canonicalUrl);
+    }
+
+    #[Test]
     public function it_downloads_audio()
     {
         $url = 'https://twitch.tv/videos/12345';

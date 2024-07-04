@@ -10,13 +10,17 @@ use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Exceptions\DownloadException;
 use App\Platforms\Exceptions\MetadataException;
+use Illuminate\Http\Client\Factory;
 use Spatie\Regex\Regex;
 
 readonly class SoundCloud implements Platform
 {
     use FixesUrls;
 
-    public function __construct(private Client $ytDlp) {}
+    public function __construct(
+        private Client $ytDlp,
+        private Factory $http,
+    ) {}
 
     public function getClipMetadata(string $clipUrl): ClipMetadata
     {
@@ -41,7 +45,7 @@ readonly class SoundCloud implements Platform
 
     public function getSourceMetadata(string $sourceUrl): SourceMetadata
     {
-        $page = file_get_contents($sourceUrl);
+        $page = $this->http->get($sourceUrl)->throw()->body();
 
         $name = html_entity_decode(trim(Regex::match('/<meta\s+property="twitter:title"\s+content="([^"]+)"/m', $page)->group(1)));
         $url = trim(Regex::match('/<meta\s+property="twitter:url"\s+content="([^"]+)"/m', $page)->group(1));
