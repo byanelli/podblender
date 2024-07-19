@@ -40,6 +40,9 @@ class Feed extends Model
     public ?int $subscription_id;
     const string COL_SUBSCRIPTION_ID = 'subscription_id';
 
+    public ?CarbonImmutable $subscribed_at;
+    const string COL_SUBSCRIBED_AT = 'subscribed_at';
+
     /**
      * @var Collection<int, AudioClip>
      *
@@ -69,7 +72,7 @@ class Feed extends Model
      * @see self::subscription()
      */
     #[Relation]
-    public User $subscription;
+    public AudioSource $subscription;
     const string REL_SUBSCRIPTION = 'subscription';
 
     public function user(): BelongsTo

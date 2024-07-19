@@ -26,6 +26,7 @@ class YouTubeTest extends TestCase
             id: $videoId,
             title: $videoTitle = 'some video',
             description: $videoDescription = 'some description',
+            publishTime: $publishTime = now()->subDay()->roundSeconds(),
             channel: new ChannelMetadata(
                 id: $channelId,
                 name: $channelName = 'some channel',
@@ -37,11 +38,12 @@ class YouTubeTest extends TestCase
 
         $metadata = $youtube->getClipMetadata($videoUrl);
 
-        $this->assertEquals($metadata->title, $videoTitle);
-        $this->assertEquals($metadata->description, $videoDescription);
-        $this->assertEquals($metadata->canonicalUrl, $videoUrl);
-        $this->assertEquals($metadata->source->canonicalUrl, $channelUrl);
-        $this->assertEquals($metadata->source->name, $channelName);
+        $this->assertEquals($videoTitle, $metadata->title);
+        $this->assertEquals($videoDescription, $metadata->description);
+        $this->assertEquals($videoUrl, $metadata->canonicalUrl);
+        $this->assertEquals($publishTime, $metadata->publishedAt);
+        $this->assertEquals($channelUrl, $metadata->source->canonicalUrl);
+        $this->assertEquals($channelName, $metadata->source->name);
     }
 
     #[Test]

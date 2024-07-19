@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('feeds', function (Blueprint $table) {
-            $table->foreignId('subscription_id')->nullable();
-            $table->datetime('subscribed_at')->nullable();
+        Schema::table('audio_sources', function (Blueprint $table) {
+            $table->renameColumn('platform_id', 'platform_url');
         });
     }
 
@@ -22,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('feeds', function (Blueprint $table) {
+        Schema::table('audio_sources', function (Blueprint $table) {
             //
         });
     }

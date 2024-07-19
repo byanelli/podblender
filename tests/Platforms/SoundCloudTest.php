@@ -22,6 +22,7 @@ class SoundCloudTest extends TestCase
             'webpage_url' => $url,
             'title' => $title = 'bar',
             'description' => $description = 'baz',
+            'timestamp' => ($publishedAt = now()->subDay()->roundSeconds())->unix(),
             'uploader_url' => $uploaderUrl = 'https://soundcloud.com/artist',
             'uploader' => $uploader = 'Artist',
         ]))]);
@@ -34,6 +35,7 @@ class SoundCloudTest extends TestCase
         $this->assertEquals($metadata->title, $title);
         $this->assertEquals($metadata->description, $description);
         $this->assertEquals($metadata->canonicalUrl, $url);
+        $this->assertEquals($metadata->publishedAt, $publishedAt);
         $this->assertEquals($metadata->source->canonicalUrl, $uploaderUrl);
         $this->assertEquals($metadata->source->name, $uploader);
     }

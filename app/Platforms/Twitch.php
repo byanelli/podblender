@@ -10,6 +10,7 @@ use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Exceptions\DownloadException;
 use App\Platforms\Exceptions\MetadataException;
+use Carbon\CarbonImmutable;
 use League\Uri\Uri;
 
 readonly class Twitch implements Platform
@@ -18,7 +19,7 @@ readonly class Twitch implements Platform
 
     public function __construct(private Client $ytDlp) {}
 
-    private function getCanonicalUrl2(array $meta): string
+    private function getCanonicalUrl(array $meta): string
     {
         return match ($extractor = $meta['extractor'] ?? '(no extractor provided)') {
             'twitch:vod' => 'https://twitch.tv/videos/'.$meta['webpage_url_basename'],
@@ -37,10 +38,11 @@ readonly class Twitch implements Platform
             return new ClipMetadata(
                 title: $meta['title'],
                 description: '',
-                canonicalUrl: $this->getCanonicalUrl2($meta),
+                canonicalUrl: $this->getCanonicalUrl($meta),
+                publishedAt: CarbonImmutable::parse($meta['timestamp']),
                 source: new SourceMetadata(
                     name: $meta['uploader'],
-                    canonicalUrl: $meta['uploader_url'], // todo: ???
+                    canonicalUrl: 'https://twitch.tv/'.$meta['uploader_id'],
                 ),
             );
         } catch (\Exception $e) {
@@ -74,5 +76,9 @@ readonly class Twitch implements Platform
     public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
     {
         throw new \RuntimeException('Not implemented');
+    }
+
+    public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array {
+        // TODO: Implement getMetadataForAllClipsPublishedSince() method.
     }
 }

@@ -3,6 +3,8 @@
 namespace Tests\Apis\ArticleExtractor;
 
 use App\Apis\ArticleExtractor\Client;
+use Carbon\CarbonImmutable;
+use DateTimeInterface;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -18,6 +20,7 @@ class ClientTest extends TestCase
                 'publisher' => $publisher = 'Some News Outlet',
                 'author' => $authors = ['Author1', 'Author2'],
                 'text' => $text = 'Lorem ipsum dolor sit amet.',
+                'date' => ($date = CarbonImmutable::parse('2020-01-01'))->format(DateTimeInterface::RFC3339),
             ],
         ])]);
 
@@ -31,6 +34,7 @@ class ClientTest extends TestCase
         $this->assertEquals($publisher, $article->publisher);
         $this->assertEquals($authors, $article->authors);
         $this->assertEquals($text, $article->text);
+        $this->assertEquals($date, $article->publicationDate);
     }
 
     #[Test]
@@ -42,6 +46,7 @@ class ClientTest extends TestCase
                 'publisher' => 'Some News Outlet',
                 'author' => ['https://news.com/authors/john-doe', 'https://news.com/authors/jane-doe'],
                 'text' => 'Lorem ipsum dolor sit amet.',
+                'date' => ($date = CarbonImmutable::parse('2020-01-01'))->format(DateTimeInterface::RFC3339),
             ],
         ])]);
 
@@ -62,6 +67,7 @@ class ClientTest extends TestCase
                 'publisher' => null,
                 'author' => ['Author1'],
                 'text' => 'Lorem ipsum dolor sit amet.',
+                'date' => ($date = CarbonImmutable::parse('2020-01-01'))->format(DateTimeInterface::RFC3339),
             ],
         ])]);
 

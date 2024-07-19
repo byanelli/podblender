@@ -10,6 +10,7 @@ use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Exceptions\DownloadException;
 use App\Platforms\Exceptions\MetadataException;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Factory;
 use Spatie\Regex\Regex;
 
@@ -33,6 +34,7 @@ readonly class SoundCloud implements Platform
                 title: $meta['title'],
                 description: $meta['description'] ?: '',
                 canonicalUrl: $meta['webpage_url'],
+                publishedAt: CarbonImmutable::parse($meta['timestamp']),
                 source: new SourceMetadata(
                     name: $meta['uploader'],
                     canonicalUrl: $meta['uploader_url'],
@@ -67,5 +69,9 @@ readonly class SoundCloud implements Platform
     public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
     {
         throw new \RuntimeException('Not implemented');
+    }
+
+    public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array {
+        // TODO: Implement getMetadataForAllClipsPublishedSince() method.
     }
 }

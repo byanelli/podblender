@@ -23,6 +23,7 @@ class ShowMetadataTest extends TestCase
                 title: $title = 'Some title',
                 description: $description = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
                 canonicalUrl: $url,
+                publishedAt: $publishedAt = now()->subDay()->roundSeconds(),
                 source: new SourceMetadata(
                     name: $sourceName = 'Some channel',
                     canonicalUrl: $sourceUrl = 'https://youtube.com/channel/lwefjiritlrth',
@@ -39,6 +40,8 @@ class ShowMetadataTest extends TestCase
                 'title' => $title,
                 'description' => $description,
                 'canonicalUrl' => $url,
+                // todo: why is this insane looking format the default datetime serialization?
+                'publishedAt' => $publishedAt->toIso8601ZuluString('microsecond'),
                 'source' => [
                     'name' => $sourceName,
                     'canonicalUrl' => $sourceUrl,

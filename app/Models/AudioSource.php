@@ -4,9 +4,13 @@ namespace App\Models;
 
 use App\Enums\PlatformType;
 use Based\Fluent\Fluent;
+use Based\Fluent\Relations\Relation;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AudioSource extends Model
 {
@@ -24,6 +28,34 @@ class AudioSource extends Model
     public PlatformType $platform_type;
     const string COL_PLATFORM_TYPE = 'platform_type';
 
-    public string $platform_id;
-    const string COL_PLATFORM_ID = 'platform_id';
+    public string $platform_url;
+    const string COL_PLATFORM_URL = 'platform_url';
+
+    /**
+     * @var Collection<int, Feed>
+     *
+     * @see self::subscribers()
+     */
+    #[Relation]
+    public Collection $subscribers;
+    const string REL_SUBSCRIBERS = 'subscribers';
+
+    /**
+     * @var Collection<int, AudioClip>
+     *
+     * @see self::audioClips()
+     */
+    #[Relation]
+    public Collection $audioClips;
+    const string REL_AUDIO_CLIPS = 'audioClips';
+
+    public function subscribers(): HasMany
+    {
+        return $this->hasMany(Feed::class, 'subscription_id');
+    }
+
+    public function audioClips(): HasMany
+    {
+        return $this->hasMany(AudioClip::class);
+    }
 }

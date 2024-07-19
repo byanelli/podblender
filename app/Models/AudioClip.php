@@ -37,6 +37,9 @@ class AudioClip extends Model
     public string $description;
     const string COL_DESCRIPTION = 'description';
 
+    public CarbonImmutable $published_at;
+    const string COL_PUBLISHED_AT = 'published_at';
+
     public int $duration;
     const string COL_DURATION = 'duration';
 

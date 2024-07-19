@@ -28,6 +28,7 @@ class AddClipToFeedTest extends TestCase
                 title: $title = 'Some title',
                 description: $description = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
                 canonicalUrl: $url,
+                publishedAt: $publishedAt = now()->subDay()->roundSeconds(),
                 source: new SourceMetadata(
                     name: $sourceName = 'Some channel',
                     canonicalUrl: $sourceUrl = 'https://youtube.com/channel/lwiejlwiejf'
@@ -52,7 +53,8 @@ class AddClipToFeedTest extends TestCase
         $this->assertEquals($url, $clip->platform_url);
         $this->assertEquals($title, $clip->title);
         $this->assertEquals($description, $clip->description);
-        $this->assertEquals($sourceUrl, $clip->audioSource->platform_id);
+        $this->assertEquals($publishedAt, $clip->published_at);
+        $this->assertEquals($sourceUrl, $clip->audioSource->platform_url);
         $this->assertEquals($sourceName, $clip->audioSource->name);
         $this->assertEquals(0, $clip->duration);
     }
@@ -65,6 +67,7 @@ class AddClipToFeedTest extends TestCase
                 title: 'Some title',
                 description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
                 canonicalUrl: $url = 'https://youtube.com/watch?v=lijwliejfwlef',
+                publishedAt: now()->subDay()->roundSeconds(),
                 source: new SourceMetadata(
                     name: 'Some channel',
                     canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf'

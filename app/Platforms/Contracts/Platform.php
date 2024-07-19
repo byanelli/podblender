@@ -27,4 +27,10 @@ interface Platform
      * @throws ListException
      */
     public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array;
+
+    /**
+     * @throws ListException
+     * @return array<int, ClipMetadata>
+     */
+    public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array;
 }

@@ -36,6 +36,7 @@ readonly class Web implements Platform
                 title: $article->title,
                 description: 'Article by '.collect($article->authors)->join(' and '),
                 canonicalUrl: $clipUrl,
+                publishedAt: $article->publicationDate,
                 source: new SourceMetadata(
                     name: $article->publisher,
                     canonicalUrl: 'https://'.Uri::fromBaseUri($clipUrl)->getHost()
@@ -76,5 +77,9 @@ readonly class Web implements Platform
     public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
     {
         throw new \RuntimeException('Not implemented');
+    }
+
+    public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array {
+        // TODO: Implement getMetadataForAllClipsPublishedSince() method.
     }
 }

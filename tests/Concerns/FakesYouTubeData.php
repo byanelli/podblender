@@ -34,19 +34,23 @@ trait FakesYouTubeData
                 return $this->videoIdsForChannel;
             }
 
-            public function getChannelMetadataForHandle(string $handle): ChannelMetadata
+            public function getChannelMetadataForHandle(string $channelHandle): ChannelMetadata
             {
                 return $this->channelMetadata;
             }
 
-            public function getChannelMetadataForId(string $id): ChannelMetadata
+            public function getChannelMetadataForId(string $channelId): ChannelMetadata
             {
                 return $this->channelMetadata;
             }
 
-            public function getVideoMetadata(string $id): VideoMetadata
+            public function getVideoMetadata(string $videoId): VideoMetadata
             {
                 return $this->videoMetadata;
+            }
+
+            public function getAllVideoMetadataForChannel(string $channelId, ?DateTimeInterface $publishedAfter = null): array {
+                // TODO: Implement getAllVideoMetadataForChannel() method.
             }
         });
     }

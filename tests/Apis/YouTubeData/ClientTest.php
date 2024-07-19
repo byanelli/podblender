@@ -22,6 +22,7 @@ class ClientTest extends TestCase
                         'description' => $description = 'foo bar',
                         'channelId' => $sourceId = 'eiorjg90ej',
                         'channelTitle' => $sourceName = 'some channel',
+                        'publishTime' => ($publishTime = now()->subDay()->roundSeconds())->format(DateTimeInterface::RFC3339),
                     ],
                 ],
             ],
@@ -35,6 +36,7 @@ class ClientTest extends TestCase
         $this->assertEquals($clipId, $metadata->id);
         $this->assertEquals($title, $metadata->title);
         $this->assertEquals($description, $metadata->description);
+        $this->assertEquals($publishTime, $metadata->publishTime);
         $this->assertEquals($sourceName, $metadata->channel->name);
         $this->assertEquals($sourceId, $metadata->channel->id);
     }

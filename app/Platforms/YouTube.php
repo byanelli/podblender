@@ -31,6 +31,7 @@ readonly class YouTube implements Platform
             title: $video->title,
             description: $video->description,
             canonicalUrl: "https://youtube.com/watch?v=$video->id",
+            publishedAt: $video->publishTime,
             source: $this->convertChannelMetadataToSourceMetadata($video->channel),
         );
     }
@@ -116,6 +117,16 @@ readonly class YouTube implements Platform
         );
 
         return collect($videoIds)->map(fn (string $id) => "https://youtube.com/watch?v=$id")->all();
+    }
+
+    public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
+    {
+        $videoMetadata = $this->youTubeData->getAllVideoMetadataForChannel(
+            channelId: $this->getChannelIdFromSourceUrl($sourceUrl),
+            publishedAfter: $publicationTime,
+        );
+
+        return collect($videoMetadata)->map($this->convertVideoMetadataToClipMetadata(...))->all();
     }
 
     private function sourceUrlHasChannelId(string $sourceUrl): bool

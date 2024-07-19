@@ -3,27 +3,20 @@
 namespace App\Actions;
 
 use App\Enums\PlatformType;
+use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
-use App\Platforms\Contracts\PlatformFactory;
-use App\Platforms\Exceptions\MetadataException;
+use App\Platforms\Contracts\ClipMetadata;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
 readonly class FindOrCreateAudioClip
 {
-    public function __construct(private PlatformFactory $platformFactory) {}
+    public function __construct(private Dispatcher $dispatcher) {}
 
-    /**
-     * @throws MetadataException
-     */
-    public function __invoke(PlatformType $platformType, string $url): AudioClip
+    public function __invoke(PlatformType $platformType, ClipMetadata $metadata): AudioClip
     {
-        $platform = $this->platformFactory->make($platformType);
-
-        // Download the metadata from the platform.
-        $metadata = $platform->getClipMetadata($url);
-
         // If a clip already exists for this URL, return it instead of creating a new one. NOTE: A platform will
         // typically have many URL formats pointing to the same content. Here we use the canonical form of the URL,
         // retrieved during the metadata request, to avoid duplication.
@@ -39,12 +32,12 @@ readonly class FindOrCreateAudioClip
         $source = AudioSource::query()->firstOrCreate(
             [
                 AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_ID => $metadata->source->canonicalUrl,
+                AudioSource::COL_PLATFORM_URL  => $metadata->source->canonicalUrl,
             ],
             [
                 AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_ID => $metadata->source->canonicalUrl,
-                AudioSource::COL_NAME => $metadata->source->name,
+                AudioSource::COL_PLATFORM_URL  => $metadata->source->canonicalUrl,
+                AudioSource::COL_NAME          => $metadata->source->name,
             ]
         );
 
@@ -56,12 +49,16 @@ readonly class FindOrCreateAudioClip
             AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
             AudioClip::COL_TITLE => Str::limit($metadata->title, 500 - 3),
             AudioClip::COL_DESCRIPTION => Str::limit($metadata->description, 1000 - 3),
+            AudioClip::COL_PUBLISHED_AT => $metadata->publishedAt,
             AudioClip::COL_DURATION => 0,
             AudioClip::COL_STORAGE_PATH => $storagePath,
             AudioClip::COL_GUID => Uuid::uuid4()->toString(),
             AudioClip::COL_PROCESSING => true,
             AudioClip::COL_SIZE => 0,
         ]);
+
+        // Queue a job to download the clip.
+        $this->dispatcher->dispatch(new DownloadAndStoreAudioClip($clip));
 
         return $clip;
     }

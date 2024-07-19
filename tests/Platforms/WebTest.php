@@ -3,6 +3,8 @@
 namespace Tests\Platforms;
 
 use App\Platforms\Web;
+use Carbon\CarbonImmutable;
+use DateTimeInterface;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesWhisper;
@@ -19,6 +21,7 @@ class WebTest extends TestCase
             [
                 'title' => $title = 'Kitten Thinks Of Nothing But Murder All Day',
                 'publisher' => $publisher = 'The Onion',
+                'date' => ($date = CarbonImmutable::parse('2020-01-01'))->format(DateTimeInterface::RFC3339),
                 'author' => ['foo', 'bar'],
                 'text' => 'zzz',
             ],
@@ -32,6 +35,7 @@ class WebTest extends TestCase
         $this->assertEquals($url, $metadata->canonicalUrl);
         $this->assertEquals($title, $metadata->title);
         $this->assertEquals('Article by foo and bar', $metadata->description);
+        $this->assertEquals($date, $metadata->publishedAt);
         $this->assertEquals('https://theonion.com', $metadata->source->canonicalUrl);
         $this->assertEquals($publisher, $metadata->source->name);
     }
@@ -61,6 +65,7 @@ class WebTest extends TestCase
                 'title' => 'Kitten Thinks Of Nothing But Murder All Day',
                 'publisher' => 'The Onion',
                 'author' => ['foo', 'bar'],
+                'date' => CarbonImmutable::parse('2020-01-01')->format(DateTimeInterface::RFC3339),
                 'text' => $text = 'zzz',
             ],
         ]))]);

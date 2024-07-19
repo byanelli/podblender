@@ -13,6 +13,8 @@ Route::middleware(Authenticate::class)->group(function () {
 
     Route::get('/feeds/{feed}', Controllers\ShowFeed::class)->name('showFeed');
 
+    Route::post('/feeds/subscription', Controllers\CreateSubscription::class)->name('createSubscription');
+
     Route::prefix('api')->group(function () {
         // todo next
         Route::post('/fetch-metadata', Controllers\FetchMetadata::class)->name('fetchMetadata');

@@ -17,13 +17,22 @@ trait FakesPlatform
 {
     protected function fakePlatform(
         ?ClipMetadata $clipMetadata = null,
+        ?SourceMetadata $sourceMetadata = null,
+        array $clipMetadataList = [],
         string $audioPath = '',
         string $audioContent = '',
     ): void {
-        $platform = new readonly class($clipMetadata, $audioPath, $audioContent) implements Platform
-        {
+        $platform = new readonly class (
+            $clipMetadata,
+            $sourceMetadata,
+            $clipMetadataList,
+            $audioPath,
+            $audioContent,
+        ) implements Platform {
             public function __construct(
                 private ?ClipMetadata $clipMetadata = null,
+                private ?SourceMetadata $sourceMetadata = null,
+                private array $clipMetadataList = [],
                 private string $audioPath = '',
                 private string $audioContent = '',
             ) {}
@@ -52,12 +61,16 @@ trait FakesPlatform
 
             public function getSourceMetadata(string $sourceUrl): SourceMetadata
             {
-                // TODO: Implement getSourceMetadata() method.
+                return $this->sourceMetadata;
             }
 
             public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
             {
                 // TODO: Implement getClipUrlsPublishedSince() method.
+            }
+
+            public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array {
+                return $this->clipMetadataList;
             }
         };
 

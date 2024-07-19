@@ -56,6 +56,15 @@ readonly class Client implements Contracts\Client
         return $pages;
     }
 
+    private function apiGetAllPagesItems(string $url, int $itemsLimit, array $queryParams): array
+    {
+        $pages = $this->apiGetAllPages($url, $itemsLimit, $queryParams);
+
+        return collect($pages)->reduce(function ($items, $nextPage) {
+            return array_merge($items, $nextPage['items']);
+        }, []);
+    }
+
     private function getVideoIdsFromPages(array $pages): array
     {
         return collect($pages)->reduce(function (Collection $ids, array $nextPage) {
@@ -97,47 +106,70 @@ readonly class Client implements Contracts\Client
         );
     }
 
-    public function getChannelMetadataForHandle(string $handle): ChannelMetadata
+    public function getChannelMetadataForHandle(string $channelHandle): ChannelMetadata
     {
         $response = $this->apiGet('channels', [
-            'forHandle' => $handle,
+            'forHandle' => $channelHandle,
             'part' => 'id,brandingSettings',
         ]);
 
         return $this->getChannelMetadataFromResponse($response);
     }
 
-    public function getChannelMetadataForId(string $id): ChannelMetadata
+    public function getChannelMetadataForId(string $channelId): ChannelMetadata
     {
         $response = $this->apiGet('channels', [
-            'id' => $id,
+            'id' => $channelId,
             'part' => 'id,brandingSettings',
         ]);
 
         return $this->getChannelMetadataFromResponse($response);
     }
 
-    public function getVideoMetadata(string $id): VideoMetadata
+    public function getVideoMetadata(string $videoId): VideoMetadata
     {
         $response = $this->apiGet('videos', [
-            'id' => $id,
+            'id' => $videoId,
             'part' => 'id,snippet',
         ]);
 
-        return $this->getVideoMetadataFromResponse($response);
+        return $this->getVideoMetadataFromResponseObject($response['items'][0]);
     }
 
-    private function getVideoMetadataFromResponse(array $response): VideoMetadata
+    public function getAllVideoMetadataForChannel(
+        string $channelId,
+        ?DateTimeInterface $publishedAfter = null
+    ): array {
+        $publishedAfter ??= CarbonImmutable::parse(0);
+
+        $videos = $this->apiGetAllPagesItems('search', PHP_INT_MAX, [
+            'maxResults' => 50,
+            'type' => 'video',
+            'order' => 'date',
+            'channelId' => $channelId,
+            'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
+            'part' => 'id,snippet',
+        ]);
+
+        return collect($videos)->map($this->getVideoMetadataFromResponseObject(...))->all();
+    }
+
+    private function getVideoMetadataFromResponseObject(array $video): VideoMetadata
     {
-        $video = $response['items'][0];
+        // For single video responses, id is stored directly as a string; for search responses, it's inside an
+        // object.
+        $id = is_array($video['id']) ? $video['id']['videoId'] : $video['id'];
+
+        $snippet = $video['snippet'];
 
         return new VideoMetadata(
-            id: $video['id'],
-            title: $video['snippet']['title'],
-            description: $video['snippet']['description'],
+            id: $id,
+            title: $snippet['title'],
+            description: $snippet['description'],
+            publishTime: CarbonImmutable::parse($snippet['publishTime']),
             channel: new ChannelMetadata(
-                id: $video['snippet']['channelId'],
-                name: $video['snippet']['channelTitle'],
+                id: $snippet['channelId'],
+                name: $snippet['channelTitle'],
             ),
         );
     }

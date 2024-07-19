@@ -2,6 +2,7 @@
 
 namespace App\Apis\ArticleExtractor;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Client\Factory;
@@ -68,6 +69,7 @@ readonly class Client
             url: $url,
             title: $response['title'] ?: $this->getNameFromSlug($url),
             publisher: $response['publisher'] ?: $this->getPublisherFromUrl($url),
+            publicationDate: CarbonImmutable::parse($response['date']),
             authors: $this->parseAuthors($response['author']),
             text: $response['text'],
         );
