@@ -2,7 +2,8 @@
 
 namespace Tests\Http\Controllers;
 
-use App\Enums\PlatformType;
+use App\Models\AudioSource;
+use App\Models\User;
 use App\Platforms\Contracts\SourceMetadata;
 use Tests\TestCase;
 use Tests\Concerns\FakesDispatcher;
@@ -14,42 +15,41 @@ class CreateSubscriptionTest extends TestCase
 
     public function testCreateSubscription()
     {
-        $url = 'https://example.com/audio-source';
+        $sourceUrl = 'https://youtube.com/@zzz';
         $feedName = 'Test Feed';
         $user = User::factory()->create();
         $this->actingAs($user);
 
         $requestPayload = [
-            'url' => $url,
-            'feed_name' => $feedName,
+            'url' => $sourceUrl,
+            'name' => $feedName,
         ];
-
-        $metadata = new SourceMetadata(
-            name: 'Test Audio Source',
-            canonicalUrl: $url
-        );
 
         $this->fakePlatform(
             sourceMetadata: new SourceMetadata(
                 name: $sourceName = 'Test channel',
-                canonicalUrl: $sourceUrl = 'https://youtube.com/@zzz'
+                canonicalUrl: $sourceUrl,
             )
         );
 
         $this->fakeNoOpDispatcher();
 
-        // Act
-        $response = $this->postJson('/feed/subscriptions', $requestPayload);
+        $this->postJson('/feeds/subscription', $requestPayload)
+            ->assertOk();
 
-        // Assert
-        $response->assertOk();
+        $this->assertDatabaseCount('audio_sources', 1);
+
         $this->assertDatabaseHas('audio_sources', [
-            'platform_url' => $url,
-            'name' => 'Test Audio Source',
+            'platform_url' => $sourceUrl,
+            'name' => $sourceName,
         ]);
+
+        $this->assertDatabaseCount('feeds', 1);
+
         $this->assertDatabaseHas('feeds', [
             'name' => $feedName,
             'user_id' => $user->id,
+            'subscription_id' => AudioSource::first()->id,
         ]);
     }
 }

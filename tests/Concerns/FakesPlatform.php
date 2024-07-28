@@ -8,6 +8,7 @@ use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Metadata;
+use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
 /**
@@ -19,8 +20,8 @@ trait FakesPlatform
         ?ClipMetadata $clipMetadata = null,
         ?SourceMetadata $sourceMetadata = null,
         array $clipMetadataList = [],
-        string $audioPath = '',
-        string $audioContent = '',
+        ?string $audioPath = null,
+        ?string $audioContent = null,
     ): void {
         $platform = new readonly class (
             $clipMetadata,
@@ -33,19 +34,9 @@ trait FakesPlatform
                 private ?ClipMetadata $clipMetadata = null,
                 private ?SourceMetadata $sourceMetadata = null,
                 private array $clipMetadataList = [],
-                private string $audioPath = '',
-                private string $audioContent = '',
+                private ?string $audioPath = null,
+                private ?string $audioContent = null,
             ) {}
-
-            public function getCanonicalUrl(string $url): string
-            {
-                return $url;
-            }
-
-            public function getMetadata(string $url): Metadata
-            {
-                return $this->metadata;
-            }
 
             public function getClipMetadata(string $clipUrl): ClipMetadata
             {
@@ -54,9 +45,12 @@ trait FakesPlatform
 
             public function downloadAudio(string $clipUrl): string
             {
-                file_put_contents($this->audioPath, $this->audioContent);
+                file_put_contents(
+                    $path = $this->audioPath ?: sys_get_temp_dir().DIRECTORY_SEPARATOR.Uuid::uuid4()->toString(),
+                    $this->audioContent ?: Uuid::uuid4()->toString(),
+                );
 
-                return $this->audioPath;
+                return $path;
             }
 
             public function getSourceMetadata(string $sourceUrl): SourceMetadata
@@ -66,10 +60,11 @@ trait FakesPlatform
 
             public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
             {
-                // TODO: Implement getClipUrlsPublishedSince() method.
+
             }
 
-            public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array {
+            public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
+            {
                 return $this->clipMetadataList;
             }
         };

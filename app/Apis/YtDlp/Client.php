@@ -85,13 +85,23 @@ readonly class Client
 
         $outputPath = sys_get_temp_dir()."/$filename.mp3";
 
-        $this->run(self::DOWNLOAD_TIMEOUT, [
-            '-x',
-            '--audio-format=mp3',
-            '--audio-quality=2',
-            '-o', $outputPath,
-            $url,
-        ]);
+        $baseRetrySeconds = 60; // todo: too conservative?
+
+        /** @noinspection PhpUnhandledExceptionInspection */
+        retry(
+            times: 4,
+            callback: fn() => $this->run(
+                timeout: self::DOWNLOAD_TIMEOUT,
+                args: [
+                    '-x',
+                    '--audio-format=mp3',
+                    '--audio-quality=2',
+                    '-o', $outputPath,
+                    $url,
+                ]
+            ),
+            sleepMilliseconds: fn (int $attempts) => $baseRetrySeconds * pow(2, $attempts) * 1000
+        );
 
         return $outputPath;
     }

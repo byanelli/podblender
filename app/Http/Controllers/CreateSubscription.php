@@ -7,7 +7,7 @@ use App\Http\Requests\SubscriptionCreateRequest;
 use App\Jobs\UpdateSubscription;
 use App\Models\AudioSource;
 use App\Models\Feed;
-use App\Platforms\PlatformFactory;
+use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\PlatformTypeResolver;
 use Illuminate\Contracts\Bus\Dispatcher;
 

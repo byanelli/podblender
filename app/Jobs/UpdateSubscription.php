@@ -57,7 +57,8 @@ class UpdateSubscription implements ShouldQueue
         $earliestSubscriber->load(Feed::REL_AUDIO_CLIPS);
 
         // Find the most recent clip that was already created for the subscriber that subscribed earliest. Everything
-        // after that is potentially a new clip and will have to be fetched from the source and upserted.
+        // after that is potentially a new clip and will have to be fetched from the source and created (upserted). If
+        // no subscribers have clips yet, use the subscription date of the earliest subscriber.
         $latestClipPublishedAt = $earliestSubscriber->audioClips->isNotEmpty()
             ? $earliestSubscriber->audioClips->sortByDesc(AudioClip::COL_PUBLISHED_AT)->first()->published_at
             : $earliestSubscriber->subscribed_at;
@@ -72,9 +73,9 @@ class UpdateSubscription implements ShouldQueue
 
         // Either find existing AudioClip records based on the metadata or create new ones.
         /** @var Collection<int, AudioClip> $newClips */
-        $newClips = collect($newClipMetadata)->map(function (ClipMetadata $metadata) use ($findOrCreateAudioClip) {
-            return $findOrCreateAudioClip->__invoke($this->subscription->platform_type, $metadata);
-        });
+        $newClips = collect($newClipMetadata)
+            ->filter(fn(ClipMetadata $clipMetadata) => $clipMetadata->publishedAt >= $latestClipPublishedAt)
+            ->map(fn(ClipMetadata $metadata) => $findOrCreateAudioClip->__invoke($this->subscription->platform_type, $metadata));
 
         $this->subscription->load(AudioSource::REL_SUBSCRIBERS);
 
