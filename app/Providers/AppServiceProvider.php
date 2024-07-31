@@ -10,6 +10,10 @@ use App\Apis\YouTubeData\Client as YouTubeDataClient;
 use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClientContract;
 use App\Platforms\Contracts\PlatformFactory as PlatformFactoryContract;
 use App\Platforms\PlatformFactory;
+use App\Proxies\BrightDataResidentialProxyConfig;
+use App\Proxies\Contracts\ResidentialProxyConfig;
+use App\Proxies\Contracts\VpnProxyConfig;
+use App\Proxies\IpVanishProxyConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(WhisperClientContract::class, WhisperClient::class);
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
         $this->app->bind(YouTubeDataClientContract::class, YouTubeDataClient::class);
+
+        $this->app->bind(VpnProxyConfig::class, IpVanishProxyConfig::class);
+        $this->app->bind(ResidentialProxyConfig::class, BrightDataResidentialProxyConfig::class);
 
         $this->app->make(BroadcastManager::class)->routes();
     }

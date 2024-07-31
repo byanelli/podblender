@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Apis\Ffmpeg\Contracts\Client as Ffmpeg;
-use App\Apis\YtDlp\Client;
 use App\Events\FinishedProcessingClip;
 use App\Models\AudioClip;
 use App\Platforms\Contracts\PlatformFactory;
@@ -24,9 +23,10 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
     public function __construct(private readonly AudioClip $clip)
     {
-        // Allow this job to run twice as long as the download process runs, because we also have to store the downloaded
-        // file and update the database.
-        $this->timeout = Client::DOWNLOAD_TIMEOUT * 2;
+        // Allow this job to run for up to an hour, because the download may involve exponential backoffs and failovers
+        // to VPNs/proxies. The timeout also includes time spent within this job storing the file and updating the
+        // database.
+        $this->timeout = 3600;
     }
 
     /**
@@ -44,13 +44,10 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
             $platform = $platformFactory->make($this->clip->platform_type);
 
-//            sleep(30); // todo: ?
-
             // Download the audio from the platform into a temporary file and open the downloaded file.
+            // todo: handle ContentUnavailable exception, mark content permanently unavailable
             $downloadPath = $platform->downloadAudio($this->clip->platform_url);
             $downloadHandle = fopen($downloadPath, 'r');
-
-//            sleep(30); // todo: ?
 
             // Use ffmpeg to get the duration.
             $duration = $ffmpeg->getDuration($downloadPath);

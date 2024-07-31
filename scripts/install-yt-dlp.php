@@ -1,7 +1,9 @@
 <?php
 
-$downloadUrl = 'https://github.com/yt-dlp/yt-dlp/releases/download/2023.12.30/yt-dlp_linux';
-$correctSha256 = '0f606eab88c629884e673ae69355fbd5d0caf035f299a3f32e104bbf4ff90063';
+$version = '2024.07.25';
+
+$downloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/download/$version/yt-dlp_linux";
+$correctSha256 = '9c624faae265aa2754e75c2aaaec6b837b5b8eacd467f8fa23117ae1acf5f3dc';
 $downloadedFilePath = './vendor/bin/yt-dlp';
 
 $downloadedFileExists = fn () => file_exists($downloadedFilePath);

@@ -86,10 +86,13 @@ readonly class Client implements Contracts\Client
             // "maxResults" means results per page; if limit <= 50 we only get one page.
             'maxResults' => min($limit, 50),
             'type' => 'video',
+            'part' => 'snippet',
             'order' => 'date',
             'channelId' => $channelId,
             'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
         ]);
+
+        dd($pages);
 
         $videoIds = $this->getVideoIdsFromPages($pages);
 
@@ -120,8 +123,10 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('channels', [
             'id' => $channelId,
-            'part' => 'id,brandingSettings',
+            'part' => 'id,brandingSettings,contentDetails,contentOwnerDetails,status,snippet',
         ]);
+
+        dd($response);
 
         return $this->getChannelMetadataFromResponse($response);
     }
@@ -130,7 +135,7 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('videos', [
             'id' => $videoId,
-            'part' => 'id,snippet',
+            'part' => 'id,snippet,status',
         ]);
 
         return $this->getVideoMetadataFromResponseObject($response['items'][0]);
@@ -160,7 +165,10 @@ readonly class Client implements Contracts\Client
         // object.
         $id = is_array($video['id']) ? $video['id']['videoId'] : $video['id'];
 
+
+        dd($video);
         $snippet = $video['snippet'];
+
 
         return new VideoMetadata(
             id: $id,

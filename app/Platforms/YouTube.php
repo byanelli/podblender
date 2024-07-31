@@ -6,11 +6,13 @@ use App\Apis\YouTubeData\ChannelMetadata;
 use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClient;
 use App\Apis\YouTubeData\VideoMetadata;
 use App\Apis\YtDlp\Client as YtDlpClient;
+use App\Apis\YtDlp\MembersOnlyContentException;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
+use App\Platforms\Exceptions\ContentUnavailableException;
 use App\Platforms\Exceptions\DownloadException;
 use App\Platforms\Exceptions\MetadataException;
 use Illuminate\Support\Collection;
@@ -93,6 +95,8 @@ readonly class YouTube implements Platform
             $clipUrl = $this->fixUrlSchemeAndHost($clipUrl);
 
             return $this->ytDlp->downloadAudio($clipUrl);
+        } catch (MembersOnlyContentException $e) {
+            throw new ContentUnavailableException();
         } catch (\Exception $e) {
             throw new DownloadException(PlatformType::YouTube, $e);
         }
