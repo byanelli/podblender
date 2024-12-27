@@ -3,9 +3,11 @@
 namespace App\Jobs;
 
 use App\Apis\Ffmpeg\Contracts\Client as Ffmpeg;
+use App\Enums\ClipProcessingState;
 use App\Events\FinishedProcessingClip;
 use App\Models\AudioClip;
 use App\Platforms\Contracts\PlatformFactory;
+use App\Platforms\Exceptions\ContentUnavailableException;
 use App\Platforms\Exceptions\DownloadException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -65,9 +67,16 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
             // Mark the clip as no longer processing and save the file size and duration in the database (for use in the
             // RSS feed).
-            $this->clip->processing = false;
+            $this->clip->processing = false; // todo remove
+            $this->clip->processing_state = ClipProcessingState::Processed;
             $this->clip->duration = $duration;
             $this->clip->size = $storage->size($this->clip->storage_path);
+            $this->clip->save();
+        } catch (ContentUnavailableException $e) {
+            // If the platform reported that we didn't have permission to access this clip, mark it as such in the
+            // database.
+            $this->clip->processing = true; // todo remove
+            $this->clip->processing_state = ClipProcessingState::Unavailable;
             $this->clip->save();
         } catch (\Exception $e) {
             // If there was an error, delete the clip so we don't leave it around in an intermediate state.

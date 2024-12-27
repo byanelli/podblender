@@ -36,7 +36,8 @@ class ShowFeedTest extends TestCase
                     ->has('feed.audio_clips', 1)
                     ->where('feed.audio_clips.0.id', $clip->id)
                     ->where('feed.audio_clips.0.title', $clip->title)
-                    ->where('feed.audio_clips.0.processing', $clip->processing)
+                    ->where('feed.audio_clips.0.processing', $clip->processing) // todo remove
+                    ->where('feed.audio_clips.0.processing_state', $clip->processing_state)
                     ->where('feed.audio_clips.0.audio_source.name', $clip->audioSource->name)
                     ->where('feed.audio_clips.0.audio_source.platform_type.name', $clip->audioSource->platform_type->name);
             });

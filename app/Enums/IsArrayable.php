@@ -3,11 +3,10 @@
 namespace App\Enums;
 
 use Illuminate\Contracts\Support\Arrayable;
+use ReflectionObject;
 
 /**
  * @mixin Arrayable
- * @mixin \UnitEnum
- * @mixin \BackedEnum
  */
 trait IsArrayable
 {
@@ -16,10 +15,14 @@ trait IsArrayable
      */
     public function toArray(): array
     {
-        $result = ['name' => $this->name];
+        $result = [];
 
-        if ($this instanceof \BackedEnum) {
-            $result['value'] = $this->value;
+        $reflection = new ReflectionObject($this);
+
+        foreach ($reflection->getProperties() as $property) {
+            if ($property->isPublic()) {
+                $result[$property->getName()] = $property->getValue($this);
+            }
         }
 
         return $result;

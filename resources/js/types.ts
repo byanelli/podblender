@@ -22,8 +22,17 @@ export type PlatformType = {
     name: string;
 };
 
-export type MetadataResponse = {
+export type ClipProcessingState = {
+    name: 'Processing' | 'Processed' | 'Unavailable';
+};
+
+export type ClipMetadataResponse = {
     metadata: ClipMetadata;
+    platformType: PlatformType;
+};
+
+export type SourceMetadataResponse = {
+    metadata: SourceMetadata;
     platformType: PlatformType;
 };
 
@@ -35,7 +44,8 @@ export type AudioSource = {
 export type AudioClip = {
     id: number,
     title: string,
-    processing: boolean,
+    processing: boolean, // todo remove
+    processing_state: ClipProcessingState,
     audio_source: AudioSource,
 }
 

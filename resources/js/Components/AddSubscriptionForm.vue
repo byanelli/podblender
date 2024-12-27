@@ -1,37 +1,32 @@
 <script setup lang="ts">
 
 import {computed, ref} from "vue";
+import {SourceMetadataResponse} from "@/types";
 import axios, {AxiosResponse} from "axios";
 import routes from "@/routes";
-import {ClipMetadataResponse} from "@/types";
 
-const props = defineProps<{ feedId: number }>();
-
-const emit = defineEmits<{ (e: 'addClip'): void }>();
+const emit = defineEmits<{ (e: 'createSubscription'): void }>();
 
 type Display = 'form' | 'metadata';
 
 const errorMessage = ref<string>('');
+const name = ref<string>('');
 const url = ref<string>('');
-const metadataResponse = ref<ClipMetadataResponse|null>(null);
-
-const display = ref<Display>('form');
-const isLoading = ref<boolean>(false);
-const hasError = ref<boolean>(false);
-
-const resetForm = () => { url.value = '' };
+const metadataResponse = ref<SourceMetadataResponse|null>(null);
 
 const displayMetadata = computed(() => {
     return (metadataResponse.value != null)
         ? {
             URL: metadataResponse.value.metadata.canonicalUrl,
             Platform: metadataResponse.value.platformType.name,
-            Title: metadataResponse.value.metadata.title,
-            Author: metadataResponse.value.metadata.source.name,
-            Description: metadataResponse.value.metadata.description,
+            Author: metadataResponse.value.metadata.name,
         }
         : {}
 });
+
+const display = ref<Display>('form');
+const isLoading = ref<boolean>(false);
+const hasError = ref<boolean>(false);
 
 const fetchMetadata = () => {
     isLoading.value = true;
@@ -40,7 +35,7 @@ const fetchMetadata = () => {
     axios.post(routes.api.fetchMetadata, {
         url: url.value
     })
-        .then((response: AxiosResponse<ClipMetadataResponse>) => {
+        .then((response: AxiosResponse<SourceMetadataResponse>) => {
             isLoading.value = false;
             display.value = 'metadata';
 
@@ -54,11 +49,11 @@ const fetchMetadata = () => {
         });
 };
 
-const addClipToFeed = () => {
+const createSubscription = () => {
     isLoading.value = true;
     hasError.value = false;
 
-    axios.post(routes.api.addClipToFeed(props.feedId), {
+    axios.post(routes.api.createSubscription, {
         url: url.value,
     })
         .then(() => {
@@ -66,7 +61,7 @@ const addClipToFeed = () => {
             display.value = 'form';
             resetForm();
 
-            emit('addClip');
+            emit('createSubscription');
         })
         .catch((error) => {
             isLoading.value = false;
@@ -81,7 +76,7 @@ const addClipToFeed = () => {
 <template>
     <div class="bg-white shadow sm:rounded-lg">
         <div class="px-4 py-5 sm:p-6">
-            <form v-if="display == 'form'" @submit.prevent="fetchMetadata">
+            <form v-if="display == 'form'" @submit.prevent="createSubscription">
                 <div v-if="hasError" class="rounded-md bg-red-50 p-4">
                     <div class="flex">
                         <div class="flex-shrink-0">
@@ -103,7 +98,7 @@ const addClipToFeed = () => {
                     </div>
                 </div>
 
-                <h3 class="text-base font-semibold leading-6 text-gray-900">Add audio clip</h3>
+                <h3 class="text-base font-semibold leading-6 text-gray-900">Create subscription</h3>
 
                 <div class="relative mt-2 rounded-md shadow-sm">
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -116,10 +111,18 @@ const addClipToFeed = () => {
                         </svg>
 
                     </div>
+
+                    <!-- todo: labels here and in AddClipForm? -->
+                    <input required name="name" id="name"
+                           v-model="name"
+                           class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                           placeholder="My Subscription">
+
                     <input required name="url" id="url"
                            v-model="url"
                            class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                           placeholder="https://www.youtube.com/watch?v=9ntPxdWAWq8">
+                           placeholder="zzz"> <!-- todo: youtube channel placeholder -->
+
                 </div>
 
                 <div class="mt-5">

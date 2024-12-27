@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import {Head, Link, router} from '@inertiajs/vue3';
 import routes from "@/routes";
 import AddClipForm from "@/Components/AddClipForm.vue";
+import AddSubscriptionForm from "@/Components/AddSubscriptionForm.vue";
 
 type User = {
     feeds: Array<Feed>,
@@ -18,6 +19,9 @@ type Feed = {
 const title: string = 'Feeds';
 
 defineProps<{user: User}>()
+
+const reloadUser = () => router.reload({only: 'user'});
+
 </script>
 
 <template>
@@ -27,6 +31,8 @@ defineProps<{user: User}>()
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{title}}</h2>
         </template>
+
+        <AddSubscriptionForm @create-subscription="reloadUser" />
 
         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div class="overflow-hidden rounded-md bg-white shadow">

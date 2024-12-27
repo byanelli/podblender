@@ -2,10 +2,15 @@
 
 namespace App\Apis\ArticleExtractor;
 
+use App\Enums\IsArrayable;
 use DateTimeInterface;
+use Illuminate\Contracts\Support\Arrayable;
+use ReflectionObject;
 
-readonly class Article
+readonly class Article implements Arrayable
 {
+    use IsArrayable;
+
     public function __construct(
         public string $url,
         public string $title,

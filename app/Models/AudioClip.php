@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
 use Based\Fluent\Fluent;
 use Based\Fluent\Relations\Relation;
@@ -54,6 +55,9 @@ class AudioClip extends Model
 
     public bool $processing;
     const string COL_PROCESSING = 'processing';
+
+    public ClipProcessingState $processing_state;
+    const string COL_PROCESSING_STATE = 'processing_state';
 
     public int $size;
     const string COL_SIZE = 'size';

@@ -34,11 +34,17 @@ console.log(props.feed);
                     <div class="min-w-0">
                         <div class="flex items-start gap-x-3">
                             <p class="text-sm font-semibold leading-6 text-gray-900">{{clip.title}}</p>
-                            <p v-if="clip.processing" class="rounded-md whitespace-nowrap mt-0.5 px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset text-yellow-800 bg-yellow-50 ring-yellow-600/20">
+                            <p v-if="clip.processing_state.name == 'Processing'" class="rounded-md whitespace-nowrap mt-0.5 px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset text-yellow-800 bg-yellow-50 ring-yellow-600/20">
                                 Processing
                             </p>
-                            <p v-else class="rounded-md whitespace-nowrap mt-0.5 px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset text-green-700 bg-green-50 ring-green-600/20">
+                            <p v-else-if="clip.processing_state.name == 'Processed'" class="rounded-md whitespace-nowrap mt-0.5 px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset text-green-700 bg-green-50 ring-green-600/20">
                                 Processed
+                            </p>
+                            <p v-else-if="clip.processing_state.name == 'Unavailable'" class="rounded-md whitespace-nowrap mt-0.5 px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset text-gray-700 bg-green-50 ring-gray-600/20">
+                                Unavailable
+                            </p>
+                            <p v-else>
+                                Unknown (Error)
                             </p>
                             <p class="rounded-md whitespace-nowrap mt-0.5 px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset text-gray-600 bg-gray-50 ring-gray-500/10">
                                 {{clip.audio_source.platform_type.name}}

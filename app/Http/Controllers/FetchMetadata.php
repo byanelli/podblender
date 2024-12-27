@@ -8,7 +8,6 @@ use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Exceptions\MetadataException;
 use App\Platforms\PlatformTypeResolver;
 use Illuminate\Contracts\Support\Responsable;
-use Illuminate\Http\Response;
 
 readonly class FetchMetadata
 {
@@ -20,7 +19,7 @@ readonly class FetchMetadata
     /**
      * @throws MetadataException
      */
-    public function __invoke(AudioClipUrlRequest $request): Response|Responsable
+    public function __invoke(AudioClipUrlRequest $request): Responsable
     {
         $url = $request->getUrl();
 
@@ -30,6 +29,9 @@ readonly class FetchMetadata
 
         $metadata = $platform->getClipMetadata($url);
 
-        return new MetadataResponse($metadata, $platformType);
+        return new MetadataResponse(
+            metadata: $metadata,
+            platformType: $platformType,
+        );
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Jobs;
 
+use App\Enums\ClipProcessingState;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
@@ -36,14 +37,16 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         $storage = Storage::fake();
 
-        $this->assertTrue($clip->processing);
+        $this->assertTrue($clip->processing); // todo remove
+        $this->assertEquals(ClipProcessingState::Processing, $clip->processing_state);
         $storage->assertMissing($clip->storage_path);
 
         dispatch(new DownloadAndStoreAudioClip($clip));
 
         $clip = $clip->fresh();
 
-        $this->assertFalse($clip->processing);
+        $this->assertFalse($clip->processing); // todo remove
+        $this->assertEquals(ClipProcessingState::Processed, $clip->processing_state);
         $storage->assertExists($clip->storage_path);
         $this->assertEquals($duration, $clip->duration);
         $this->assertEquals($downloadContents, $storage->get($clip->storage_path));

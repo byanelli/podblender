@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
@@ -53,7 +54,8 @@ readonly class FindOrCreateAudioClip
             AudioClip::COL_DURATION => 0,
             AudioClip::COL_STORAGE_PATH => $storagePath,
             AudioClip::COL_GUID => Uuid::uuid4()->toString(),
-            AudioClip::COL_PROCESSING => true,
+            AudioClip::COL_PROCESSING => true, // todo remove
+            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,
             AudioClip::COL_SIZE => 0,
         ]);
 

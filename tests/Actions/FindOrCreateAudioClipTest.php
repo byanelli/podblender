@@ -5,6 +5,7 @@
 namespace Tests\Actions;
 
 use App\Actions\FindOrCreateAudioClip;
+use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
 use App\Models\AudioClip;
 use App\Platforms\Contracts\ClipMetadata;
@@ -47,6 +48,7 @@ class FindOrCreateAudioClipTest extends TestCase
         $this->assertEquals(0, $clip->duration);
         $this->assertEquals($sourceUrl, $clip->audioSource->platform_url);
         $this->assertEquals($sourceName, $clip->audioSource->name);
-        $this->assertTrue($clip->processing);
+        $this->assertTrue($clip->processing); // todo remove
+        $this->assertEquals(ClipProcessingState::Processing, $clip->processing_state);
     }
 }
