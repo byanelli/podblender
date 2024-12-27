@@ -1,9 +1,24 @@
 <?php
 
-$version = '2024.07.25';
+$uname = php_uname();
+$version = '2024.12.23';
 
-$downloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/download/$version/yt-dlp_linux";
-$correctSha256 = '9c624faae265aa2754e75c2aaaec6b837b5b8eacd467f8fa23117ae1acf5f3dc';
+[$downloadUrl, $correctSha256] = (function () use ($uname, $version) {
+    if (str_contains($uname, 'Darwin')) {
+        return [
+            "https://github.com/yt-dlp/yt-dlp/releases/download/$version/yt-dlp",
+            'eb5fef5807129b445d20a557cf57b5a9eaafb84d9f575bfcd51c5598cd70a133',
+        ];
+    } else if (str_contains($uname, 'Linux')) {
+        return [
+            "https://github.com/yt-dlp/yt-dlp/releases/download/$version/yt-dlp_linux",
+            '50a1799719fc69baf387e5bce8e38bd9aef2d177e0569d666151a4f9e40a461d',
+        ];
+    } else {
+        throw new RuntimeException('Unsupported operating system');
+    }
+})();
+
 $downloadedFilePath = './vendor/bin/yt-dlp';
 
 $downloadedFileExists = fn () => file_exists($downloadedFilePath);
