@@ -89,7 +89,7 @@ class TwitchTest extends TestCase
 
         $content = 'mp3 content';
 
-        Process::fake(["'./yt-dlp' '-x' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use ($content) {
+        Process::fake(["'./yt-dlp' '*' '--extract-audio' '--no-check-certificates' '*' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use ($content) {
             $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));
 
             file_put_contents($file, $content);

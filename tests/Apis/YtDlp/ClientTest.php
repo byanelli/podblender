@@ -42,7 +42,7 @@ class ClientTest extends TestCase
 
         $file = '';
 
-        Process::fake(["'./yt-dlp' '-x' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use (&$file) {
+        Process::fake(["'./yt-dlp' '*' '--extract-audio' '--no-check-certificates' '*' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use (&$file) {
             $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));
 
             touch($file);

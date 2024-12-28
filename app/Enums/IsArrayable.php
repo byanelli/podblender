@@ -21,7 +21,9 @@ trait IsArrayable
 
         foreach ($reflection->getProperties() as $property) {
             if ($property->isPublic()) {
-                $result[$property->getName()] = $property->getValue($this);
+                $value = $property->getValue($this);
+
+                $result[$property->getName()] = ($value instanceof Arrayable) ? $value->toArray() : $value;
             }
         }
 

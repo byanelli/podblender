@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Concerns\FixesUrls;
+use App\Enums\ClipProcessingState;
 use App\Models\AudioClip;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -29,6 +30,7 @@ class AudioClipFactory extends Factory
             AudioClip::COL_SIZE => 1_000_000,
             AudioClip::COL_STORAGE_PATH => $this->faker->uuid,
             AudioClip::COL_PROCESSING => false,
+            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,
         ];
     }
 }

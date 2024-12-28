@@ -79,6 +79,7 @@ class ClientTest extends TestCase
         $apiUrl1 = 'https://www.googleapis.com/youtube/v3/search?'.http_build_query([
             'maxResults' => 50,
             'type' => 'video',
+            'part' => 'snippet',
             'order' => 'date',
             'channelId' => $channelId = 'wlifjlwjf',
             'publishedAfter' => ($publishedAfter = now()->subDay())->format(DateTimeInterface::RFC3339),
@@ -88,6 +89,7 @@ class ClientTest extends TestCase
         $apiUrl2 = 'https://www.googleapis.com/youtube/v3/search?'.http_build_query([
             'maxResults' => 50,
             'type' => 'video',
+            'part' => 'snippet',
             'order' => 'date',
             'channelId' => $channelId,
             'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
@@ -116,6 +118,9 @@ class ClientTest extends TestCase
                 'nextPageToken' => null,
             ]),
         ]);
+
+        /*
+RuntimeException: Attempted request to [https://www.googleapis.com/youtube/v3/search?maxResults=50&type=video&part=snippet&order=date&channelId=wlifjlwjf&publishedAfter=2024-12-26T17%3A57%3A59%2B00%3A00&key=REDACTED*/
 
         /** @var Client $client */
         $client = $this->app->make(Client::class);

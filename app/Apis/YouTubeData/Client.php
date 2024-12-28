@@ -92,8 +92,6 @@ readonly class Client implements Contracts\Client
             'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
         ]);
 
-        dd($pages);
-
         $videoIds = $this->getVideoIdsFromPages($pages);
 
         return Arr::take($videoIds, $limit);
@@ -125,8 +123,6 @@ readonly class Client implements Contracts\Client
             'id' => $channelId,
             'part' => 'id,brandingSettings,contentDetails,contentOwnerDetails,status,snippet',
         ]);
-
-        dd($response);
 
         return $this->getChannelMetadataFromResponse($response);
     }
@@ -165,10 +161,7 @@ readonly class Client implements Contracts\Client
         // object.
         $id = is_array($video['id']) ? $video['id']['videoId'] : $video['id'];
 
-
-        dd($video);
         $snippet = $video['snippet'];
-
 
         return new VideoMetadata(
             id: $id,
