@@ -2,25 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Auth\AuthUserResolver;
 use App\Http\Views;
 use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\Request;
 use Inertia\Response;
 
 readonly class Home
 {
-    public function __construct(
-        private AuthUserResolver $authUserResolver,
-        private Views $views,
-    ) {}
-
-    public function __invoke(Request $request): Response
-    {
-        $user = $this->authUserResolver->get();
-
+    public function __invoke(
+        Views $views,
+        Request $request,
+        #[CurrentUser] User $user,
+    ): Response {
         $user->load(User::REL_FEEDS);
 
-        return $this->views->home($user);
+        return $views->home($user);
     }
 }

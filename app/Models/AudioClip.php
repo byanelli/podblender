@@ -53,9 +53,6 @@ class AudioClip extends Model
     public string $platform_url;
     const string COL_PLATFORM_URL = 'platform_url';
 
-    public bool $processing;
-    const string COL_PROCESSING = 'processing';
-
     public ClipProcessingState $processing_state;
     const string COL_PROCESSING_STATE = 'processing_state';
 

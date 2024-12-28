@@ -11,21 +11,19 @@ use Illuminate\Contracts\Support\Responsable;
 
 readonly class FetchMetadata
 {
-    public function __construct(
-        private PlatformTypeResolver $platformTypeResolver,
-        private PlatformFactory $platformFactory,
-    ) {}
-
     /**
      * @throws MetadataException
      */
-    public function __invoke(AudioClipUrlRequest $request): Responsable
-    {
+    public function __invoke(
+        PlatformTypeResolver $platformTypeResolver,
+        PlatformFactory $platformFactory,
+        AudioClipUrlRequest $request
+    ): Responsable {
         $url = $request->getUrl();
 
-        $platformType = $this->platformTypeResolver->fromUrl($url);
+        $platformType = $platformTypeResolver->fromUrl($url);
 
-        $platform = $this->platformFactory->make($platformType);
+        $platform = $platformFactory->make($platformType);
 
         $metadata = $platform->getClipMetadata($url);
 

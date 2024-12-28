@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AudioSource extends Model
 {
+    /** @use HasFactory<\Database\Factories\AudioSourceFactory> */
     use Fluent, HasFactory;
 
     public CarbonImmutable $created_at;

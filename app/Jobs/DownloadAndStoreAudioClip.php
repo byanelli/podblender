@@ -67,7 +67,6 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
             // Mark the clip as no longer processing and save the file size and duration in the database (for use in the
             // RSS feed).
-            $this->clip->processing = false; // todo remove
             $this->clip->processing_state = ClipProcessingState::Processed;
             $this->clip->duration = $duration;
             $this->clip->size = $storage->size($this->clip->storage_path);
@@ -75,7 +74,6 @@ class DownloadAndStoreAudioClip implements ShouldQueue
         } catch (ContentUnavailableException $e) {
             // If the platform reported that we didn't have permission to access this clip, mark it as such in the
             // database.
-            $this->clip->processing = true; // todo remove
             $this->clip->processing_state = ClipProcessingState::Unavailable;
             $this->clip->save();
         } catch (\Exception $e) {

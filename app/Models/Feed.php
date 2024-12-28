@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ClipProcessingState;
 use App\Models\Concerns\HasUuid;
 use Based\Fluent\Fluent;
 use Based\Fluent\Relations\Relation;
@@ -87,7 +88,8 @@ class Feed extends Model
 
     public function audioClipsFinishedProcessing(): BelongsToMany
     {
-        return $this->audioClips()->where('processing', false);
+        return $this->audioClips()
+            ->where(AudioClip::COL_PROCESSING_STATE, ClipProcessingState::Processing);
     }
 
     public function subscription(): BelongsTo

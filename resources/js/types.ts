@@ -44,7 +44,6 @@ export type AudioSource = {
 export type AudioClip = {
     id: number,
     title: string,
-    processing: boolean, // todo remove
     processing_state: ClipProcessingState,
     audio_source: AudioSource,
 }

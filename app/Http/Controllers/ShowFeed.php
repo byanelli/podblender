@@ -13,20 +13,19 @@ use Inertia\Response;
 
 readonly class ShowFeed
 {
-    public function __construct(
-        private Gate $gate,
-        private Views $views,
-    ) {}
-
     /**
      * @throws AuthorizationException
      */
-    public function __invoke(Request $request, Feed $feed): Response
-    {
-        $this->gate->authorizeView($feed);
+    public function __invoke(
+        Gate $gate,
+        Views $views,
+        Request $request,
+        Feed $feed
+    ): Response {
+        $gate->authorizeView($feed);
 
         $feed->load([Feed::REL_AUDIO_CLIPS => fn (Relation $q) => $q->orderByDesc(AudioClip::COL_CREATED_AT)]);
 
-        return $this->views->feed($feed);
+        return $views->feed($feed);
     }
 }

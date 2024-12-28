@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('audio_clips', function (Blueprint $table) {
+            $table->dropColumn('processing');
             $table->tinyInteger('processing_state')->default(0);
         });
     }

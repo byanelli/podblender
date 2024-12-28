@@ -32,12 +32,10 @@ class DownloadAndStoreAudioClipTest extends TestCase
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
             AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
-            AudioClip::COL_PROCESSING => true,
         ]);
 
         $storage = Storage::fake();
 
-        $this->assertTrue($clip->processing); // todo remove
         $this->assertEquals(ClipProcessingState::Processing, $clip->processing_state);
         $storage->assertMissing($clip->storage_path);
 
@@ -45,7 +43,6 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         $clip = $clip->fresh();
 
-        $this->assertFalse($clip->processing); // todo remove
         $this->assertEquals(ClipProcessingState::Processed, $clip->processing_state);
         $storage->assertExists($clip->storage_path);
         $this->assertEquals($duration, $clip->duration);
@@ -70,7 +67,6 @@ class DownloadAndStoreAudioClipTest extends TestCase
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
             AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
-            AudioClip::COL_PROCESSING => true,
         ]);
 
         $this->assertModelExists($clip);

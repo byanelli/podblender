@@ -54,7 +54,6 @@ readonly class FindOrCreateAudioClip
             AudioClip::COL_DURATION => 0,
             AudioClip::COL_STORAGE_PATH => $storagePath,
             AudioClip::COL_GUID => Uuid::uuid4()->toString(),
-            AudioClip::COL_PROCESSING => true, // todo remove
             AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,
             AudioClip::COL_SIZE => 0,
         ]);
