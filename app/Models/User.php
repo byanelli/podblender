@@ -60,6 +60,9 @@ class User extends Authenticatable implements MustVerifyEmail
         self::COL_REMEMBER_TOKEN,
     ];
 
+    /**
+     * @return HasMany<Feed, self>
+     */
     public function feeds(): HasMany
     {
         return $this->hasMany(Feed::class);

@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class SubscriptionCreateRequest extends FormRequest
+class CreateSubscriptionRequest extends FormRequest
 {
     public function rules(): array
     {
@@ -20,6 +20,5 @@ class SubscriptionCreateRequest extends FormRequest
 
     public function getFeedName(): string {
         return $this->string('name');
-
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Http\Controllers;
 
+use App\Enums\ClipProcessingState;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
@@ -23,7 +24,10 @@ class ShowRssTest extends TestCase
         $source = AudioSource::factory()->create();
 
         /** @var AudioClip $clip */
-        $clip = AudioClip::factory()->create([AudioClip::COL_AUDIO_SOURCE_ID => $source->id])
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
+            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+        ])
             ->load(AudioClip::REL_AUDIO_SOURCE);
 
         $feed->audioClips()->attach($clip);

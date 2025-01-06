@@ -13,7 +13,11 @@ Route::middleware(Authenticate::class)->group(function () {
 
     Route::get('/feeds/{feed}', Controllers\ShowFeed::class)->name('showFeed');
 
+    Route::delete('/feeds/{feed}/clips/{clip}', Controllers\DeleteClip::class)->name('deleteClip');
+    Route::delete('/feeds/{feed}', Controllers\DeleteFeed::class)->name('deleteFeed');
+
     Route::post('/feeds/subscription', Controllers\CreateSubscription::class)->name('createSubscription');
+    Route::post('/feeds', Controllers\CreateCustomFeed::class)->name('createCustomFeed');
 
     Route::prefix('api')->group(function () {
         // todo next

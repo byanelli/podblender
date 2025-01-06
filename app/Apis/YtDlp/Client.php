@@ -114,7 +114,11 @@ readonly class Client
                 "--proxy={$proxy->getProtocol()}://{$proxy->getUser()}:{$proxy->getPassword()}@{$proxy->getHost()}:{$proxy->getPort()}",
                 '--extract-audio',
                 '--no-check-certificates', // todo: make configurable per-proxy
-                '--impersonate=Chrome-120', // todo: random?
+
+                // todo: figure out why curl_cffi is missing and restore impersonation
+                // '--impersonate=Chrome-120', // todo: random?
+
+                "--ffmpeg-location={$this->app->basePath('vendor/bin/ffmpeg')}",
                 '--audio-format=mp3',
                 '--audio-quality=2',
                 '-o', $outputPath,

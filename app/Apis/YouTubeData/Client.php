@@ -152,11 +152,16 @@ readonly class Client implements Contracts\Client
             'part' => 'id,snippet',
         ]);
 
-        return collect($videos)->map($this->getVideoMetadataFromResponseObject(...))->all();
+        return collect($videos)
+            ->map(fn($response) => $this->getVideoMetadataFromResponseObject($response, true))
+            ->all();
     }
 
-    private function getVideoMetadataFromResponseObject(array $video): VideoMetadata
-    {
+    private function getVideoMetadataFromResponseObject(
+        array $video,
+        // YouTube HTML-encodes titles in some responses but not others!?
+        bool $decodeTitle=false,
+    ): VideoMetadata {
         // For single video responses, id is stored directly as a string; for search responses, it's inside an
         // object.
         $id = is_array($video['id']) ? $video['id']['videoId'] : $video['id'];
@@ -165,9 +170,9 @@ readonly class Client implements Contracts\Client
 
         return new VideoMetadata(
             id: $id,
-            title: $snippet['title'],
+            title: $decodeTitle ? html_entity_decode($snippet['title']) : $snippet['title'],
             description: $snippet['description'],
-            publishTime: CarbonImmutable::parse($snippet['publishTime']),
+            publishedAt: CarbonImmutable::parse($snippet['publishedAt']),
             channel: new ChannelMetadata(
                 id: $snippet['channelId'],
                 name: $snippet['channelTitle'],

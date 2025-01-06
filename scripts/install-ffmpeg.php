@@ -8,7 +8,7 @@ $uname = php_uname();
     if (str_contains($uname, 'Darwin')) {
         return [
             $base.'ffmpeg-6.1-macos-64.zip',
-            '8bb4a27f5fd02f3dd9a5e75c9eddf6ace1d50a08929ee0d20bbf17eb467fb711',
+            'ca8945e5eef946a246d29c943b21f10db345a2ef050dd7ea1c77f877277dc2fa',
         ];
     } else if (str_contains($uname, 'Linux')) {
         return [

@@ -46,6 +46,9 @@ export type AudioClip = {
     title: string,
     processing_state: ClipProcessingState,
     audio_source: AudioSource,
+    created_at: string,
+    published_at: string,
+
 }
 
 export type Feed = {

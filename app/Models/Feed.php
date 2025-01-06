@@ -89,7 +89,7 @@ class Feed extends Model
     public function audioClipsFinishedProcessing(): BelongsToMany
     {
         return $this->audioClips()
-            ->where(AudioClip::COL_PROCESSING_STATE, ClipProcessingState::Processing);
+            ->where(AudioClip::COL_PROCESSING_STATE, ClipProcessingState::Processed);
     }
 
     public function subscription(): BelongsTo

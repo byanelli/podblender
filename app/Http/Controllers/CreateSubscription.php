@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\FindOrCreateAudioSource;
-use App\Http\Requests\SubscriptionCreateRequest;
+use App\Http\Requests\CreateSubscriptionRequest;
 use App\Jobs\UpdateSubscription;
 use App\Models\Feed;
 use App\Models\User;
@@ -15,12 +15,12 @@ use Illuminate\Contracts\Bus\Dispatcher;
 readonly class CreateSubscription
 {
     public function __invoke(
-        PlatformTypeResolver $platformTypeResolver,
-        PlatformFactory $platformFactory,
-        Dispatcher $dispatcher,
-        FindOrCreateAudioSource $findOrCreateAudioSource,
-        SubscriptionCreateRequest $request,
-        #[CurrentUser] User $user,
+        PlatformTypeResolver      $platformTypeResolver,
+        PlatformFactory           $platformFactory,
+        Dispatcher                $dispatcher,
+        FindOrCreateAudioSource   $findOrCreateAudioSource,
+        CreateSubscriptionRequest $request,
+        #[CurrentUser] User       $user,
     ): void {
         $url = $request->getUrl();
 
@@ -36,7 +36,7 @@ readonly class CreateSubscription
         $feed = $user->feeds()->create([
             Feed::COL_NAME => $request->getFeedName(),
             Feed::COL_SUBSCRIPTION_ID => $source->id,
-            Feed::COL_SUBSCRIBED_AT => now()->subWeek(), // todo make configurable
+            Feed::COL_SUBSCRIBED_AT => now()->subMonth(), // todo make configurable
         ]);
 
         $dispatcher->dispatch(new UpdateSubscription($source, $feed));

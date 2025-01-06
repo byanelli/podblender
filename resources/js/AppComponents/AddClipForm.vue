@@ -4,6 +4,7 @@ import {computed, ref} from "vue";
 import axios, {AxiosResponse} from "axios";
 import routes from "@/routes";
 import {ClipMetadataResponse} from "@/types";
+import Panel from "@/Components/Panel.vue";
 
 const props = defineProps<{ feedId: number }>();
 
@@ -79,56 +80,55 @@ const addClipToFeed = () => {
 </script>
 
 <template>
-    <div class="bg-white shadow sm:rounded-lg">
-        <div class="px-4 py-5 sm:p-6">
-            <form v-if="display == 'form'" @submit.prevent="fetchMetadata">
-                <div v-if="hasError" class="rounded-md bg-red-50 p-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"
-                                 aria-hidden="true">
-                                <path fill-rule="evenodd"
-                                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                                      clip-rule="evenodd"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-red-800">There was an error processing your URL</h3>
-                            <div class="mt-2 text-sm text-red-700">
-                                <ul role="list" class="list-disc space-y-1 pl-5">
-                                    <li>{{ errorMessage }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <h3 class="text-base font-semibold leading-6 text-gray-900">Add audio clip</h3>
-
-                <div class="relative mt-2 rounded-md shadow-sm">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-                             class="w-5 h-5 text-gray-400">
-                            <path
-                                d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z"/>
-                            <path
-                                d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z"/>
+    <Panel>
+        <form v-if="display == 'form'" @submit.prevent="fetchMetadata">
+            <div v-if="hasError" class="rounded-md bg-red-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"
+                             aria-hidden="true">
+                            <path fill-rule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                                  clip-rule="evenodd"/>
                         </svg>
-
                     </div>
-                    <input required name="url" id="url"
-                           v-model="url"
-                           class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                           placeholder="https://www.youtube.com/watch?v=9ntPxdWAWq8">
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">There was an error processing your URL</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul role="list" class="list-disc space-y-1 pl-5">
+                                <li>{{ errorMessage }}</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div class="mt-5">
-                    <button type="submit"
-                            :disabled="isLoading"
-                            class="disabled:bg-gray-500 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-                    >
-                        Add
-                        <span :hidden="!isLoading">
+            <h3 class="text-base font-semibold leading-6 text-gray-900">Add audio clip</h3>
+
+            <div class="relative mt-2 rounded-md shadow-sm">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                         class="w-5 h-5 text-gray-400">
+                        <path
+                            d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z"/>
+                        <path
+                            d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z"/>
+                    </svg>
+
+                </div>
+                <input required name="url" id="url"
+                       v-model="url"
+                       class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                       placeholder="https://www.youtube.com/watch?v=9ntPxdWAWq8">
+            </div>
+
+            <div class="mt-5">
+                <button type="submit"
+                        :disabled="isLoading"
+                        class="disabled:bg-gray-500 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                >
+                    Add
+                    <span :hidden="!isLoading">
                             <svg aria-hidden="true"
                                  class="ml-3 w-4 h-4 text-gray-200 animate-spin dark:text-gray-600 fill-white"
                                  viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -140,23 +140,23 @@ const addClipToFeed = () => {
                                     fill="currentFill"/>
                             </svg>
                         </span>
-                    </button>
+                </button>
+            </div>
+        </form>
+        <div v-if="display == 'metadata'">
+            <dl class="divide-y divide-gray-100">
+                <div v-for="(value, key) in displayMetadata" class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+                    <dt class="text-sm font-medium leading-6 text-gray-900">{{key}}</dt>
+                    <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{value}}</dd>
                 </div>
-            </form>
-            <div v-if="display == 'metadata'">
-                <dl class="divide-y divide-gray-100">
-                    <div v-for="(value, key) in displayMetadata" class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                        <dt class="text-sm font-medium leading-6 text-gray-900">{{key}}</dt>
-                        <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{value}}</dd>
-                    </div>
-                </dl>
-                <form @submit.prevent="addClipToFeed">
-                    <div class="mt-5">
-                        <button type="submit"
-                                :disabled="isLoading"
-                                class="disabled:bg-gray-500 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
-                            Confirm
-                            <span id="add-clip-spinner" :hidden="!isLoading">
+            </dl>
+            <form @submit.prevent="addClipToFeed">
+                <div class="mt-5">
+                    <button type="submit"
+                            :disabled="isLoading"
+                            class="disabled:bg-gray-500 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                        Confirm
+                        <span id="add-clip-spinner" :hidden="!isLoading">
                                 <svg aria-hidden="true"
                                      class="ml-3 w-4 h-4 text-gray-200 animate-spin dark:text-gray-600 fill-white"
                                      viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -168,10 +168,9 @@ const addClipToFeed = () => {
                                         fill="currentFill"/>
                                 </svg>
                             </span>
-                        </button>
-                    </div>
-                </form>
-            </div>
+                    </button>
+                </div>
+            </form>
         </div>
-    </div>
+    </Panel>
 </template>

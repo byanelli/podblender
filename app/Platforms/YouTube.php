@@ -33,7 +33,7 @@ readonly class YouTube implements Platform
             title: $video->title,
             description: $video->description,
             canonicalUrl: "https://youtube.com/watch?v=$video->id",
-            publishedAt: $video->publishTime,
+            publishedAt: $video->publishedAt,
             source: $this->convertChannelMetadataToSourceMetadata($video->channel),
         );
     }

@@ -26,7 +26,7 @@ class YouTubeTest extends TestCase
             id: $videoId,
             title: $videoTitle = 'some video',
             description: $videoDescription = 'some description',
-            publishTime: $publishTime = now()->subDay()->roundSeconds(),
+            publishedAt: $publishTime = now()->subDay()->roundSeconds(),
             channel: new ChannelMetadata(
                 id: $channelId,
                 name: $channelName = 'some channel',
