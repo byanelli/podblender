@@ -51,7 +51,21 @@ console.log(props.feed);
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{feed.name}}</h2>
+            <h3 class="font-semibold text-xl text-gray-800 leading-tight">{{feed.name}}</h3>
+            <div class="mt-1 flex items-center gap-x-2 text-xs/5 text-gray-500">
+                <p v-if="feed.subscription != null" class="whitespace-nowrap">
+                    Subscription to {{ feed.subscription.name }} on {{ feed.subscription.platform_type.name }}
+                </p>
+                <p v-else class="whitespace-nowrap">
+                    Custom feed
+                </p>
+                <svg viewBox="0 0 2 2" class="size-0.5 fill-current">
+                    <circle cx="1" cy="1" r="1" />
+                </svg>
+                <p class="whitespace-nowrap">
+                    {{ feed.audio_clips.length }} {{ feed.audio_clips.length > 1 ? 'clips' : 'clip' }}
+                </p>
+            </div>
         </template>
 
         <ErrorPanel v-if="errorMessage != ''"
@@ -59,7 +73,7 @@ console.log(props.feed);
                     operation="deleting your clip" />
 
         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
-            <AddClipForm :feed-id="feed.id" @add-clip="reloadFeed"/>
+            <AddClipForm v-if="feed.subscription == null" :feed-id="feed.id" @add-clip="reloadFeed"/>
 
             <PanelList>
                 <PanelListItem v-for="clip in feed.audio_clips" :key="clip.id" :class="'flex items-center justify-between gap-x-6'">
@@ -102,6 +116,15 @@ console.log(props.feed);
                     </div>
 
                     <div class="flex flex-none items-center gap-x-4">
+                        <a
+                            target="_blank"
+                            class="hidden rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
+                            :href="clip.platform_url"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                            </svg>
+                        </a>
                         <button
                             @click="deleteClip(clip)"
                             class="hidden rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"

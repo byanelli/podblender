@@ -24,7 +24,12 @@ readonly class ShowFeed
     ): Response {
         $gate->authorizeView($feed);
 
-        $feed->load([Feed::REL_AUDIO_CLIPS => fn (Relation $q) => $q->orderByDesc(AudioClip::COL_CREATED_AT)]);
+        $feed->load([
+            Feed::REL_SUBSCRIPTION,
+            Feed::REL_AUDIO_CLIPS => function (Relation $q) {
+                return $q->orderByDesc(AudioClip::COL_CREATED_AT);
+            },
+        ]);
 
         return $views->feed($feed);
     }

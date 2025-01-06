@@ -7,9 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/rss/{feed:uuid}', Controllers\ShowRss::class)->name('rss');
 
 Route::middleware(Authenticate::class)->group(function () {
-    Route::get('/', Controllers\Welcome::class)->name('welcome');
-
-    Route::get('/dashboard', Controllers\Home::class)->name('dashboard');
+    Route::get('/', Controllers\Home::class)->name('dashboard');
 
     Route::get('/feeds/{feed}', Controllers\ShowFeed::class)->name('showFeed');
 
