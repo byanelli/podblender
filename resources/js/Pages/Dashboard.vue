@@ -19,6 +19,8 @@ type Feed = {
     uuid: string,
     name: string,
     description: string,
+    subscription_id: number|null,
+    audio_clips_count: number,
 }
 
 const title: string = 'Feeds';
@@ -69,42 +71,59 @@ const deleteFeed = (feed: Feed) => {
             </Panel>
 
             <PanelList>
-                <PanelListItem v-for="feed in user.feeds" :key="feed.id"  :class="'flex items-center justify-between gap-x-6'">
+                <PanelListItem
+                    v-for="feed in user.feeds"
+                    :key="feed.id"
+                    :class="'flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-y-2 sm:gap-x-6'"
+                >
+                    <!-- First Div: Metadata -->
                     <div class="min-w-0">
                         <Link :href="routes.feed(feed.id)" class="flex items-start gap-x-3">
-                            <p class="text-sm font-semibold leading-6 text-gray-900">{{feed.name}}</p>
+                            <p class="text-sm font-semibold leading-6 text-gray-900">{{ feed.name }}</p>
                         </Link>
                         <div class="mt-1 flex items-center gap-x-2 text-xs/5 text-gray-500">
-                            <p class="whitespace-nowrap">
-                                Some metadata here
-                            </p>
+                            <p class="whitespace-nowrap">{{ feed.subscription_id == null ? 'Custom' : 'Subscription' }}</p>
                             <svg viewBox="0 0 2 2" class="size-0.5 fill-current">
                                 <circle cx="1" cy="1" r="1" />
                             </svg>
-                            <p class="whitespace-nowrap">
-                                Some more metadata here
-                            </p>
+                            <p class="whitespace-nowrap">{{ feed.audio_clips_count }} clips <!--todo: pluralize--></p>
                         </div>
                     </div>
 
+                    <!-- Second Div: Buttons -->
                     <div class="flex flex-none items-center gap-x-4">
                         <a
                             target="_blank"
-                            class="hidden sm:inline-flex items-center space-x-2 rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                            class="inline-flex items-center space-x-2 rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                             :href="routes.rss(feed.uuid)"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12.75 19.5v-.75a7.5 7.5 0 0 0-7.5-7.5H4.5m0-6.75h.75c7.87 0 14.25 6.38 14.25 14.25v.75M6 18.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M12.75 19.5v-.75a7.5 7.5 0 0 0-7.5-7.5H4.5m0-6.75h.75c7.87 0 14.25 6.38 14.25 14.25v.75M6 18.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+                                />
                             </svg>
                             <span>RSS</span>
                         </a>
                         <button
                             @click="deleteFeed(feed)"
-                            class="hidden rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
-                            :disabled="false /*isLoading*/"
+                            class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                            :disabled="isLoading"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="1.5"
+                                stroke="currentColor"
+                                class="size-5"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                                />
                             </svg>
                         </button>
                     </div>
