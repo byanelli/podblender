@@ -5,8 +5,6 @@
 Podblender lets you add audio clips from around the Web to a custom podcast feed that you can subscribe to in your preferred podcast app. It currently supports:
 
 * YouTube videos
-* Twitch VOD and clips
-* SoundCloud tracks
 * Web articles (text extraction using [Apify](https://apify.com/lukaskrivka/article-extractor-smart), text-to-speech conversion using [OpenAI Whisper](https://platform.openai.com/docs/guides/speech-to-text))
 
 Why would you want this? It turns out there's a lot of interesting audio content (lectures, interviews, etc.) trapped on video sharing sites. I would prefer to listen to this content in my podcast player, with all its affordances for listening to long audio files: controls to scrub forward/back 30s, dynamic range compression for when speakers are recorded at inconsistent levels, ability to skip silences, etc. Also, even when a video platform (e.g., YouTube) lets you cache videos on mobile devices, it often forces you to cache the video along with the audio track even if you don't intend to watch, wasting space on your device. 

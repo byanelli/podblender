@@ -37,37 +37,4 @@ class PlatformTypeResolverTest extends TestCase
         }
     }
 
-    #[Test]
-    public function it_resolves_soundcloud()
-    {
-        /** @var PlatformTypeResolver $resolver */
-        $resolver = $this->app->make(PlatformTypeResolver::class);
-
-        $urls = [
-            'https://soundcloud.com/kendrick-lamar-music/not-like-us',
-            'https://on.soundcloud.com/TAdDMxWcmzCW8TMi8',
-        ];
-
-        foreach ($urls as $url) {
-            $this->assertEquals(PlatformType::SoundCloud, $resolver->fromUrl($url), "Failed to identify as a SoundCloud URL: $url");
-        }
-    }
-
-    #[Test]
-    public function it_resolves_twitch()
-    {
-        /** @var PlatformTypeResolver $resolver */
-        $resolver = $this->app->make(PlatformTypeResolver::class);
-
-        $urls = [
-            'https://twitch.tv/video/12345',
-            'https://twitch.tv/clip/FooBarBaz-lwjeiwljg90gj3wgjijr',
-            'https://twitch.com/video/12345',
-            'https://twitch.com/clip/FooBarBaz-lwjeiwljg90gj3wgjijr',
-        ];
-
-        foreach ($urls as $url) {
-            $this->assertEquals(PlatformType::Twitch, $resolver->fromUrl($url), "Failed to identify as a Twitch URL: $url");
-        }
-    }
 }

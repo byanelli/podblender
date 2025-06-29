@@ -17,16 +17,6 @@ readonly class PlatformTypeResolver
         'youtube-nocookie.com',
     ];
 
-    const array SOUNDCLOUD_HOSTS = [
-        'soundcloud.com',
-        'on.soundcloud.com',
-    ];
-
-    const array TWITCH_HOSTS = [
-        'twitch.tv',
-        'twitch.com',
-    ];
-
     public function fromUrl(string $url): PlatformType
     {
         $url = $this->fixUrlSchemeAndHost($url);
@@ -35,8 +25,6 @@ readonly class PlatformTypeResolver
 
         return match (true) {
             (in_array($host, self::YOUTUBE_HOSTS)) => PlatformType::YouTube,
-            (in_array($host, self::SOUNDCLOUD_HOSTS)) => PlatformType::SoundCloud,
-            (in_array($host, self::TWITCH_HOSTS)) => PlatformType::Twitch,
             default => PlatformType::Web,
         };
     }

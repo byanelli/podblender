@@ -27,7 +27,7 @@ readonly class AddClipToFeed
     ): void {
         $gate->authorizeUpdate($feed);
 
-        // Detect the platform type (e.g. YouTube or SoundCloud) from the URL.
+        // Detect the platform type (e.g. YouTube or Web) from the URL.
         $platformType = $platformTypeResolver->fromUrl($request->getUrl());
 
         $platform = $platformFactory->make($platformType);
