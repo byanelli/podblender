@@ -4,8 +4,6 @@ namespace App\Models;
 
 use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
-use Based\Fluent\Fluent;
-use Based\Fluent\Relations\Relation;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,71 +15,50 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Traits\Tappable;
 
 /**
+ * @property int $id
+ * @property int $audio_source_id
+ * @property string $description
+ * @property CarbonImmutable $published_at
+ * @property int $duration
+ * @property string $guid
+ * @property string $platform_url
+ * @property ClipProcessingState $processing_state
+ * @property int $size
+ * @property string $storage_path
+ * @property string $title
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
+ * @property AudioSource $audioSource
+ * @property Collection<int, Feed> $feeds
  * @property string $audio_url {@see self::audioUrl()}
  * @property string $formatted_time {@see self::formattedTime()}
  * @property PlatformType $platform_type {@see self::platformType()}
  */
 class AudioClip extends Model
 {
-    use Fluent, HasFactory, Tappable;
+    use HasFactory, Tappable;
+
+    protected $casts = [
+        'processing_state' => ClipProcessingState::class,
+    ];
 
     protected $with = [
         self::REL_AUDIO_SOURCE,
     ];
 
-    public int $audio_source_id;
     const string COL_AUDIO_SOURCE_ID = 'audio_source_id';
-
-    public CarbonImmutable $created_at;
     const string COL_CREATED_AT = 'created_at';
-
-    public string $description;
     const string COL_DESCRIPTION = 'description';
-
-    public CarbonImmutable $published_at;
     const string COL_PUBLISHED_AT = 'published_at';
-
-    public int $duration;
     const string COL_DURATION = 'duration';
-
-    public string $guid;
     const string COL_GUID = 'guid';
-
-    public int $id;
     const string COL_ID = 'id';
-
-    public string $platform_url;
     const string COL_PLATFORM_URL = 'platform_url';
-
-    public ClipProcessingState $processing_state;
     const string COL_PROCESSING_STATE = 'processing_state';
-
-    public int $size;
     const string COL_SIZE = 'size';
-
-    public string $storage_path;
     const string COL_STORAGE_PATH = 'storage_path';
-
-    public string $title;
     const string COL_TITLE = 'title';
-
-    public CarbonImmutable $updated_at;
-    const string COL_UPDATED_AT = 'updated_at';
-
-    /**
-     * @see self::audioSource()
-     */
-    #[Relation]
-    public AudioSource $audioSource;
     const string REL_AUDIO_SOURCE = 'audioSource';
-
-    /**
-     * @see self::feeds()
-     *
-     * @var Collection<int, Feed> $feeds
-     */
-    #[Relation]
-    public Collection $feeds;
     const string REL_FEEDS = 'feeds';
 
     public function audioSource(): BelongsTo
