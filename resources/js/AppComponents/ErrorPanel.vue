@@ -3,9 +3,9 @@ defineProps<{message: string, operation: string}>()
 </script>
 
 <template>
-    <div class="rounded-md shadow bg-red-50 border border-red-200 p-4">
+    <div class="rounded-md shadow-sm bg-red-50 border border-red-200 p-4">
         <div class="flex">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
                 <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"
                      aria-hidden="true">
                     <path fill-rule="evenodd"

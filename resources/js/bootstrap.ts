@@ -21,7 +21,7 @@ import Pusher from 'pusher-js';
 
 declare global {
     interface Window {
-        Echo: Echo;
+        Echo: Echo<'reverb'>;
         Pusher: typeof Pusher;
     }
 }
@@ -29,7 +29,7 @@ declare global {
 window.Pusher = Pusher;
 
 const options = {
-    broadcaster: 'reverb',
+    broadcaster: 'reverb' as const,
     key: import.meta.env.VITE_REVERB_APP_KEY,
     wsHost: import.meta.env.VITE_REVERB_SERVER_HOST,
     wsPort: import.meta.env.VITE_REVERB_SERVER_PORT ?? 80,

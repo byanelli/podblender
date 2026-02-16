@@ -76,7 +76,7 @@ const createNewFeed = () => {
     <form @submit.prevent="createNewFeed">
         <div v-if="hasError" class="rounded-md bg-red-50 p-4">
             <div class="flex">
-                <div class="flex-shrink-0">
+                <div class="shrink-0">
                     <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"
                          aria-hidden="true">
                         <path fill-rule="evenodd"
@@ -104,7 +104,7 @@ const createNewFeed = () => {
                        type="radio"
                        :checked="newFeedType === 'custom'"
                        @click="newFeedType = 'custom'"
-                       class="relative size-4 appearance-none rounded-full border border-gray-300 bg-white before:absolute before:inset-1 before:rounded-full before:bg-white checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:before:bg-gray-400 forced-colors:appearance-auto forced-colors:before:hidden [&:not(:checked)]:before:hidden" />
+                       class="relative size-4 appearance-none rounded-full border border-gray-300 bg-white before:absolute before:inset-1 before:rounded-full before:bg-white checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:before:bg-gray-400 forced-colors:appearance-auto forced-colors:before:hidden not-checked:before:hidden" />
                 <label for="feed-type-custom" class="ml-2 block text-sm/6 font-medium text-gray-900">
                     Custom
                 </label>
@@ -114,14 +114,14 @@ const createNewFeed = () => {
                        type="radio"
                        :checked="newFeedType === 'subscription'"
                        @click="newFeedType = 'subscription'"
-                       class="relative size-4 appearance-none rounded-full border border-gray-300 bg-white before:absolute before:inset-1 before:rounded-full before:bg-white checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:before:bg-gray-400 forced-colors:appearance-auto forced-colors:before:hidden [&:not(:checked)]:before:hidden" />
+                       class="relative size-4 appearance-none rounded-full border border-gray-300 bg-white before:absolute before:inset-1 before:rounded-full before:bg-white checked:border-indigo-600 checked:bg-indigo-600 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:border-gray-300 disabled:bg-gray-100 disabled:before:bg-gray-400 forced-colors:appearance-auto forced-colors:before:hidden not-checked:before:hidden" />
                 <label for="feed-type-subscription" class="ml-2 block text-sm/6 font-medium text-gray-900">
                     Subscription
                 </label>
             </div>
         </div>
 
-        <div class="relative mt-2 rounded-md shadow-sm">
+        <div class="relative mt-2 rounded-md shadow-xs">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
                      class="w-5 h-5 text-gray-400">
@@ -134,7 +134,7 @@ const createNewFeed = () => {
                    class="block w-full rounded-md border-0 py-1.5 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                    placeholder="Name">
         </div>
-        <div v-if="newFeedType == 'subscription'" class="relative mt-2 rounded-md shadow-sm">
+        <div v-if="newFeedType == 'subscription'" class="relative mt-2 rounded-md shadow-xs">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
                      class="w-5 h-5 text-gray-400">
@@ -155,7 +155,7 @@ const createNewFeed = () => {
         <div class="mt-5">
             <button type="submit"
                     :disabled="isLoading"
-                    class="disabled:bg-gray-500 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                    class="disabled:bg-gray-500 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
             >
                 Add
                 <span :hidden="!isLoading">

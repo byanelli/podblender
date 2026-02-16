@@ -94,7 +94,7 @@ const deleteFeed = (feed: Feed) => {
                     <div class="flex flex-none items-center gap-x-4">
                         <a
                             target="_blank"
-                            class="inline-flex items-center space-x-2 rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                            class="inline-flex items-center space-x-2 rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                             :href="routes.rss(feed.uuid)"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
@@ -108,7 +108,7 @@ const deleteFeed = (feed: Feed) => {
                         </a>
                         <button
                             @click="deleteFeed(feed)"
-                            class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                            class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-xs ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                             :disabled="isLoading"
                         >
                             <svg
