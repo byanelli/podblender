@@ -2,18 +2,12 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use BYanelli\Roma\Request\Attributes\Rule;
 
-class CreateCustomFeedRequest extends FormRequest
+readonly class CreateCustomFeedRequest
 {
-    public function rules(): array
-    {
-        return [
-            'name' => 'required|string|max:255',
-        ];
-    }
-
-    public function getFeedName(): string {
-        return $this->string('name');
-    }
+    public function __construct(
+        #[Rule('max:255')]
+        public string $name,
+    ) {}
 }

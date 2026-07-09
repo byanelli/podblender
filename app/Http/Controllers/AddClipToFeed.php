@@ -6,9 +6,10 @@ use App\Actions\FindOrCreateAudioClip;
 use App\Auth\Access\Gate;
 use App\Http\Requests\AudioClipUrlRequest;
 use App\Models\Feed;
-use App\Platforms\Exceptions\MetadataException;
 use App\Platforms\Contracts\PlatformFactory;
+use App\Platforms\Exceptions\MetadataException;
 use App\Platforms\PlatformTypeResolver;
+use BYanelli\Roma\Request\ContextualBinding\Request;
 use Illuminate\Auth\Access\AuthorizationException;
 
 readonly class AddClipToFeed
@@ -22,18 +23,18 @@ readonly class AddClipToFeed
         PlatformTypeResolver $platformTypeResolver,
         PlatformFactory $platformFactory,
         FindOrCreateAudioClip $findOrCreateAudioClip,
-        AudioClipUrlRequest $request,
+        #[Request] AudioClipUrlRequest $request,
         Feed $feed,
     ): void {
         $gate->authorizeUpdate($feed);
 
         // Detect the platform type (e.g. YouTube or Web) from the URL.
-        $platformType = $platformTypeResolver->fromUrl($request->getUrl());
+        $platformType = $platformTypeResolver->fromUrl($request->url);
 
         $platform = $platformFactory->make($platformType);
 
         // Download the metadata from the platform.
-        $metadata = $platform->getClipMetadata($request->getUrl());
+        $metadata = $platform->getClipMetadata($request->url);
 
         // Find an existing audio clip in the database or create a new one from the metadata.
         $clip = $findOrCreateAudioClip($platformType, $metadata);

@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Requests\Auth\ProfileUpdateRequest;
+use App\Models\User;
+use BYanelli\Roma\Request\ContextualBinding\Request as RomaRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,15 +31,28 @@ class ProfileBaseController
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(#[RomaRequest] ProfileUpdateRequest $data, Request $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // Email uniqueness ignoring the current user depends on the authenticated
+        // user's id at runtime, so it can't be a static Roma rule attribute and is
+        // validated here instead.
+        Validator::make(
+            ['email' => $data->email],
+            ['email' => [Rule::unique(User::class)->ignore($user->id)]],
+        )->validate();
+
+        $user->fill([
+            'name' => $data->name,
+            'email' => $data->email,
+        ]);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
         return Redirect::route('profile.edit');
     }

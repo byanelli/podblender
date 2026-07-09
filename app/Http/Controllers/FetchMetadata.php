@@ -7,6 +7,7 @@ use App\Http\Responses\MetadataResponse;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Exceptions\MetadataException;
 use App\Platforms\PlatformTypeResolver;
+use BYanelli\Roma\Request\ContextualBinding\Request;
 use Illuminate\Contracts\Support\Responsable;
 
 readonly class FetchMetadata
@@ -17,9 +18,9 @@ readonly class FetchMetadata
     public function __invoke(
         PlatformTypeResolver $platformTypeResolver,
         PlatformFactory $platformFactory,
-        AudioClipUrlRequest $request
+        #[Request] AudioClipUrlRequest $request
     ): Responsable {
-        $url = $request->getUrl();
+        $url = $request->url;
 
         $platformType = $platformTypeResolver->fromUrl($url);
 
@@ -27,7 +28,7 @@ readonly class FetchMetadata
 
         $metadata = $platform->getClipMetadata($url);
 
-        return new MetadataResponse(
+        return MetadataResponse::fromDomain(
             metadata: $metadata,
             platformType: $platformType,
         );

@@ -2,19 +2,12 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use BYanelli\Roma\Request\Attributes\Rule;
 
-class AudioClipUrlRequest extends FormRequest
+readonly class AudioClipUrlRequest
 {
-    public function rules(): array
-    {
-        return [
-            'url' => 'required|string|url:http,https|max:255',
-        ];
-    }
-
-    public function getUrl(): string
-    {
-        return $this->post('url');
-    }
+    public function __construct(
+        #[Rule(['url:http,https', 'max:255'])]
+        public string $url,
+    ) {}
 }

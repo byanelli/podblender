@@ -2,23 +2,15 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use BYanelli\Roma\Request\Attributes\Rule;
 
-class CreateSubscriptionRequest extends FormRequest
+readonly class CreateSubscriptionRequest
 {
-    public function rules(): array
-    {
-        return [
-            'url' => 'required|string|url:http,https|max:255',
-            'name' => 'required|string|max:255',
-        ];
-    }
+    public function __construct(
+        #[Rule(['url:http,https', 'max:255'])]
+        public string $url,
 
-    public function getUrl(): string {
-        return $this->string('url');
-    }
-
-    public function getFeedName(): string {
-        return $this->string('name');
-    }
+        #[Rule('max:255')]
+        public string $name,
+    ) {}
 }

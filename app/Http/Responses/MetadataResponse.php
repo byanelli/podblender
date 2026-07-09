@@ -2,17 +2,32 @@
 
 namespace App\Http\Responses;
 
-use App\Enums\IsResponsable;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
-use Illuminate\Contracts\Support\Responsable;
+use BYanelli\Roma\Response\Response;
+use Illuminate\Support\Carbon;
 
-readonly class MetadataResponse implements Responsable
+class MetadataResponse extends Response
 {
-    use IsResponsable;
-
     public function __construct(
-        public ClipMetadata $metadata,
-        public PlatformType $platformType,
+        public ClipMetadataResponse $metadata,
+        public PlatformTypeResponse $platformType,
     ) {}
+
+    public static function fromDomain(ClipMetadata $metadata, PlatformType $platformType): self
+    {
+        return new self(
+            metadata: new ClipMetadataResponse(
+                title: $metadata->title,
+                description: $metadata->description,
+                canonicalUrl: $metadata->canonicalUrl,
+                publishedAt: Carbon::instance($metadata->publishedAt)->utc(),
+                source: new SourceMetadataResponse(
+                    name: $metadata->source->name,
+                    canonicalUrl: $metadata->source->canonicalUrl,
+                ),
+            ),
+            platformType: PlatformTypeResponse::fromEnum($platformType),
+        );
+    }
 }

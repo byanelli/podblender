@@ -2,22 +2,22 @@
 
 namespace App\Http\Requests\Auth;
 
-use App\Models\User;
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use BYanelli\Roma\Request\Attributes\Rule;
 
-class ProfileUpdateRequest extends FormRequest
+/**
+ * Profile fields for an update.
+ *
+ * Email uniqueness (ignoring the current user) is enforced in
+ * ProfileBaseController::update, because it depends on the authenticated user's
+ * id at runtime and so can't be expressed as a static Roma rule attribute.
+ */
+readonly class ProfileUpdateRequest
 {
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
-     */
-    public function rules(): array
-    {
-        return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
-        ];
-    }
+    public function __construct(
+        #[Rule('max:255')]
+        public string $name,
+
+        #[Rule(['lowercase', 'email', 'max:255'])]
+        public string $email,
+    ) {}
 }
