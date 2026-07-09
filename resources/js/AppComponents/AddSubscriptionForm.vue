@@ -1,8 +1,7 @@
 <script setup lang="ts">
 
 import {computed, ref} from "vue";
-import {SourceMetadataResponse} from "@/types";
-import axios, {AxiosResponse} from "axios";
+import axios from "axios";
 import routes from "@/routes";
 
 const emit = defineEmits<{ (e: 'createNewFeed'): void }>();

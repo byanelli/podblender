@@ -3,7 +3,7 @@
 import {computed, ref} from "vue";
 import axios, {AxiosResponse} from "axios";
 import routes from "@/routes";
-import {ClipMetadataResponse} from "@/types";
+import {MetadataResponseBody} from "@/roma";
 import Panel from "@/Components/Panel.vue";
 
 const props = defineProps<{ feedId: number }>();
@@ -14,7 +14,7 @@ type Display = 'form' | 'metadata';
 
 const errorMessage = ref<string>('');
 const url = ref<string>('');
-const metadataResponse = ref<ClipMetadataResponse|null>(null);
+const metadataResponse = ref<MetadataResponseBody|null>(null);
 
 const display = ref<Display>('form');
 const isLoading = ref<boolean>(false);
@@ -41,7 +41,7 @@ const fetchMetadata = () => {
     axios.post(routes.api.fetchMetadata, {
         url: url.value
     })
-        .then((response: AxiosResponse<ClipMetadataResponse>) => {
+        .then((response: AxiosResponse<MetadataResponseBody>) => {
             isLoading.value = false;
             display.value = 'metadata';
 

@@ -4,7 +4,7 @@ import {Head, router} from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import AddClipForm from "@/AppComponents/AddClipForm.vue";
 import events from "@/events";
-import {AudioClip, ClipMetadataResponse, Feed} from "@/types";
+import {AudioClip, Feed} from "@/types";
 import moment from "moment/moment";
 import axios, {AxiosResponse} from "axios";
 import routes from "@/routes";
