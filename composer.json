@@ -5,7 +5,7 @@
     "keywords": ["laravel", "framework"],
     "license": "Elastic-2.0",
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "ext-zip": "*",
         "byanelli/roma": "@dev",
         "guzzlehttp/guzzle": "^7.2",

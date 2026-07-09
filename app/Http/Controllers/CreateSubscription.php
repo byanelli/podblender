@@ -23,13 +23,11 @@ readonly class CreateSubscription
         #[Request] CreateSubscriptionRequest $request,
         #[CurrentUser] User $user,
     ): void {
-        $url = $request->url;
-
-        $platformType = $platformTypeResolver->fromUrl($url);
+        $platformType = $platformTypeResolver->fromUrl($request->url);
 
         $platform = $platformFactory->make($platformType);
 
-        $metadata = $platform->getSourceMetadata($url);
+        $metadata = $platform->getSourceMetadata($request->url);
 
         $source = $findOrCreateAudioSource($platformType, $metadata);
 

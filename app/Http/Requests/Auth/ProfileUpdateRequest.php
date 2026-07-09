@@ -2,22 +2,24 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use BYanelli\Roma\Request\Attributes\Rule;
+use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Validation\Rule as ValidationRule;
+use Illuminate\Validation\Rules\Unique;
 
-/**
- * Profile fields for an update.
- *
- * Email uniqueness (ignoring the current user) is enforced in
- * ProfileBaseController::update, because it depends on the authenticated user's
- * id at runtime and so can't be expressed as a static Roma rule attribute.
- */
 readonly class ProfileUpdateRequest
 {
     public function __construct(
         #[Rule('max:255')]
         public string $name,
 
-        #[Rule(['lowercase', 'email', 'max:255'])]
+        #[Rule('lowercase', 'email', 'max:255', self::uniqueEmail(...))]
         public string $email,
     ) {}
+
+    public static function uniqueEmail(#[CurrentUser] User $user): Unique
+    {
+        return ValidationRule::unique(User::class, 'email')->ignore($user->id);
+    }
 }

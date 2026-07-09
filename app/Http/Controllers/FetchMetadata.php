@@ -20,13 +20,11 @@ readonly class FetchMetadata
         PlatformFactory $platformFactory,
         #[Request] AudioClipUrlRequest $request
     ): Responsable {
-        $url = $request->url;
-
-        $platformType = $platformTypeResolver->fromUrl($url);
+        $platformType = $platformTypeResolver->fromUrl($request->url);
 
         $platform = $platformFactory->make($platformType);
 
-        $metadata = $platform->getClipMetadata($url);
+        $metadata = $platform->getClipMetadata($request->url);
 
         return MetadataResponse::fromDomain(
             metadata: $metadata,
