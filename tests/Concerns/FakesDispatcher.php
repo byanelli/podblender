@@ -25,6 +25,16 @@ trait FakesDispatcher
                 $this->dispatch($command);
             }
 
+            public function dispatchAfterResponse($command, $handler = null)
+            {
+                $this->dispatch($command);
+            }
+
+            public function chain($jobs = null)
+            {
+                throw new \Exception('Not implemented');
+            }
+
             public function hasCommandHandler($command)
             {
                 return false;
@@ -68,6 +78,16 @@ trait FakesDispatcher
             public function dispatchNow($command, $handler = null)
             {
                 $this->dispatch($command);
+            }
+
+            public function dispatchAfterResponse($command, $handler = null)
+            {
+                $this->dispatch($command);
+            }
+
+            public function chain($jobs = null)
+            {
+                throw new \Exception('Not implemented');
             }
 
             public function hasCommandHandler($command)
