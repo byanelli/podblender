@@ -1,5 +1,12 @@
 // This file is auto-generated. Do not edit by hand.
 
+export const PlatformTypeEnum = {
+  YouTube: { name: 'YouTube', value: 1 },
+  Web: { name: 'Web', value: 2 },
+} as const;
+
+export type PlatformTypeEnum = typeof PlatformTypeEnum[keyof typeof PlatformTypeEnum];
+
 export interface AudioClipUrlRequestBody {
   url: string;
 }
@@ -23,12 +30,7 @@ export interface CreateSubscriptionRequestBody {
 
 export interface MetadataResponseBody {
   metadata: ClipMetadata;
-  platformType: PlatformTypeResponse;
-}
-
-export interface PlatformTypeResponse {
-  name: string;
-  value: number;
+  platformType: PlatformTypeEnum;
 }
 
 export interface SourceMetadata {

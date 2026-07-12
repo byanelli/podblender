@@ -26,7 +26,7 @@ readonly class FetchMetadata
 
         $metadata = $platform->getClipMetadata($request->url);
 
-        return MetadataResponse::fromDomain(
+        return new MetadataResponse(
             metadata: $metadata,
             platformType: $platformType,
         );
