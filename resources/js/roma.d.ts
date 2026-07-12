@@ -4,12 +4,12 @@ export interface AudioClipUrlRequestBody {
   url: string;
 }
 
-export interface ClipMetadataResponse {
+export interface ClipMetadata {
   title: string;
   description: string;
   canonicalUrl: string;
   publishedAt: string;
-  source: SourceMetadataResponse;
+  source: SourceMetadata;
 }
 
 export interface CreateCustomFeedRequestBody {
@@ -22,7 +22,7 @@ export interface CreateSubscriptionRequestBody {
 }
 
 export interface MetadataResponseBody {
-  metadata: ClipMetadataResponse;
+  metadata: ClipMetadata;
   platformType: PlatformTypeResponse;
 }
 
@@ -31,7 +31,7 @@ export interface PlatformTypeResponse {
   value: number;
 }
 
-export interface SourceMetadataResponse {
+export interface SourceMetadata {
   name: string;
   canonicalUrl: string;
 }
