@@ -2,10 +2,9 @@
 
 namespace App\Apis\ArticleExtractor;
 
-use App\Enums\IsArrayable;
+use BYanelli\Roma\Response\IsArrayable;
 use DateTimeInterface;
 use Illuminate\Contracts\Support\Arrayable;
-use ReflectionObject;
 
 readonly class Article implements Arrayable
 {

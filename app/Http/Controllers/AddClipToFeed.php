@@ -9,7 +9,6 @@ use App\Models\Feed;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Exceptions\MetadataException;
 use App\Platforms\PlatformTypeResolver;
-use BYanelli\Roma\Request\ContextualBinding\Request;
 use Illuminate\Auth\Access\AuthorizationException;
 
 readonly class AddClipToFeed
@@ -23,7 +22,7 @@ readonly class AddClipToFeed
         PlatformTypeResolver $platformTypeResolver,
         PlatformFactory $platformFactory,
         FindOrCreateAudioClip $findOrCreateAudioClip,
-        #[Request] AudioClipUrlRequest $request,
+        AudioClipUrlRequest $request,
         Feed $feed,
     ): void {
         $gate->authorizeUpdate($feed);

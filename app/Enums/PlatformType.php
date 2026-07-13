@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use BYanelli\Roma\Response\IsArrayable;
 use BYanelli\Roma\TypeScript\Attributes\TypeScriptName;
 use Illuminate\Contracts\Support\Arrayable;
 

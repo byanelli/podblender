@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use BYanelli\Roma\Response\IsArrayable;
 use Illuminate\Contracts\Support\Arrayable;
 
 enum ClipProcessingState: int implements Arrayable

@@ -1,10 +1,5 @@
 <?php
 
-use App\Http\Requests\AudioClipUrlRequest;
-use App\Http\Requests\CreateCustomFeedRequest;
-use App\Http\Requests\CreateSubscriptionRequest;
-use App\Http\Responses\MetadataResponse;
-
 return [
 
     'typescript' => [
@@ -12,17 +7,16 @@ return [
         // Where the generated .d.ts file is written.
         'output' => resource_path('js/roma.d.ts'),
 
-        // Request classes to generate interfaces for.
-        'requests' => [
-            AudioClipUrlRequest::class,
-            CreateCustomFeedRequest::class,
-            CreateSubscriptionRequest::class,
+        // Directories scanned to auto-detect request and response classes.
+        // Requests are classes marked with a class-level #[Request]; responses
+        // are classes extending Response (or using IsResponsable).
+        'discover' => [
+            app_path(),
         ],
 
-        // Response classes to generate interfaces for.
-        'responses' => [
-            MetadataResponse::class,
-        ],
+        // Additional classes to include beyond what discovery finds.
+        'requests' => [],
+        'responses' => [],
 
     ],
 

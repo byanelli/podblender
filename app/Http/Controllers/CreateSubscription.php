@@ -9,7 +9,6 @@ use App\Models\Feed;
 use App\Models\User;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\PlatformTypeResolver;
-use BYanelli\Roma\Request\ContextualBinding\Request;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\Bus\Dispatcher;
 
@@ -20,7 +19,7 @@ readonly class CreateSubscription
         PlatformFactory $platformFactory,
         Dispatcher $dispatcher,
         FindOrCreateAudioSource $findOrCreateAudioSource,
-        #[Request] CreateSubscriptionRequest $request,
+        CreateSubscriptionRequest $request,
         #[CurrentUser] User $user,
     ): void {
         $platformType = $platformTypeResolver->fromUrl($request->url);

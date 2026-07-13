@@ -3,7 +3,9 @@
 namespace App\Http\Requests;
 
 use BYanelli\Roma\Request\Attributes\Rule;
+use BYanelli\Roma\Request\ContextualBinding\Request;
 
+#[Request]
 readonly class AudioClipUrlRequest
 {
     public function __construct(
