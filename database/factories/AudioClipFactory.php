@@ -30,6 +30,10 @@ class AudioClipFactory extends Factory
             AudioClip::COL_SIZE => 1_000_000,
             AudioClip::COL_STORAGE_PATH => $this->faker->uuid,
             AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,
+
+            // A clip always gets this from the platform's metadata, so a clip without one isn't a realistic clip to
+            // test against. Deliberately not the same as created_at, which is the point: the two dates differ.
+            AudioClip::COL_PUBLISHED_AT => $this->faker->dateTimeBetween('-2 years', '-1 day'),
         ];
     }
 }

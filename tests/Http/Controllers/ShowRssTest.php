@@ -44,7 +44,7 @@ class ShowRssTest extends TestCase
         $this->assertStringContainsString("<title>{$h($clip->title)}</title>", $response);
         $this->assertStringContainsString("<link>{$clip->platform_url}</link>", $response);
         $this->assertStringContainsString("<description>{$h($clip->description)}</description>", $response);
-        $this->assertStringContainsString("<pubDate>{$clip->created_at->format(DateTimeInterface::RSS)}</pubDate>", $response);
+        $this->assertStringContainsString("<pubDate>{$clip->published_at->format(DateTimeInterface::RSS)}</pubDate>", $response);
         $this->assertStringContainsString("<itunes:duration>$clip->formatted_time</itunes:duration>", $response);
         $this->assertStringContainsString("<enclosure url=\"$clip->audio_url", $response);
         $this->assertStringContainsString("<guid isPermaLink=\"false\">$clip->guid</guid>", $response);

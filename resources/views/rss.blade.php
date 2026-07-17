@@ -23,7 +23,9 @@
                 <link>{{$clip->platform_url}}</link>
                 <description>{{$clip->description}}</description>
                 {{--todo: this should come from the feed/clip pivot--}}
-                <pubDate>{{$clip->created_at->format(\DateTimeInterface::RSS)}}</pubDate>
+                @if($clip->published_at)
+                    <pubDate>{{$clip->published_at->format(\DateTimeInterface::RSS)}}</pubDate>
+                @endif
                 <enclosure url="{{$clip->audio_url}}"
                            type="audio/mpeg" length="{{$clip->size}}"/>
                 <itunes:duration>{{$clip->formatted_time}}</itunes:duration>
