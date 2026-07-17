@@ -36,8 +36,11 @@ return [
             'secret' => env('REVERB_APP_SECRET'),
             'app_id' => env('REVERB_APP_ID'),
             'options' => [
-                'host' => env('REVERB_SERVER_HOST'),
-                'port' => env('REVERB_SERVER_PORT', 443),
+                // REVERB_SERVER_HOST is the address Reverb *binds* to, which is 0.0.0.0: every interface. That's not
+                // an address anything can connect *to*, so it doesn't belong here. This is the app talking to Reverb
+                // as a client, so it wants REVERB_HOST, the same address the browser uses.
+                'host' => env('REVERB_HOST'),
+                'port' => env('REVERB_PORT', 443),
                 'scheme' => env('REVERB_SCHEME', 'https'),
                 'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
             ],

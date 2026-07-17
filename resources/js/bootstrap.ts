@@ -28,16 +28,20 @@ declare global {
 
 window.Pusher = Pusher;
 
+/**
+ * Note that these are REVERB_HOST and REVERB_PORT rather than REVERB_SERVER_HOST and REVERB_SERVER_PORT. The latter
+ * pair is the address Reverb binds to, which is 0.0.0.0: every interface at once. That isn't somewhere a browser can
+ * connect to, so what's wanted here is the address Reverb is reachable at, which is the same one the back end uses to
+ * broadcast in config/broadcasting.php.
+ */
 const options = {
     broadcaster: 'reverb' as const,
     key: import.meta.env.VITE_REVERB_APP_KEY,
-    wsHost: import.meta.env.VITE_REVERB_SERVER_HOST,
-    wsPort: import.meta.env.VITE_REVERB_SERVER_PORT ?? 80,
-    wssPort: import.meta.env.VITE_REVERB_SERVER_PORT ?? 443,
+    wsHost: import.meta.env.VITE_REVERB_HOST,
+    wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+    wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
     forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
     enabledTransports: ['ws', 'wss'],
 };
-
-console.log(options);
 
 window.Echo = new Echo(options);
