@@ -30,6 +30,10 @@ class Feed extends Model
 {
     use HasFactory, HasUuid;
 
+    protected $casts = [
+        'subscribed_at' => 'datetime',
+    ];
+
     const string COL_NAME = 'name';
     const string COL_USER_ID = 'user_id';
     const string COL_SUBSCRIPTION_ID = 'subscription_id';

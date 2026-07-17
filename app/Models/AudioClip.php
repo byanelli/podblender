@@ -40,6 +40,11 @@ class AudioClip extends Model
 
     protected $casts = [
         'processing_state' => ClipProcessingState::class,
+
+        // Without this, published_at is a string, and comparing it against a date — which is the whole point of the
+        // column — silently evaluates to false rather than failing. Note that the @property annotation above has
+        // always claimed this is a CarbonImmutable; now it is one.
+        self::COL_PUBLISHED_AT => 'datetime',
     ];
 
     protected $with = [
