@@ -144,6 +144,43 @@ class ClientTest extends TestCase
     }
 
     #[Test]
+    public function it_asks_the_proxy_for_a_new_address_on_every_attempt()
+    {
+        Sleep::fake();
+
+        $sessions = [];
+
+        Process::fake(['*' => function (PendingProcess $process) use (&$sessions) {
+            foreach ($process->command as $argument) {
+                if (Str::startsWith($argument, '--proxy=') && preg_match('/-sessid-(\w+)-/', $argument, $matches)) {
+                    $sessions[] = $matches[1];
+                }
+            }
+
+            return Process::result(exitCode: 1, errorOutput: 'Sign in to confirm you’re not a bot');
+        }]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        try {
+            $client->downloadAudio(self::URL);
+        } catch (ProcessFailedException) {
+            // Expected: this test is about how it retried, not that it failed.
+        }
+
+        $this->assertNotEmpty($sessions, 'Nothing was downloaded through the proxy.');
+
+        // Retrying a download that a proxy just failed to make is only worth doing from a different address, and
+        // asking for a new proxy URL per attempt is what gets us one.
+        $this->assertSameSize(
+            $sessions,
+            array_unique($sessions),
+            'Two attempts shared a session, and so would have retried from the same address.',
+        );
+    }
+
+    #[Test]
     public function it_gives_up_when_the_residential_proxy_fails_too()
     {
         Sleep::fake();

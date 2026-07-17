@@ -45,4 +45,15 @@ return [
             'password' => env('BRIGHT_DATA_RESIDENTIAL_PASSWORD'),
         ],
     ],
+
+    'oxylabs' => [
+        'residential' => [
+            'user' => env('OXYLABS_USERNAME'),
+            'password' => env('OXYLABS_PASSWORD'),
+
+            // The country to take an exit address in. YouTube serves some countries poorly or not at all, and an
+            // address near the content is faster.
+            'country' => env('OXYLABS_COUNTRY', 'US'),
+        ],
+    ],
 ];

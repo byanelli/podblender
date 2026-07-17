@@ -103,15 +103,18 @@ readonly class Client
         ];
     }
 
+    /**
+     * Note that this asks the proxy for a URL each time it's called, which is once per download attempt. That's what
+     * gives a rotating pool one address per download rather than one per request, which a download can't survive.
+     */
     private function getProxyArgs(ProxyConfig $proxy): array
     {
-        return [
-            "--proxy={$proxy->getProtocol()}://{$proxy->getUser()}:{$proxy->getPassword()}@{$proxy->getHost()}:{$proxy->getPort()}",
+        return array_filter([
+            "--proxy={$proxy->getUrlForDownload()}",
 
-            // Proxies terminate TLS with their own certificate, so we can't verify it. This is only passed on the
-            // proxied path, never when talking to YouTube directly.
-            '--no-check-certificates', // todo: make configurable per-proxy
-        ];
+            // Only for proxies that can't leave TLS end-to-end. Never passed when talking to YouTube directly.
+            $proxy->requiresInsecureTls() ? '--no-check-certificates' : null,
+        ]);
     }
 
     private function getCacheKey(string $id): string

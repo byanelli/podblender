@@ -11,8 +11,8 @@ use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClientContract;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Platforms\Contracts\PlatformFactory as PlatformFactoryContract;
 use App\Platforms\PlatformFactory;
-use App\Proxies\BrightDataResidentialProxyConfig;
 use App\Proxies\Contracts\ResidentialProxyConfig;
+use App\Proxies\OxylabsResidentialProxyConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Cache\RateLimiter;
@@ -47,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
         $this->app->bind(YouTubeDataClientContract::class, YouTubeDataClient::class);
 
-        $this->app->bind(ResidentialProxyConfig::class, BrightDataResidentialProxyConfig::class);
+        $this->app->bind(ResidentialProxyConfig::class, OxylabsResidentialProxyConfig::class);
 
         $this->registerDownloadRateLimiter();
 
