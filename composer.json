@@ -50,7 +50,9 @@
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",
             "@php ./scripts/install-yt-dlp.php",
-            "@php ./scripts/install-ffmpeg.php"
+            "@php ./scripts/install-ffmpeg.php",
+            "@php ./scripts/install-deno.php",
+            "@php ./scripts/install-bgutil-pot.php"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"

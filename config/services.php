@@ -39,11 +39,6 @@ return [
         'key' => env('YOUTUBE_DATA_API_KEY'),
     ],
 
-    'ip_vanish' => [
-        'user' => env('IP_VANISH_USER'),
-        'password' => env('IP_VANISH_PASSWORD'),
-    ],
-
     'bright_data' => [
         'residential' => [
             'user' => env('BRIGHT_DATA_RESIDENTIAL_USER'),

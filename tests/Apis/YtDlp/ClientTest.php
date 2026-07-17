@@ -5,20 +5,56 @@
 namespace Tests\Apis\YtDlp;
 
 use App\Apis\YtDlp\Client;
+use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class ClientTest extends TestCase
 {
+    private const URL = 'https://youtube.com/watch?v=wp4i5g490wg7u';
+
+    /**
+     * Match the download yt-dlp runs when it goes straight to YouTube. The absence of a proxy argument is the thing
+     * being matched here: it's what sits between the pacing arguments and the audio ones on the direct path.
+     */
+    private const DIRECT_DOWNLOAD = "*'--sleep-requests=1.5' '--extract-audio'*";
+
+    private const PROXIED_DOWNLOAD = "*'--proxy=*";
+
+    /**
+     * Assert that a command yt-dlp was run with can actually get past YouTube. Without a JavaScript runtime and a
+     * proof-of-origin token provider, yt-dlp doesn't fail outright: it quietly falls back to whatever formats it can
+     * still reach, until the day it can't reach any. That's a regression worth catching in a test rather than in a
+     * podcast feed that stopped updating.
+     */
+    private function assertCommandCanReachYouTube(array $command): void
+    {
+        $arguments = collect($command);
+
+        $this->assertTrue(
+            $arguments->contains(fn (string $a) => Str::startsWith($a, '--js-runtimes=deno:')),
+            'yt-dlp was run without being told where to find Deno.',
+        );
+
+        $this->assertTrue(
+            $arguments->contains(fn (string $a) => Str::startsWith($a, '--plugin-dirs=')),
+            'yt-dlp was run without the proof-of-origin token provider plugin directory.',
+        );
+
+        $this->assertTrue(
+            $arguments->contains(fn (string $a) => Str::contains($a, 'youtubepot-bgutilcli:cli_path=')),
+            'yt-dlp was run without being told where to find the proof-of-origin token executable.',
+        );
+    }
+
     #[Test]
     public function it_gets_metadata()
     {
-        $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
-
-        Process::fake(["'./yt-dlp' '--dump-json' '$url'" => Process::result(json_encode($fakeMetadata = [
+        Process::fake(["*'--dump-json' '".self::URL."'" => Process::result(json_encode($fakeMetadata = [
             'id' => 1,
             'title' => 'Some video',
             'description' => 'Lorem ipsum',
@@ -30,19 +66,24 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $metadata = $client->getMetadata($url);
+        $metadata = $client->getMetadata(self::URL);
 
         $this->assertEquals($fakeMetadata, $metadata);
+
+        // Extracting metadata talks to YouTube just like downloading does, so it needs the same arguments.
+        Process::assertRan(function (PendingProcess $process) {
+            $this->assertCommandCanReachYouTube($process->command);
+
+            return true;
+        });
     }
 
     #[Test]
-    public function it_downloads_audio()
+    public function it_downloads_audio_directly_without_a_proxy()
     {
-        $url = 'https://youtube.com/watch?v=wp4i5g490wg7u';
-
         $file = '';
 
-        Process::fake(["'./yt-dlp' '*' '--extract-audio' '--no-check-certificates' '*' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use (&$file) {
+        Process::fake([self::DIRECT_DOWNLOAD => function (PendingProcess $process) use (&$file) {
             $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));
 
             touch($file);
@@ -53,8 +94,69 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $client->downloadAudio($url);
+        $client->downloadAudio(self::URL);
 
         $this->assertFileExists($file);
+
+        // A residential connection is the most credible address we have, so a download should only ever be proxied
+        // after going directly has already failed.
+        Process::assertRan(function (PendingProcess $process) {
+            $this->assertCommandCanReachYouTube($process->command);
+
+            $this->assertFalse(
+                collect($process->command)->contains(fn (string $a) => Str::startsWith($a, '--proxy=')),
+                'The first attempt at a download was proxied.',
+            );
+
+            return true;
+        });
+    }
+
+    #[Test]
+    public function it_falls_back_to_the_residential_proxy_when_downloading_directly_fails()
+    {
+        // The client backs off between attempts, which we don't want to actually wait for.
+        Sleep::fake();
+
+        $file = '';
+
+        Process::fake([
+            self::DIRECT_DOWNLOAD => Process::result(exitCode: 1, errorOutput: 'Sign in to confirm you’re not a bot'),
+
+            self::PROXIED_DOWNLOAD => function (PendingProcess $process) use (&$file) {
+                $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));
+
+                touch($file);
+
+                return Process::result();
+            },
+        ]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $client->downloadAudio(self::URL);
+
+        $this->assertFileExists($file);
+
+        Process::assertRan(fn (PendingProcess $process) => collect($process->command)
+            ->contains(fn (string $a) => Str::startsWith($a, '--proxy=')));
+    }
+
+    #[Test]
+    public function it_gives_up_when_the_residential_proxy_fails_too()
+    {
+        Sleep::fake();
+
+        Process::fake([
+            '*' => Process::result(exitCode: 1, errorOutput: 'Sign in to confirm you’re not a bot'),
+        ]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->expectException(ProcessFailedException::class);
+
+        $client->downloadAudio(self::URL);
     }
 }

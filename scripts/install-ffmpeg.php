@@ -1,60 +1,24 @@
 <?php
 
-$uname = php_uname();
+require_once __DIR__.'/lib/vendored-binary.php';
 
-[$downloadZipUrl, $unzippedFileCorrectSha256] = (function () use ($uname) {
-    $base = 'https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v6.1/';
+/**
+ * ffmpeg does the transcoding to mp3 once yt-dlp has fetched the audio.
+ */
+$version = '6.1';
 
-    if (str_contains($uname, 'Darwin')) {
-        return [
-            $base.'ffmpeg-6.1-macos-64.zip',
-            'ca8945e5eef946a246d29c943b21f10db345a2ef050dd7ea1c77f877277dc2fa',
-        ];
-    } else if (str_contains($uname, 'Linux')) {
-        return [
-            $base.'ffmpeg-6.1-linux-64.zip',
-            'ffcd56ce5ef50c4d36d675b0ee80674f5a0869f94746460ff5d058a33cbd3128',
-        ];
-    } else {
-        throw new RuntimeException('Unsupported operating system');
-    }
-})();
-$downloadedZipPath = './vendor/bin/ffmpeg.zip';
+// ffbinaries publishes one x86_64 build per OS. On Apple Silicon it runs under Rosetta, which is slower than a native
+// build but works; there is no arm64 Linux build, so that combination has to be installed some other way.
+[$asset, $sha256] = match ($platform = VendoredBinary::platform()) {
+    'linux-x86_64' => ['ffmpeg-6.1-linux-64.zip', 'ffcd56ce5ef50c4d36d675b0ee80674f5a0869f94746460ff5d058a33cbd3128'],
+    'macos-x86_64', 'macos-aarch64' => ['ffmpeg-6.1-macos-64.zip', 'ca8945e5eef946a246d29c943b21f10db345a2ef050dd7ea1c77f877277dc2fa'],
+    default => throw new RuntimeException("No ffmpeg build available for $platform"),
+};
 
-$unzippedFileParent = './vendor/bin';
-$unzippedFileName = 'ffmpeg';
-$unzippedFilePath = $unzippedFileParent.'/'.$unzippedFileName;
-
-$downloadedZipExists = fn () => file_exists($downloadedZipPath);
-$unzippedFileExists = fn () => file_exists($unzippedFilePath);
-
-$unzippedFileSha256 = $unzippedFileExists()
-    ? hash('sha256', file_get_contents($unzippedFilePath))
-    : null;
-
-if ($unzippedFileExists() && ($unzippedFileSha256 != $unzippedFileCorrectSha256)) {
-    echo "ffmpeg is invalid. Deleting and re-downloading\n";
-    unlink($unzippedFilePath) || throw new \RuntimeException('Error removing file');
-}
-
-if (! $unzippedFileExists()) {
-    echo "Downloading ffmpeg.zip from $downloadZipUrl\n";
-
-    $result = shell_exec("curl -L $downloadZipUrl --output $downloadedZipPath");
-    ($result === false || ! $downloadedZipExists()) && throw new \RuntimeException('Error downloading file');
-
-    $zip = new ZipArchive();
-    ($zip->open($downloadedZipPath) === true) || throw new \RuntimeException('Error opening zip archive');
-
-    $zip->extractTo($unzippedFileParent, [$unzippedFileName]);
-
-    file_exists($unzippedFilePath) || throw new \RuntimeException('Error unzipping file');
-
-    echo "Successfully downloaded ffmpeg from $downloadZipUrl\n";
-}
-
-if (! is_executable($unzippedFilePath)) {
-    echo "Making ffmpeg executable at: $unzippedFilePath\n";
-    chmod($unzippedFilePath, 0755);
-    is_executable($unzippedFilePath) || throw new \RuntimeException('Error making ffmpeg executable');
-}
+VendoredBinary::installFromZip(
+    directory: VendoredBinary::BIN_DIR,
+    member: 'ffmpeg',
+    sha256: $sha256,
+    url: "https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v$version/$asset",
+    executable: true,
+);

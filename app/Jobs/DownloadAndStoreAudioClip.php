@@ -9,26 +9,68 @@ use App\Models\AudioClip;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Exceptions\ContentUnavailableException;
 use App\Platforms\Exceptions\DownloadException;
+use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\RateLimited;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 
 class DownloadAndStoreAudioClip implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * Names both the lock that keeps downloads from overlapping and the rate limiter that spaces them out. The limiter
+     * itself is registered in App\Providers\AppServiceProvider.
+     */
+    public const string THROTTLE = 'audio-clip-downloads';
+
+    /**
+     * Downloading is the one thing here that can get us blocked, so only a genuine failure should count against the
+     * job. See retryUntil() for why attempts aren't a useful bound.
+     */
+    public int $maxExceptions = 1;
+
     public int $timeout;
 
     public function __construct(private readonly AudioClip $clip)
     {
-        // Allow this job to run for up to an hour, because the download may involve exponential backoffs and failovers
-        // to VPNs/proxies. The timeout also includes time spent within this job storing the file and updating the
-        // database.
+        // Allow this job to run for up to an hour, because the download may involve exponential backoffs and a
+        // failover to a residential proxy. The timeout also includes time spent within this job storing the file and
+        // updating the database.
         $this->timeout = 3600;
+    }
+
+    /**
+     * What YouTube reacts badly to is a burst of downloads, and subscribing to a channel can create a lot of clips at
+     * once. Horizon runs several worker processes, so without these two the backlog would go out as fast as the
+     * workers could pick it up: concurrently, and from one IP address.
+     */
+    public function middleware(): array
+    {
+        return [
+            // Never download two clips at the same time, no matter how many workers are free.
+            (new WithoutOverlapping(self::THROTTLE))->releaseAfter(30)->expireAfter($this->timeout),
+
+            // Having serialized them, leave a gap between one download and the next.
+            new RateLimited(self::THROTTLE),
+        ];
+    }
+
+    /**
+     * Both middlewares above release the job back onto the queue rather than failing it, and a large backlog means a
+     * job may be released many times before its turn comes around. That makes the number of attempts a meaningless
+     * measure of whether this job is failing, so bound it by wall-clock time and let $maxExceptions bound the errors.
+     * Laravel ignores the attempt limit entirely when this method is present.
+     */
+    public function retryUntil(): CarbonImmutable
+    {
+        return CarbonImmutable::now()->addHours(12);
     }
 
     /**
