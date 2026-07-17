@@ -26,8 +26,10 @@ readonly class ShowFeed
 
         $feed->load([
             Feed::REL_SUBSCRIPTION,
+            // Newest episode first, by when it was published rather than when we happened to download it. Those two
+            // orders only agree when clips arrive in the order they were published, which a backfill isn't.
             Feed::REL_AUDIO_CLIPS => function (Relation $q) {
-                return $q->orderByDesc(AudioClip::COL_CREATED_AT);
+                return $q->orderByDesc(AudioClip::COL_PUBLISHED_AT);
             },
         ]);
 
