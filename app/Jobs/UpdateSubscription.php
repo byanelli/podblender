@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Actions\FindOrCreateAudioClip;
 use App\Models\AudioClip;
+use App\Models\AudioClipFeed;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Platforms\Contracts\ClipMetadata;
@@ -90,8 +91,16 @@ class UpdateSubscription implements ShouldQueue
                 $this->earliestPublicationTimeFor($subscriber),
             );
 
-            // Attach all clips that aren't already attached.
-            $subscriber->audioClips()->syncWithoutDetaching($clipsToAttach->pluck(AudioClip::COL_ID));
+            // Attach all clips that aren't already attached. A subscription presents a clip at the date the platform
+            // published it: that's what makes a series of lectures play in the order they were given, however long
+            // after the fact they were downloaded.
+            $subscriber->audioClips()->syncWithoutDetaching(
+                $clipsToAttach
+                    ->mapWithKeys(fn (AudioClip $clip) => [
+                        $clip->id => [AudioClipFeed::COL_PUBLISHED_AT => $clip->published_at],
+                    ])
+                    ->all()
+            );
         }
     }
 

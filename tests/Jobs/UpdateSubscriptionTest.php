@@ -3,10 +3,12 @@
 namespace Tests\Jobs;
 
 use App\Jobs\UpdateSubscription;
+use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
+use Carbon\CarbonImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesDispatcher;
 use Tests\Concerns\FakesPlatform;
@@ -80,5 +82,74 @@ class UpdateSubscriptionTest extends TestCase
         $this->assertDatabaseCount('audio_clips', 2);
 
         $this->assertEquals(2, $subscriber->audioClips()->count());
+    }
+
+    #[Test]
+    public function it_presents_a_subscribed_clip_at_the_date_the_platform_published_it()
+    {
+        /** @var AudioSource $subscription */
+        $subscription = AudioSource::factory()->create();
+        $subscriber = Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
+            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subYears(2),
+        ]);
+
+        $this->fakeNoOpDispatcher();
+
+        $this->fakePlatform(clipMetadataList: [
+            new ClipMetadata(
+                title: 'Lecture 1',
+                description: 'Description',
+                canonicalUrl: 'https://youtube.com/watch?v=clip1',
+                publishedAt: $publishedAt = CarbonImmutable::now()->subYear()->roundSeconds(),
+                source: new SourceMetadata(
+                    name: $subscription->name,
+                    canonicalUrl: $subscription->platform_url,
+                ),
+            ),
+        ]);
+
+        $this->app->call([new UpdateSubscription($subscription, $subscriber), 'handle']);
+
+        /** @var AudioClip $clip */
+        $clip = $subscriber->audioClips()->first();
+
+        // Not the date it was downloaded, which is now: a lecture given a year ago is a year old in a subscription,
+        // however long it took us to fetch it. It's what keeps a series in the order it was given.
+        $this->assertEquals($publishedAt, $clip->pivot->published_at);
+    }
+
+    #[Test]
+    public function it_backfills_clips_published_before_the_subscription_date()
+    {
+        /** @var AudioSource $subscription */
+        $subscription = AudioSource::factory()->create();
+        $subscriber = Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
+            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDay(),
+        ]);
+
+        $this->fakeNoOpDispatcher();
+
+        $this->fakePlatform(clipMetadataList: [
+            new ClipMetadata(
+                title: 'An old lecture',
+                description: 'Description',
+                canonicalUrl: 'https://youtube.com/watch?v=old',
+                // Published long before anyone subscribed, so ordinarily this would be left out entirely.
+                publishedAt: CarbonImmutable::now()->subMonths(6)->roundSeconds(),
+                source: new SourceMetadata(
+                    name: $subscription->name,
+                    canonicalUrl: $subscription->platform_url,
+                ),
+            ),
+        ]);
+
+        $backfillSince = CarbonImmutable::now()->subYear();
+
+        $this->app->call([new UpdateSubscription($subscription, $subscriber, $backfillSince), 'handle']);
+
+        // Creating the clip isn't enough: it has to end up attached to the feed that asked for the backfill.
+        $this->assertEquals(1, $subscriber->audioClips()->count());
     }
 }

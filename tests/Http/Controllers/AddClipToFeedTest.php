@@ -8,6 +8,7 @@ use App\Models\Feed;
 use App\Models\User;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesDispatcher;
@@ -88,6 +89,45 @@ class AddClipToFeedTest extends TestCase
 
         $this->assertEquals(1, AudioClip::count());
         $this->assertTrue($feed->audioClips()->first()->is($clip));
+    }
+
+    #[Test]
+    public function it_presents_a_clip_added_by_hand_as_published_now()
+    {
+        $this->travelTo($now = CarbonImmutable::parse('2026-01-02 03:04:05'));
+
+        // A talk from years ago, of the sort someone finds and adds to a feed by hand.
+        $publishedAt = CarbonImmutable::parse('2023-05-06 07:08:09');
+
+        $this->fakePlatform(
+            clipMetadata: new ClipMetadata(
+                title: 'An old talk',
+                description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                canonicalUrl: $url = 'https://youtube.com/watch?v=lijwliejfwlef',
+                publishedAt: $publishedAt,
+                source: new SourceMetadata(
+                    name: 'Some channel',
+                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf'
+                ),
+            ),
+        );
+
+        $this->fakeNoOpDispatcher();
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+
+        $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $url]);
+
+        /** @var AudioClip $clip */
+        $clip = $feed->audioClips()->first();
+
+        // The clip keeps the date the platform published it...
+        $this->assertEquals($publishedAt, $clip->published_at);
+
+        // ...but this feed presents it as new, so that it arrives at the top of a podcast app rather than three years
+        // down the listing where nobody would ever come across it.
+        $this->assertEquals($now, $clip->pivot->published_at);
     }
 
     #[Test]

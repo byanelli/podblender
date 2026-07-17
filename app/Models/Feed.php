@@ -50,7 +50,9 @@ class Feed extends Model
 
     public function audioClips(): BelongsToMany
     {
-        return $this->belongsToMany(AudioClip::class);
+        return $this->belongsToMany(AudioClip::class)
+            ->using(AudioClipFeed::class)
+            ->withPivot(AudioClipFeed::COL_PUBLISHED_AT);
     }
 
     public function audioClipsFinishedProcessing(): BelongsToMany

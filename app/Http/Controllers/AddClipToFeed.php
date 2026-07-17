@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Actions\FindOrCreateAudioClip;
 use App\Auth\Access\Gate;
 use App\Http\Requests\AudioClipUrlRequest;
+use App\Models\AudioClipFeed;
 use App\Models\Feed;
+use Carbon\CarbonImmutable;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Exceptions\MetadataException;
 use App\Platforms\PlatformTypeResolver;
@@ -38,7 +40,11 @@ readonly class AddClipToFeed
         // Find an existing audio clip in the database or create a new one from the metadata.
         $clip = $findOrCreateAudioClip($platformType, $metadata);
 
-        // Attach the clip to the feed.
-        $feed->audioClips()->attach($clip);
+        // Attach the clip to the feed, presented as published now. Unlike a subscription, a clip added by hand is new
+        // to this feed whenever it went up on the platform: someone adding a talk from three years ago wants it at the
+        // top of their podcast app, not three years down the listing where they'll never see it.
+        $feed->audioClips()->attach($clip, [
+            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::now(),
+        ]);
     }
 }
