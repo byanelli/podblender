@@ -39,13 +39,6 @@ return [
         'key' => env('YOUTUBE_DATA_API_KEY'),
     ],
 
-    'bright_data' => [
-        'residential' => [
-            'user' => env('BRIGHT_DATA_RESIDENTIAL_USER'),
-            'password' => env('BRIGHT_DATA_RESIDENTIAL_PASSWORD'),
-        ],
-    ],
-
     'oxylabs' => [
         'residential' => [
             'user' => env('OXYLABS_USERNAME'),
