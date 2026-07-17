@@ -8,6 +8,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
         Providers\AppServiceProvider::class,
+        Providers\DevCommandsServiceProvider::class,
         \Illuminate\Broadcasting\BroadcastServiceProvider::class,
     ])
     ->withRouting(
