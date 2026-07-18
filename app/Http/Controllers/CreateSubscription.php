@@ -7,26 +7,22 @@ use App\Http\Requests\CreateSubscriptionRequest;
 use App\Jobs\UpdateSubscription;
 use App\Models\Feed;
 use App\Models\User;
-use App\Platforms\Contracts\PlatformFactory;
-use App\Platforms\PlatformTypeResolver;
+use App\Platforms\Platforms;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\Bus\Dispatcher;
 
 readonly class CreateSubscription
 {
     public function __invoke(
-        PlatformTypeResolver $platformTypeResolver,
-        PlatformFactory $platformFactory,
+        Platforms $platforms,
         Dispatcher $dispatcher,
         FindOrCreateAudioSource $findOrCreateAudioSource,
         CreateSubscriptionRequest $request,
         #[CurrentUser] User $user,
     ): void {
-        $platformType = $platformTypeResolver->fromUrl($request->url);
+        $platformType = $platforms->typeForUrl($request->url);
 
-        $platform = $platformFactory->make($platformType);
-
-        $metadata = $platform->getSourceMetadata($request->url);
+        $metadata = $platforms->for($platformType)->getSourceMetadata($request->url);
 
         $source = $findOrCreateAudioSource($platformType, $metadata);
 

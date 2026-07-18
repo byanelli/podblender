@@ -1,0 +1,70 @@
+<?php
+
+namespace App\Platforms;
+
+use App\Concerns\FixesUrls;
+use App\Enums\PlatformType;
+use App\Platforms\Contracts\Platform;
+use App\Platforms\Contracts\SubscribablePlatform;
+use App\Platforms\Exceptions\PlatformNotSubscribableException;
+use Illuminate\Contracts\Container\Container;
+use League\Uri\Uri;
+
+final class Platforms
+{
+    use FixesUrls;
+
+    /**
+     * The hosts we treat as YouTube. This is the single authoritative list; YouTube::getIdFromUrl references it too.
+     */
+    public const array YOUTUBE_HOSTS = [
+        'youtube.com',
+        'm.youtube.com',
+        'youtu.be',
+        'youtube-nocookie.com',
+    ];
+
+    /**
+     * Which concrete class serves each platform type. Resolved lazily from the container (see for()) so a request only
+     * ever constructs the one platform it actually uses, rather than every platform up front.
+     *
+     * @var array<int, class-string<Platform>>
+     */
+    private const array PLATFORMS = [
+        PlatformType::YouTube->value => YouTube::class,
+        PlatformType::Web->value => Web::class,
+    ];
+
+    public function __construct(private readonly Container $container) {}
+
+    public function forUrl(string $url): Platform
+    {
+        return $this->for($this->typeForUrl($url));
+    }
+
+    public function for(PlatformType $type): Platform
+    {
+        return $this->container->make(self::PLATFORMS[$type->value]);
+    }
+
+    /**
+     * @throws PlatformNotSubscribableException
+     */
+    public function subscribableFor(PlatformType $type): SubscribablePlatform
+    {
+        $platform = $this->for($type);
+
+        if (! $platform instanceof SubscribablePlatform) {
+            throw new PlatformNotSubscribableException($type);
+        }
+
+        return $platform;
+    }
+
+    public function typeForUrl(string $url): PlatformType
+    {
+        $host = Uri::fromBaseUri($this->fixUrlSchemeAndHost($url))->getHost();
+
+        return in_array($host, self::YOUTUBE_HOSTS) ? PlatformType::YouTube : PlatformType::Web;
+    }
+}

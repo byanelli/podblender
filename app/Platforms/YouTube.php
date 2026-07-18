@@ -10,15 +10,15 @@ use App\Apis\YtDlp\MembersOnlyContentException;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
-use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
+use App\Platforms\Contracts\SubscribablePlatform;
 use App\Platforms\Exceptions\ContentUnavailableException;
-use App\Platforms\Exceptions\DownloadException;
-use App\Platforms\Exceptions\MetadataException;
+use App\Platforms\Exceptions\PlatformException;
+use App\Platforms\Exceptions\PlatformOperation;
 use Illuminate\Support\Collection;
 use League\Uri\Uri;
 
-readonly class YouTube implements Platform
+readonly class YouTube implements SubscribablePlatform
 {
     use FixesUrls;
 
@@ -45,7 +45,7 @@ readonly class YouTube implements Platform
                 $this->youTubeData->getVideoMetadata($this->getIdFromUrl($clipUrl))
             );
         } catch (\Exception $e) {
-            throw new MetadataException(PlatformType::YouTube, $e);
+            throw new PlatformException(PlatformType::YouTube, PlatformOperation::Metadata, $e);
         }
     }
 
@@ -55,7 +55,7 @@ readonly class YouTube implements Platform
 
         $uri = Uri::fromBaseUri($url);
 
-        if (! collect(['youtube.com', 'm.youtube.com', 'youtu.be', 'youtube-nocookie.com'])->contains($uri->getHost())) {
+        if (! collect(Platforms::YOUTUBE_HOSTS)->contains($uri->getHost())) {
             throw new \RuntimeException("Invalid host for YouTube URL: {$uri->getHost()}");
         }
 
@@ -98,7 +98,7 @@ readonly class YouTube implements Platform
         } catch (MembersOnlyContentException $e) {
             throw new ContentUnavailableException;
         } catch (\Exception $e) {
-            throw new DownloadException(PlatformType::YouTube, $e);
+            throw new PlatformException(PlatformType::YouTube, PlatformOperation::Download, $e);
         }
     }
 

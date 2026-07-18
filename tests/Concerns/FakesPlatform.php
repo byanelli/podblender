@@ -2,11 +2,11 @@
 
 namespace Tests\Concerns;
 
-use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
-use App\Platforms\Contracts\Platform;
-use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Contracts\SourceMetadata;
+use App\Platforms\Contracts\SubscribablePlatform;
+use App\Platforms\Web;
+use App\Platforms\YouTube;
 use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
@@ -22,7 +22,7 @@ trait FakesPlatform
         ?string $audioPath = null,
         ?string $audioContent = null,
     ): void {
-        $platform = new readonly class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent) implements Platform
+        $platform = new readonly class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent) implements SubscribablePlatform
         {
             public function __construct(
                 private ?ClipMetadata $clipMetadata = null,
@@ -58,14 +58,9 @@ trait FakesPlatform
             }
         };
 
-        $this->app->bind(PlatformFactory::class, fn () => new readonly class($platform) implements PlatformFactory
-        {
-            public function __construct(private Platform $platform) {}
-
-            public function make(PlatformType $platformType): Platform
-            {
-                return $this->platform;
-            }
-        });
+        // Bind the fake against every concrete platform so the Platforms service resolves it from the container no
+        // matter which type a URL maps to. It's a SubscribablePlatform so subscribableFor() accepts it too.
+        $this->app->instance(YouTube::class, $platform);
+        $this->app->instance(Web::class, $platform);
     }
 }

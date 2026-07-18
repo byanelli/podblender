@@ -9,8 +9,8 @@ use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
-use App\Platforms\Exceptions\DownloadException;
-use App\Platforms\Exceptions\MetadataException;
+use App\Platforms\Exceptions\PlatformException;
+use App\Platforms\Exceptions\PlatformOperation;
 use Illuminate\Http\Client\Factory;
 use League\Uri\Uri;
 use Spatie\Regex\Regex;
@@ -43,7 +43,7 @@ readonly class Web implements Platform
                 ),
             );
         } catch (\Exception $e) {
-            throw new MetadataException(PlatformType::Web, $e);
+            throw new PlatformException(PlatformType::Web, PlatformOperation::Metadata, $e);
         }
     }
 
@@ -70,12 +70,7 @@ readonly class Web implements Platform
 
             return $this->whisper->convertTextToSpeech($article->text);
         } catch (\Exception $e) {
-            throw new DownloadException(PlatformType::Web, $e);
+            throw new PlatformException(PlatformType::Web, PlatformOperation::Download, $e);
         }
-    }
-
-    public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
-    {
-        // TODO: Implement getMetadataForAllClipsPublishedSince() method.
     }
 }

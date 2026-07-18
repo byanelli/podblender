@@ -2,10 +2,14 @@
 
 namespace App\Platforms\Contracts;
 
+use BYanelli\Roma\Response\IsArrayable;
 use DateTimeInterface;
+use Illuminate\Contracts\Support\Arrayable;
 
-readonly class ClipMetadata
+readonly class ClipMetadata implements Arrayable
 {
+    use IsArrayable;
+
     public function __construct(
         public string $title,
         public string $description,

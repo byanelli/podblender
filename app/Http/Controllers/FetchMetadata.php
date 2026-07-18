@@ -4,26 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AudioClipUrlRequest;
 use App\Http\Responses\MetadataResponse;
-use App\Platforms\Contracts\PlatformFactory;
-use App\Platforms\Exceptions\MetadataException;
-use App\Platforms\PlatformTypeResolver;
+use App\Platforms\Exceptions\PlatformException;
+use App\Platforms\Platforms;
 use Illuminate\Contracts\Support\Responsable;
 
 readonly class FetchMetadata
 {
     /**
-     * @throws MetadataException
+     * @throws PlatformException
      */
     public function __invoke(
-        PlatformTypeResolver $platformTypeResolver,
-        PlatformFactory $platformFactory,
+        Platforms $platforms,
         AudioClipUrlRequest $request
     ): Responsable {
-        $platformType = $platformTypeResolver->fromUrl($request->url);
+        $platformType = $platforms->typeForUrl($request->url);
 
-        $platform = $platformFactory->make($platformType);
-
-        $metadata = $platform->getClipMetadata($request->url);
+        $metadata = $platforms->for($platformType)->getClipMetadata($request->url);
 
         return new MetadataResponse(
             metadata: $metadata,

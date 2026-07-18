@@ -5,6 +5,7 @@ namespace Tests\Http\Controllers;
 use App\Models\User;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
+use DateTimeInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\Concerns\FakesPlatform;
 use Tests\TestCase;
@@ -40,8 +41,9 @@ class ShowMetadataTest extends TestCase
                 'title' => $title,
                 'description' => $description,
                 'canonicalUrl' => $url,
-                // todo: why is this insane looking format the default datetime serialization?
-                'publishedAt' => $publishedAt->toIso8601ZuluString('microsecond'),
+                // roma serializes DateTimeInterface with the ATOM format by default (see IsArrayable::normalizeValue),
+                // e.g. 2026-07-16T12:34:56+00:00.
+                'publishedAt' => $publishedAt->format(DateTimeInterface::ATOM),
                 'source' => [
                     'name' => $sourceName,
                     'canonicalUrl' => $sourceUrl,

@@ -6,9 +6,9 @@ use App\Apis\Ffmpeg\Contracts\Client as Ffmpeg;
 use App\Enums\ClipProcessingState;
 use App\Events\FinishedProcessingClip;
 use App\Models\AudioClip;
-use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Exceptions\ContentUnavailableException;
-use App\Platforms\Exceptions\DownloadException;
+use App\Platforms\Exceptions\PlatformException;
+use App\Platforms\Platforms;
 use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -74,10 +74,10 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     }
 
     /**
-     * @throws DownloadException
+     * @throws PlatformException
      */
     public function handle(
-        PlatformFactory $platformFactory,
+        Platforms $platforms,
         Filesystem $storage,
         Ffmpeg $ffmpeg,
         Dispatcher $events,
@@ -86,7 +86,7 @@ class DownloadAndStoreAudioClip implements ShouldQueue
             // Load related feeds (we'll need these later to dispatch events).
             $this->clip->load(AudioClip::REL_FEEDS, AudioClip::REL_AUDIO_SOURCE);
 
-            $platform = $platformFactory->make($this->clip->platform_type);
+            $platform = $platforms->for($this->clip->platform_type);
 
             // Download the audio from the platform into a temporary file and open the downloaded file.
             // todo: handle ContentUnavailable exception, mark content permanently unavailable

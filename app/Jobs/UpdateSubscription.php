@@ -8,7 +8,8 @@ use App\Models\AudioClipFeed;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Platforms\Contracts\ClipMetadata;
-use App\Platforms\Contracts\PlatformFactory;
+use App\Platforms\Exceptions\PlatformNotSubscribableException;
+use App\Platforms\Platforms;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -34,8 +35,11 @@ class UpdateSubscription implements ShouldQueue
         $this->timeout = 1800;
     }
 
+    /**
+     * @throws PlatformNotSubscribableException
+     */
     public function handle(
-        PlatformFactory $platformFactory,
+        Platforms $platforms,
         FindOrCreateAudioClip $findOrCreateAudioClip,
     ): void {
         // No point in running this job if there are no subscribers.
@@ -66,7 +70,7 @@ class UpdateSubscription implements ShouldQueue
             ? $earliestSubscriber->audioClips->sortByDesc(AudioClip::COL_PUBLISHED_AT)->first()->published_at
             : $earliestSubscriber->subscribed_at);
 
-        $platform = $platformFactory->make($this->subscription->platform_type);
+        $platform = $platforms->subscribableFor($this->subscription->platform_type);
 
         // Download metadata for all new clips.
         $newClipMetadata = $platform->getMetadataForAllClipsPublishedSince(
