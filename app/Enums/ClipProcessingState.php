@@ -5,6 +5,9 @@ namespace App\Enums;
 use BYanelli\Roma\Response\IsArrayable;
 use Illuminate\Contracts\Support\Arrayable;
 
+/**
+ * @implements Arrayable<string, mixed>
+ */
 enum ClipProcessingState: int implements Arrayable
 {
     use IsArrayable;

@@ -33,11 +33,17 @@ class AudioSource extends Model
     const string COL_PLATFORM_URL = 'platform_url';
     const string REL_SUBSCRIBERS = 'subscribers';
 
+    /**
+     * @return HasMany<Feed, $this>
+     */
     public function subscribers(): HasMany
     {
         return $this->hasMany(Feed::class, 'subscription_id');
     }
 
+    /**
+     * @return HasMany<AudioClip, $this>
+     */
     public function audioClips(): HasMany
     {
         return $this->hasMany(AudioClip::class);

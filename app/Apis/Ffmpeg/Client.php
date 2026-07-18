@@ -22,6 +22,9 @@ readonly class Client implements ClientContract
         return $this->app->basePath('vendor/bin');
     }
 
+    /**
+     * @param  array<int, string>  $args
+     */
     private function run(int $timeout, array $args): ProcessResult
     {
         return $this->processFactory
@@ -31,11 +34,17 @@ readonly class Client implements ClientContract
             ->run(array_merge(['./ffmpeg'], $args));
     }
 
+    /**
+     * @param  array<int, string>  $args
+     */
     private function runSuccessfully(int $timeout, array $args): ProcessResult
     {
         return $this->run($timeout, $args)->throw();
     }
 
+    /**
+     * @param  array<int, string>  $mp3s
+     */
     public function combineMp3s(array $mp3s): string
     {
         if (count($mp3s) === 1) {

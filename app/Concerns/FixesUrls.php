@@ -16,9 +16,11 @@ trait FixesUrls
     {
         $uri = Uri::fromBaseUri($url);
 
-        $host = str_starts_with($uri->getHost(), 'www.')
-            ? substr($uri->getHost(), strlen('www.'))
-            : $uri->getHost();
+        $host = $uri->getHost();
+
+        $host = ($host !== null && str_starts_with($host, 'www.'))
+            ? substr($host, strlen('www.'))
+            : $host;
 
         return $uri->withHost($host)->toString();
     }
@@ -37,7 +39,7 @@ trait FixesUrls
         } else {
             parse_str($url->getQuery(), $query);
 
-            $query = collect($query)->filter(fn ($val, $key) => ! str_starts_with($key, 'utm_'))->all();
+            $query = collect($query)->filter(fn ($val, $key) => ! str_starts_with((string) $key, 'utm_'))->all();
 
             $withoutUtm = $url->withQuery(http_build_query($query))->toString();
 

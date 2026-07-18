@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ClipProcessingState;
 use App\Models\Concerns\HasUuid;
 use Carbon\CarbonImmutable;
+use Database\Factories\FeedFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,7 +29,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Feed extends Model
 {
-    use HasFactory, HasUuid;
+    /** @use HasFactory<FeedFactory> */
+    use HasFactory;
+
+    use HasUuid;
 
     protected $casts = [
         'subscribed_at' => 'datetime',
@@ -43,11 +47,17 @@ class Feed extends Model
     const string REL_USER = 'user';
     const string REL_SUBSCRIPTION = 'subscription';
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsToMany<AudioClip, $this, AudioClipFeed>
+     */
     public function audioClips(): BelongsToMany
     {
         return $this->belongsToMany(AudioClip::class)
@@ -55,9 +65,11 @@ class Feed extends Model
             ->withPivot(AudioClipFeed::COL_PUBLISHED_AT);
     }
 
+    /**
+     * @return BelongsToMany<AudioClip, $this, AudioClipFeed>
+     */
     public function audioClipsFinishedProcessing(): BelongsToMany
     {
-        /** @phpstan-ignore-next-line */
         return $this->audioClips()
             ->where(AudioClip::COL_PROCESSING_STATE, ClipProcessingState::Processed)
             // Newest episode first, in the order the feed itself presents them (the pivot date, not the clip's own
@@ -66,6 +78,9 @@ class Feed extends Model
             ->orderByPivot(AudioClipFeed::COL_PUBLISHED_AT, 'desc');
     }
 
+    /**
+     * @return BelongsTo<AudioSource, $this>
+     */
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(AudioSource::class, 'subscription_id');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -19,7 +20,10 @@ class PasswordBaseController
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        $request->user()->update([
+        /** @var User $user */
+        $user = $request->user();
+
+        $user->update([
             'password' => Hash::make($validated['password']),
         ]);
 

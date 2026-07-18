@@ -22,7 +22,6 @@ readonly class FindOrCreateAudioClip
         // If a clip already exists for this URL, return it instead of creating a new one. NOTE: A platform will
         // typically have many URL formats pointing to the same content. Here we use the canonical form of the URL,
         // retrieved during the metadata request, to avoid duplication.
-        /** @var AudioClip $existing */
         if ($existing = AudioClip::query()->where(AudioClip::COL_PLATFORM_URL, $metadata->canonicalUrl)->first()) {
             return $existing;
         }

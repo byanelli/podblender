@@ -28,16 +28,25 @@ readonly class Client
         return $this->config->get('apify.api_key');
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     private function getCachedResponse(string $url): ?array
     {
         return $this->cache->get($this->getCacheKey($url));
     }
 
+    /**
+     * @param  array<string, mixed>  $response
+     */
     private function cacheResponse(string $url, array $response): void
     {
         $this->cache->put($this->getCacheKey($url), $response);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function getArticleFromApi(string $url): array
     {
         if (! is_null($cached = $this->getCachedResponse($url))) {
@@ -46,7 +55,7 @@ readonly class Client
 
         $response = $this->http
             ->withQueryParameters(['token' => $this->getApiKey()])
-            ->withBody(json_encode(['articleUrls' => [['url' => $url]]]))
+            ->withBody(json_encode(['articleUrls' => [['url' => $url]]], JSON_THROW_ON_ERROR))
             ->timeout(60)
             ->post('https://api.apify.com/v2/acts/lukaskrivka~article-extractor-smart/run-sync-get-dataset-items')
             ->json();
@@ -77,7 +86,7 @@ readonly class Client
 
     private function getPublisherFromUrl(string $url): string
     {
-        return Str::of(Uri::new($url)->getHost())
+        return Str::of(Uri::new($url)->getHost() ?? '')
             ->replaceMatches('/^www\\./', '')
             ->__toString();
     }
@@ -86,7 +95,7 @@ readonly class Client
     {
         $path = Uri::new($url)->getPath();
 
-        $slug = Arr::last(explode('/', $path));
+        $slug = Arr::last(explode('/', $path)) ?? '';
 
         return str_contains($slug, '-')
             ? collect(explode('-', $slug))->map(fn ($s) => ucfirst($s))->implode(' ')

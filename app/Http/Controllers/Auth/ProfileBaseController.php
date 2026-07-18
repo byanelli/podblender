@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Requests\Auth\ProfileUpdateRequest;
+use App\Models\User;
 use BYanelli\Roma\Request\ContextualBinding\Request as RomaRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +31,7 @@ class ProfileBaseController
      */
     public function update(#[RomaRequest] ProfileUpdateRequest $data, Request $request): RedirectResponse
     {
+        /** @var User $user */
         $user = $request->user();
 
         $user->fill([
@@ -55,6 +57,7 @@ class ProfileBaseController
             'password' => ['required', 'current_password'],
         ]);
 
+        /** @var User $user */
         $user = $request->user();
 
         Auth::logout();

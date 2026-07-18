@@ -124,6 +124,8 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
      * initial fill failed sits below that line forever: the fetch never reaches back to it, so it permanently misses
      * every clip published between when it subscribed and the earliest subscriber's latest clip. A backfill request
      * overrides all of this: it's an explicit ask to reach back to a fixed date regardless of who has what.
+     *
+     * @param  Collection<int, Feed>  $subscribers
      */
     private function fetchCursorFor(Collection $subscribers): \DateTimeInterface
     {

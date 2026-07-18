@@ -23,6 +23,10 @@ readonly class Client implements Contracts\Client
         return $this->config->get('services.youtube_data_api.key');
     }
 
+    /**
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>
+     */
     private function apiGet(string $url, array $params): array
     {
         return $this->http->get(
@@ -31,6 +35,10 @@ readonly class Client implements Contracts\Client
         )->throw()->json();
     }
 
+    /**
+     * @param  array<string, mixed>  $queryParams
+     * @return array<int, array<string, mixed>>
+     */
     private function apiGetAllPages(string $url, int $itemsLimit, array $queryParams): array
     {
         $pages = [];
@@ -56,6 +64,10 @@ readonly class Client implements Contracts\Client
         return $pages;
     }
 
+    /**
+     * @param  array<string, mixed>  $queryParams
+     * @return array<int, mixed>
+     */
     private function apiGetAllPagesItems(string $url, int $itemsLimit, array $queryParams): array
     {
         $pages = $this->apiGetAllPages($url, $itemsLimit, $queryParams);
@@ -65,15 +77,22 @@ readonly class Client implements Contracts\Client
         }, []);
     }
 
+    /**
+     * @param  array<int, array<string, mixed>>  $pages
+     * @return array<int, mixed>
+     */
     private function getVideoIdsFromPages(array $pages): array
     {
         return collect($pages)->reduce(function (Collection $ids, array $nextPage) {
-            $nextPageIds = collect($nextPage['items'])->pluck('id.videoId')->all();
+            $nextPageIds = collect((array) $nextPage['items'])->pluck('id.videoId')->all();
 
             return $ids->merge($nextPageIds);
         }, collect())->all();
     }
 
+    /**
+     * @return array<int, mixed>
+     */
     public function getVideoIdsForChannel(
         string $channelId,
         ?DateTimeInterface $publishedAfter = null,
@@ -97,6 +116,9 @@ readonly class Client implements Contracts\Client
         return Arr::take($videoIds, $limit);
     }
 
+    /**
+     * @param  array<string, mixed>  $response
+     */
     private function getChannelMetadataFromResponse(array $response): ChannelMetadata
     {
         $channel = $response['items'][0];
@@ -157,6 +179,9 @@ readonly class Client implements Contracts\Client
             ->all();
     }
 
+    /**
+     * @param  array<string, mixed>  $video
+     */
     private function getVideoMetadataFromResponseObject(
         array $video,
         // YouTube HTML-encodes titles in some responses but not others!?

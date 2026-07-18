@@ -53,6 +53,9 @@ class DownloadAndStoreAudioClip implements ShouldQueue
      * once. Horizon runs several worker processes, so without these two the backlog would go out as fast as the
      * workers could pick it up: concurrently, and from one IP address.
      */
+    /**
+     * @return array<int, object>
+     */
     public function middleware(): array
     {
         return [

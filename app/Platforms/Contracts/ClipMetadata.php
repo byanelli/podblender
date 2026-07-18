@@ -6,6 +6,9 @@ use BYanelli\Roma\Response\IsArrayable;
 use DateTimeInterface;
 use Illuminate\Contracts\Support\Arrayable;
 
+/**
+ * @implements Arrayable<string, mixed>
+ */
 readonly class ClipMetadata implements Arrayable
 {
     use IsArrayable;

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\CarbonImmutable;
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,7 +25,10 @@ use Laravel\Sanctum\HasApiTokens;
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, Notifiable;
+
+    /** @use HasFactory<UserFactory> */
+    use HasFactory;
 
     const string COL_EMAIL_VERIFIED_AT = 'email_verified_at';
     const string COL_NAME = 'name';
@@ -40,7 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $hidden = [
         self::COL_PASSWORD,
@@ -48,7 +52,7 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * @return HasMany<Feed, self>
+     * @return HasMany<Feed, $this>
      */
     public function feeds(): HasMany
     {

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
 use Carbon\CarbonImmutable;
+use Database\Factories\AudioClipFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -36,7 +37,10 @@ use Illuminate\Support\Traits\Tappable;
  */
 class AudioClip extends Model
 {
-    use HasFactory, Tappable;
+    /** @use HasFactory<AudioClipFactory> */
+    use HasFactory;
+
+    use Tappable;
 
     protected $casts = [
         'processing_state' => ClipProcessingState::class,
@@ -66,11 +70,17 @@ class AudioClip extends Model
     const string REL_AUDIO_SOURCE = 'audioSource';
     const string REL_FEEDS = 'feeds';
 
+    /**
+     * @return BelongsTo<AudioSource, $this>
+     */
     public function audioSource(): BelongsTo
     {
         return $this->belongsTo(AudioSource::class);
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     public function formattedTime(): Attribute
     {
         $format = ($this->duration >= 3600) ? '%h:%I:%S' : '%i:%S';
@@ -80,16 +90,25 @@ class AudioClip extends Model
         );
     }
 
+    /**
+     * @return Attribute<PlatformType, never>
+     */
     public function platformType(): Attribute
     {
         return Attribute::make(fn () => $this->audioSource->platform_type);
     }
 
+    /**
+     * @return Attribute<string, never>
+     */
     public function audioUrl(): Attribute
     {
         return Attribute::make(fn () => url(Storage::url($this->storage_path)));
     }
 
+    /**
+     * @return BelongsToMany<Feed, $this>
+     */
     public function feeds(): BelongsToMany
     {
         return $this->belongsToMany(Feed::class);

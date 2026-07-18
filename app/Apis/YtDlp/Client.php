@@ -51,6 +51,9 @@ readonly class Client
         return $this->app->basePath("vendor/$path");
     }
 
+    /**
+     * @param  array<int, string>  $args
+     */
     private function run(int $timeout, array $args): ProcessResult
     {
         return $this->processFactory
@@ -67,6 +70,8 @@ readonly class Client
      *
      * Note that all three paths are absolute. yt-dlp discovers Deno and the token provider on the PATH, and we can't
      * assume the queue worker's PATH contains a directory inside this project, so we tell it exactly where to look.
+     *
+     * @return array<int, string>
      */
     private function getCommonArgs(): array
     {
@@ -83,6 +88,9 @@ readonly class Client
         ];
     }
 
+    /**
+     * @return array<int, string>
+     */
     private function getAudioArgs(string $outputPath): array
     {
         return [
@@ -97,6 +105,8 @@ readonly class Client
     /**
      * Note that this asks the proxy for a URL each time it's called, which is once per download attempt. That's what
      * gives a rotating pool one address per download rather than one per request, which a download can't survive.
+     *
+     * @return array<int, string>
      */
     private function getProxyArgs(ProxyConfig $proxy): array
     {

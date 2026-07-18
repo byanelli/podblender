@@ -46,7 +46,7 @@ readonly class Client implements ClientContract
         $currentSegment = '';
         $currentLength = 0;
 
-        $words = preg_split('/\\s+/', $text);
+        $words = preg_split('/\\s+/', $text) ?: [];
 
         foreach ($words as $word) {
             $wordLength = strlen($word);

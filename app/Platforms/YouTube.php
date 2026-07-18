@@ -55,35 +55,35 @@ readonly class YouTube implements SubscribablePlatform
 
         $uri = Uri::fromBaseUri($url);
 
-        if (! collect(Platforms::YOUTUBE_HOSTS)->contains($uri->getHost())) {
+        if (! collect(Platforms::YOUTUBE_HOSTS)->contains($uri->getHost() ?? '')) {
             throw new \RuntimeException("Invalid host for YouTube URL: {$uri->getHost()}");
         }
 
-        parse_str($uri->getQuery(), $query);
+        parse_str($uri->getQuery() ?? '', $query);
 
-        if (isset($query['v'])) {
+        if (isset($query['v']) && is_string($query['v'])) {
             return $query['v'];
         }
 
         $splitPathPiece = fn (string $piece): string => explode('&', $piece)[0];
 
-        /** @var Collection $pathPieces */
+        /** @var Collection<int, string> $pathPieces */
         $pathPieces = collect(explode('/', $uri->getPath()))->filter()->values();
 
-        if ($pathPieces->count() == 2 && collect(['watch', 'v', 'embed', 'e', 'shorts', 'live'])->contains($pathPieces->first())) {
-            return $splitPathPiece($pathPieces[1]);
+        if ($pathPieces->count() == 2 && collect(['watch', 'v', 'embed', 'e', 'shorts', 'live'])->contains((string) $pathPieces->first())) {
+            return $splitPathPiece((string) $pathPieces[1]);
         }
 
-        if ($pathPieces->first() == 'oembed' && isset($query['url'])) {
+        if ($pathPieces->first() == 'oembed' && isset($query['url']) && is_string($query['url'])) {
             return $this->getIdFromUrl($query['url']);
         }
 
-        if ($pathPieces->first() == 'attribution_link' && isset($query['u'])) {
+        if ($pathPieces->first() == 'attribution_link' && isset($query['u']) && is_string($query['u'])) {
             return $this->getIdFromUrl('https://youtube.com'.$query['u']);
         }
 
         if ($pathPieces->count() == 1) {
-            return $splitPathPiece($pathPieces->first());
+            return $splitPathPiece((string) $pathPieces->first());
         }
 
         throw new \RuntimeException("Cannot parse URL: $url");
@@ -119,7 +119,7 @@ readonly class YouTube implements SubscribablePlatform
 
     private function getLastPathPiece(string $url): string
     {
-        return collect(explode('/', Uri::fromBaseUri($url)->getPath()))->last();
+        return (string) collect(explode('/', Uri::fromBaseUri($url)->getPath()))->last();
     }
 
     private function convertChannelMetadataToSourceMetadata(ChannelMetadata $channel): SourceMetadata

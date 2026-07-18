@@ -8,6 +8,9 @@ use DateTimeInterface;
 
 interface Client
 {
+    /**
+     * @return array<int, mixed>
+     */
     public function getVideoIdsForChannel(
         string $channelId,
         ?DateTimeInterface $publishedAfter = null,
