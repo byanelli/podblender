@@ -7,7 +7,7 @@ use App\Models\AudioSource;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AudioSource>
+ * @extends Factory<AudioSource>
  */
 class AudioSourceFactory extends Factory
 {
@@ -19,8 +19,8 @@ class AudioSourceFactory extends Factory
     public function definition(): array
     {
         return [
-            AudioSource::COL_NAME          => $this->faker->name,
-            AudioSource::COL_PLATFORM_URL  => $this->faker->uuid,
+            AudioSource::COL_NAME => $this->faker->name,
+            AudioSource::COL_PLATFORM_URL => $this->faker->uuid,
             AudioSource::COL_PLATFORM_TYPE => PlatformType::YouTube,
         ];
     }

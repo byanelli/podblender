@@ -89,22 +89,4 @@ class YouTubeTest extends TestCase
         $this->assertFileExists($mp3);
         $this->assertEquals($content, file_get_contents($mp3));
     }
-
-    #[Test]
-    public function it_gets_clip_urls()
-    {
-        $url1 = 'https://youtube.com/watch?v='.($videoId1 = 'leirjieljrg');
-        $url2 = 'https://youtube.com/watch?v='.($videoId2 = 'wlefjlwifjw');
-        $url3 = 'https://youtube.com/watch?v='.($videoId3 = 'ergeligjleg');
-
-        $this->fakeYouTubeData(videoIdsForChannel: [$videoId1, $videoId2, $videoId3]);
-
-        /** @var YouTube $youtube */
-        $youtube = $this->app->make(YouTube::class);
-
-        $this->assertEquals(
-            [$url1, $url2, $url3],
-            $youtube->getClipUrlsPublishedSince('https://youtube.com/channel/wlifjliwjf', now()->subDay()),
-        );
-    }
 }

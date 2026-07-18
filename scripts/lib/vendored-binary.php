@@ -136,7 +136,7 @@ final class VendoredBinary
         if (! isset(self::$downloadedZips[$url])) {
             $zipPath = tempnam(sys_get_temp_dir(), 'vendored-binary-').'.zip';
 
-            echo "Downloading ".basename($url)." from $url\n";
+            echo 'Downloading '.basename($url)." from $url\n";
             self::download($url, $zipPath);
 
             self::$downloadedZips[$url] = $zipPath;
@@ -145,7 +145,7 @@ final class VendoredBinary
             register_shutdown_function(fn () => file_exists($zipPath) && unlink($zipPath));
         }
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         ($zip->open(self::$downloadedZips[$url]) === true) || throw new RuntimeException("Error opening archive from $url");
 
         $zip->extractTo($directory, [$member]);

@@ -1,5 +1,3 @@
-@use(App\Http\Routes\Web)
-
 @php
     /** @var \App\Models\Feed $feed */
 @endphp

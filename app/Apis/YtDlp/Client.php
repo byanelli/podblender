@@ -4,8 +4,6 @@ namespace App\Apis\YtDlp;
 
 use App\Proxies\Contracts\ProxyConfig;
 use App\Proxies\Contracts\ResidentialProxyConfig;
-use Carbon\CarbonInterval;
-use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Process\ProcessResult;
 use Illuminate\Process\Exceptions\ProcessFailedException;
@@ -28,12 +26,6 @@ use Ramsey\Uuid\Uuid;
  */
 readonly class Client
 {
-    /**
-     * Extracting metadata now means solving a JavaScript challenge and minting a proof-of-origin token, both of which
-     * are slower than the plain HTTP request this used to be.
-     */
-    const int METADATA_TIMEOUT = 120;
-
     const int DOWNLOAD_TIMEOUT = 1800;
 
     /**
@@ -43,10 +35,9 @@ readonly class Client
     const string SLEEP_BETWEEN_REQUESTS = '1.5';
 
     public function __construct(
-        private Application            $app,
-        private LoggerInterface        $logger,
-        private Repository             $cache,
-        private Factory                $processFactory,
+        private Application $app,
+        private LoggerInterface $logger,
+        private Factory $processFactory,
         private ResidentialProxyConfig $residentialProxy,
     ) {}
 
@@ -117,43 +108,6 @@ readonly class Client
         ]);
     }
 
-    private function getCacheKey(string $id): string
-    {
-        return "metadata:$id";
-    }
-
-    private function cacheMetadata(string $id, array $metadata): void
-    {
-        $this->cache->put($this->getCacheKey($id), $metadata, CarbonInterval::day());
-    }
-
-    private function getCachedMetadata(string $id): ?array
-    {
-        return $this->cache->get($this->getCacheKey($id));
-    }
-
-    /**
-     * @throws ProcessFailedException
-     */
-    public function getMetadata(string $url): array
-    {
-        // Return cached metadata if available.
-        if (! is_null($cached = $this->getCachedMetadata($url))) {
-            return $cached;
-        }
-
-        // Run process and convert output to JSON.
-        $jsonString = $this
-            ->run(self::METADATA_TIMEOUT, array_merge($this->getCommonArgs(), ['--dump-json', $url]))
-            ->output();
-
-        // Cache metadata before returning.
-        return tap(
-            json_decode($jsonString, true),
-            fn (array $metadata) => $this->cacheMetadata($url, $metadata),
-        );
-    }
-
     private function downloadFailedDueToMembersOnlyContent(ProcessResult $result): bool
     {
         // todo: more accurate detection?
@@ -184,7 +138,7 @@ readonly class Client
             if ($this->downloadFailedDueToMembersOnlyContent($e->result)) {
                 $this->logger->error("Couldn't download $url because it's a members-only video");
 
-                throw new MembersOnlyContentException();
+                throw new MembersOnlyContentException;
             } else {
                 throw $e;
             }
@@ -195,14 +149,14 @@ readonly class Client
      * @throws ProcessFailedException
      * @throws MembersOnlyContentException
      */
-    private function retryWithExponentialBackoff(callable $callback, int $retryTimes=3, int $baseSleepSeconds=60): mixed
+    private function retryWithExponentialBackoff(callable $callback, int $retryTimes = 3, int $baseSleepSeconds = 60): mixed
     {
         return retry(
             times: $retryTimes,
             callback: $callback,
-            sleepMilliseconds: fn (int $attempts) => $baseSleepSeconds * pow(2, $attempts-1) * 1000,
+            sleepMilliseconds: fn (int $attempts) => $baseSleepSeconds * pow(2, $attempts - 1) * 1000,
             // No point in retrying if the content is members-only.
-            when: fn (\Throwable $t) => !($t instanceof MembersOnlyContentException)
+            when: fn (\Throwable $t) => ! ($t instanceof MembersOnlyContentException)
         );
     }
 
@@ -219,7 +173,7 @@ readonly class Client
         try {
             // Try to run the download using exponential backoff directly from this host.
             $this->retryWithExponentialBackoff(
-                fn() => $this->runDownload($url, $outputPath)
+                fn () => $this->runDownload($url, $outputPath)
             );
 
             $this->logger->info("Successfully downloaded $url directly");
@@ -229,7 +183,7 @@ readonly class Client
             try {
                 // Try to run the download using exponential backoff with a residential proxy.
                 $this->retryWithExponentialBackoff(
-                    fn() => $this->runDownload($url, $outputPath, $this->residentialProxy)
+                    fn () => $this->runDownload($url, $outputPath, $this->residentialProxy)
                 );
 
                 $this->logger->info("Successfully downloaded $url with residential proxy");

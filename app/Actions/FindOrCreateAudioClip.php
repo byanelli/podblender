@@ -33,12 +33,12 @@ readonly class FindOrCreateAudioClip
         $source = AudioSource::query()->firstOrCreate(
             [
                 AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_URL  => $metadata->source->canonicalUrl,
+                AudioSource::COL_PLATFORM_URL => $metadata->source->canonicalUrl,
             ],
             [
                 AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_URL  => $metadata->source->canonicalUrl,
-                AudioSource::COL_NAME          => $metadata->source->name,
+                AudioSource::COL_PLATFORM_URL => $metadata->source->canonicalUrl,
+                AudioSource::COL_NAME => $metadata->source->name,
             ]
         );
 

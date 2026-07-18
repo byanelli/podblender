@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\PlatformType;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use Database\Factories\AudioSourceFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class AudioSource extends Model
 {
-    /** @use HasFactory<\Database\Factories\AudioSourceFactory> */
+    /** @use HasFactory<AudioSourceFactory> */
     use HasFactory;
 
     protected $casts = [

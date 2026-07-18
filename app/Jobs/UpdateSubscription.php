@@ -17,7 +17,6 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
-
 class UpdateSubscription implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -28,8 +27,8 @@ class UpdateSubscription implements ShouldQueue
         private readonly AudioSource $subscription,
         // If present, update only one subscriber. This can be used to initialize the subscription for a given
         // subscriber.
-        private readonly ?Feed $subscriber=null,
-        private readonly ?\DateTimeInterface $backfillSince=null,
+        private readonly ?Feed $subscriber = null,
+        private readonly ?\DateTimeInterface $backfillSince = null,
     ) {
         // Let this run for up to 30 mins since we might need to make several API calls to get metadata.
         $this->timeout = 1800;
@@ -40,17 +39,19 @@ class UpdateSubscription implements ShouldQueue
         FindOrCreateAudioClip $findOrCreateAudioClip,
     ): void {
         // No point in running this job if there are no subscribers.
-        if (!$this->subscription->subscribers()->exists()) { return; }
+        if (! $this->subscription->subscribers()->exists()) {
+            return;
+        }
 
         // If a specific subscriber is provided, ensure that the subscriber is actually subscribed to this audio source.
-        if (!is_null($this->subscriber)
-            && !$this->subscription->subscribers()->whereKey($this->subscriber->id)->exists()
+        if (! is_null($this->subscriber)
+            && ! $this->subscription->subscribers()->whereKey($this->subscriber->id)->exists()
         ) {
             throw new RuntimeException('The provided subscriber is not subscribed to this audio source.');
         }
 
         /** @var Collection<int, Feed> $subscribers */
-        $subscribers = !is_null($this->subscriber)
+        $subscribers = ! is_null($this->subscriber)
             ? collect([$this->subscriber])
             : $this->subscription->subscribers()->get();
 
@@ -77,8 +78,8 @@ class UpdateSubscription implements ShouldQueue
         // will dispatch jobs to download audio clips.
         /** @var Collection<int, AudioClip> $newClips */
         $newClips = collect($newClipMetadata)
-            ->filter(fn(ClipMetadata $clipMetadata) => $clipMetadata->publishedAt >= $latestClipPublishedAt)
-            ->map(fn(ClipMetadata $metadata) => $findOrCreateAudioClip->__invoke($this->subscription->platform_type, $metadata));
+            ->filter(fn (ClipMetadata $clipMetadata) => $clipMetadata->publishedAt >= $latestClipPublishedAt)
+            ->map(fn (ClipMetadata $metadata) => $findOrCreateAudioClip->__invoke($this->subscription->platform_type, $metadata));
 
         $this->subscription->load(AudioSource::REL_SUBSCRIBERS);
 

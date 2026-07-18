@@ -96,31 +96,10 @@ readonly class YouTube implements Platform
 
             return $this->ytDlp->downloadAudio($clipUrl);
         } catch (MembersOnlyContentException $e) {
-            throw new ContentUnavailableException();
+            throw new ContentUnavailableException;
         } catch (\Exception $e) {
             throw new DownloadException(PlatformType::YouTube, $e);
         }
-    }
-
-    // todo: this was public and part of the Platform interface. Delete?
-    private function getAllClipUrls(string $sourceUrl, ?int $limit = null): array
-    {
-        $videoIds = $this->youTubeData->getVideoIdsForChannel(
-            channelId: $this->getChannelIdFromSourceUrl($sourceUrl),
-            limit: $limit,
-        );
-
-        return collect($videoIds)->map(fn (string $id) => "https://youtube.com/watch?v=$id")->all();
-    }
-
-    public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
-    {
-        $videoIds = $this->youTubeData->getVideoIdsForChannel(
-            channelId: $this->getChannelIdFromSourceUrl($sourceUrl),
-            publishedAfter: $publicationTime,
-        );
-
-        return collect($videoIds)->map(fn (string $id) => "https://youtube.com/watch?v=$id")->all();
     }
 
     public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array

@@ -1,13 +1,13 @@
 <?php
 
-namespace Http\Controllers;
+namespace Tests\Http\Controllers;
 
 use App\Models\User;
 use Tests\TestCase;
 
 class CreateCustomFeedTest extends TestCase
 {
-    public function testCreateCustomFeed()
+    public function test_create_custom_feed()
     {
         $feedName = 'Test Feed';
         $user = User::factory()->create();

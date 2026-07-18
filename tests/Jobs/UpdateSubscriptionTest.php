@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 class UpdateSubscriptionTest extends TestCase
 {
-    use FakesPlatform, FakesDispatcher;
+    use FakesDispatcher, FakesPlatform;
 
     #[Test]
     public function it_initializes_a_subscription()

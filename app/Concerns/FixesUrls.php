@@ -51,7 +51,7 @@ trait FixesUrls
 
     protected function fixUrl(string $url): string
     {
-        return (new Pipeline())->send($url)->through([
+        return (new Pipeline)->send($url)->through([
             $this->ensureSchemeIsHttps(...),
             $this->removeWwwFromHost(...),
             $this->removeUtmCodesFromUrl(...),

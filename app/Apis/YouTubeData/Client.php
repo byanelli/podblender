@@ -153,14 +153,14 @@ readonly class Client implements Contracts\Client
         ]);
 
         return collect($videos)
-            ->map(fn($response) => $this->getVideoMetadataFromResponseObject($response, true))
+            ->map(fn ($response) => $this->getVideoMetadataFromResponseObject($response, true))
             ->all();
     }
 
     private function getVideoMetadataFromResponseObject(
         array $video,
         // YouTube HTML-encodes titles in some responses but not others!?
-        bool $decodeTitle=false,
+        bool $decodeTitle = false,
     ): VideoMetadata {
         // For single video responses, id is stored directly as a string; for search responses, it's inside an
         // object.

@@ -44,7 +44,7 @@ readonly class Client implements ClientContract
 
         $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
 
-        $this->runSuccessfully(600 /*todo*/, [
+        $this->runSuccessfully(600 /* todo */, [
             '-i',
             'concat:'.collect($mp3s)->implode('|'),
             '-acodec',

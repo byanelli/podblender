@@ -52,33 +52,6 @@ class ClientTest extends TestCase
     }
 
     #[Test]
-    public function it_gets_metadata()
-    {
-        Process::fake(["*'--dump-json' '".self::URL."'" => Process::result(json_encode($fakeMetadata = [
-            'id' => 1,
-            'title' => 'Some video',
-            'description' => 'Lorem ipsum',
-            'channel_id' => '12039u30qg9oir48jg3',
-            'channel' => 'Some channel',
-            'duration' => 199,
-        ]))]);
-
-        /** @var Client $client */
-        $client = $this->app->make(Client::class);
-
-        $metadata = $client->getMetadata(self::URL);
-
-        $this->assertEquals($fakeMetadata, $metadata);
-
-        // Extracting metadata talks to YouTube just like downloading does, so it needs the same arguments.
-        Process::assertRan(function (PendingProcess $process) {
-            $this->assertCommandCanReachYouTube($process->command);
-
-            return true;
-        });
-    }
-
-    #[Test]
     public function it_downloads_audio_directly_without_a_proxy()
     {
         $file = '';

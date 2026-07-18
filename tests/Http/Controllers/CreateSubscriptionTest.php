@@ -5,15 +5,15 @@ namespace Tests\Http\Controllers;
 use App\Models\AudioSource;
 use App\Models\User;
 use App\Platforms\Contracts\SourceMetadata;
-use Tests\TestCase;
 use Tests\Concerns\FakesDispatcher;
 use Tests\Concerns\FakesPlatform;
+use Tests\TestCase;
 
 class CreateSubscriptionTest extends TestCase
 {
     use FakesDispatcher, FakesPlatform;
 
-    public function testCreateSubscription()
+    public function test_create_subscription()
     {
         $sourceUrl = 'https://youtube.com/@zzz';
         $feedName = 'Test Feed';

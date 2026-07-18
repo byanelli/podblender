@@ -4,7 +4,6 @@ namespace App\Platforms\Contracts;
 
 use App\Platforms\Exceptions\ContentUnavailableException;
 use App\Platforms\Exceptions\DownloadException;
-use App\Platforms\Exceptions\ListException;
 use App\Platforms\Exceptions\MetadataException;
 
 interface Platform
@@ -26,12 +25,6 @@ interface Platform
     public function downloadAudio(string $clipUrl): string;
 
     /**
-     * @throws ListException
-     */
-    public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array;
-
-    /**
-     * @throws ListException
      * @return array<int, ClipMetadata>
      */
     public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array;

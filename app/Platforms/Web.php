@@ -74,12 +74,8 @@ readonly class Web implements Platform
         }
     }
 
-    public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
+    public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
     {
-        throw new \RuntimeException('Not implemented');
-    }
-
-    public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array {
         // TODO: Implement getMetadataForAllClipsPublishedSince() method.
     }
 }

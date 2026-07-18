@@ -2,7 +2,4 @@
 
 namespace App\Proxies\Contracts;
 
-interface ResidentialProxyConfig extends ProxyConfig
-{
-
-}
+interface ResidentialProxyConfig extends ProxyConfig {}

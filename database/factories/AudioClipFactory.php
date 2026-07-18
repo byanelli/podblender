@@ -8,7 +8,7 @@ use App\Models\AudioClip;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AudioClip>
+ * @extends Factory<AudioClip>
  */
 class AudioClipFactory extends Factory
 {

@@ -49,7 +49,8 @@ trait FakesYouTubeData
                 return $this->videoMetadata;
             }
 
-            public function getAllVideoMetadataForChannel(string $channelId, ?DateTimeInterface $publishedAfter = null): array {
+            public function getAllVideoMetadataForChannel(string $channelId, ?DateTimeInterface $publishedAfter = null): array
+            {
                 // TODO: Implement getAllVideoMetadataForChannel() method.
             }
         });

@@ -2,7 +2,4 @@
 
 namespace App\Platforms\Exceptions;
 
-class ContentUnavailableException extends \Exception
-{
-
-}
+class ContentUnavailableException extends \Exception {}

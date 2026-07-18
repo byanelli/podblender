@@ -7,7 +7,6 @@ use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\PlatformFactory;
 use App\Platforms\Contracts\SourceMetadata;
-use App\Platforms\Metadata;
 use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
@@ -23,13 +22,8 @@ trait FakesPlatform
         ?string $audioPath = null,
         ?string $audioContent = null,
     ): void {
-        $platform = new readonly class (
-            $clipMetadata,
-            $sourceMetadata,
-            $clipMetadataList,
-            $audioPath,
-            $audioContent,
-        ) implements Platform {
+        $platform = new readonly class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent) implements Platform
+        {
             public function __construct(
                 private ?ClipMetadata $clipMetadata = null,
                 private ?SourceMetadata $sourceMetadata = null,
@@ -56,11 +50,6 @@ trait FakesPlatform
             public function getSourceMetadata(string $sourceUrl): SourceMetadata
             {
                 return $this->sourceMetadata;
-            }
-
-            public function getClipUrlsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
-            {
-
             }
 
             public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array

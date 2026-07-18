@@ -23,5 +23,5 @@ interface Client
     /**
      * @return array<int, VideoMetadata>
      */
-    public function getAllVideoMetadataForChannel(string $channelId, ?DateTimeInterface $publishedAfter=null): array;
+    public function getAllVideoMetadataForChannel(string $channelId, ?DateTimeInterface $publishedAfter = null): array;
 }
