@@ -30,10 +30,20 @@ return new class extends Migration
 
         // Copy the rows across, collapsing any duplicate (clip, feed) pairing to a single row. Existing prod data may
         // hold duplicates from before the unique index existed; MIN(published_at) keeps the earliest date the pairing
-        // was ever presented at, so a surviving row is never newer than what was there before.
+        // was ever presented at, so a surviving row is never newer than what was there before. Rows pointing at a feed
+        // or clip that no longer exists — the orphans the old delete-on-error behavior left behind — are dropped here
+        // rather than copied: the new foreign keys would reject them anyway, and they reference nothing.
         DB::table('audio_clip_feed_rebuild')->insertUsing(
             ['audio_clip_id', 'feed_id', 'published_at'],
             DB::table('audio_clip_feed')
+                ->whereExists(fn ($query) => $query
+                    ->selectRaw('1')
+                    ->from('audio_clips')
+                    ->whereColumn('audio_clips.id', 'audio_clip_feed.audio_clip_id'))
+                ->whereExists(fn ($query) => $query
+                    ->selectRaw('1')
+                    ->from('feeds')
+                    ->whereColumn('feeds.id', 'audio_clip_feed.feed_id'))
                 ->select('audio_clip_id', 'feed_id')
                 ->selectRaw('MIN(published_at) as published_at')
                 ->groupBy('audio_clip_id', 'feed_id')
