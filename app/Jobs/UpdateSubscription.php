@@ -11,6 +11,7 @@ use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Exceptions\PlatformNotSubscribableException;
 use App\Platforms\Platforms;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -18,7 +19,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
-class UpdateSubscription implements ShouldQueue
+class UpdateSubscription implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -33,6 +34,18 @@ class UpdateSubscription implements ShouldQueue
     ) {
         // Let this run for up to 30 mins since we might need to make several API calls to get metadata.
         $this->timeout = 1800;
+    }
+
+    /**
+     * One update per source at a time. The scheduler fires UpdateAllSubscriptions every two hours, and a slow update
+     * can still be running when the next tick arrives; without this, two jobs would fetch and attach the same source's
+     * clips concurrently, racing on clip creation (see FindOrCreateAudioClip) and doing the same work twice. Keyed on
+     * the source rather than the job's arguments so an init job for one subscriber and a full sweep still collapse to
+     * one at a time.
+     */
+    public function uniqueId(): string
+    {
+        return (string) $this->subscription->id;
     }
 
     /**
@@ -59,16 +72,7 @@ class UpdateSubscription implements ShouldQueue
             ? collect([$this->subscriber])
             : $this->subscription->subscribers()->get();
 
-        /** @var Feed $earliestSubscriber */
-        $earliestSubscriber = $subscribers->sortBy(Feed::COL_SUBSCRIBED_AT)->first();
-        $earliestSubscriber->load(Feed::REL_AUDIO_CLIPS);
-
-        // Find the most recent clip that was already created for the subscriber that subscribed earliest. Everything
-        // after that is potentially a new clip and will have to be fetched from the source and created (upserted). If
-        // no subscribers have clips yet, use the subscription date of the earliest subscriber.
-        $latestClipPublishedAt = $this->backfillSince ?: ($earliestSubscriber->audioClips->isNotEmpty()
-            ? $earliestSubscriber->audioClips->sortByDesc(AudioClip::COL_PUBLISHED_AT)->first()->published_at
-            : $earliestSubscriber->subscribed_at);
+        $latestClipPublishedAt = $this->fetchCursorFor($subscribers);
 
         $platform = $platforms->subscribableFor($this->subscription->platform_type);
 
@@ -107,6 +111,38 @@ class UpdateSubscription implements ShouldQueue
                     ->all()
             );
         }
+    }
+
+    /**
+     * How far back to fetch clips from the source. Everything published after this cursor is potentially new and gets
+     * fetched, created (upserted), and offered to each subscriber; the per-subscriber filter in handle() then decides
+     * which of them actually belong in each feed.
+     *
+     * The cursor is the OLDEST point any subscriber still needs covered: the minimum, over every subscriber, of the
+     * publication date of that subscriber's newest attached clip (or, if it has none, the moment it subscribed). Take
+     * the earliest subscriber's newest clip alone — as this used to — and a subscriber that subscribed later or whose
+     * initial fill failed sits below that line forever: the fetch never reaches back to it, so it permanently misses
+     * every clip published between when it subscribed and the earliest subscriber's latest clip. A backfill request
+     * overrides all of this: it's an explicit ask to reach back to a fixed date regardless of who has what.
+     */
+    private function fetchCursorFor(Collection $subscribers): \DateTimeInterface
+    {
+        if ($this->backfillSince) {
+            return $this->backfillSince;
+        }
+
+        /** @var \DateTimeInterface $cursor */
+        $cursor = $subscribers
+            ->map(function (Feed $subscriber) {
+                $subscriber->loadMissing(Feed::REL_AUDIO_CLIPS);
+
+                return $subscriber->audioClips->isNotEmpty()
+                    ? $subscriber->audioClips->max(fn (AudioClip $clip) => $clip->published_at)
+                    : $subscriber->subscribed_at;
+            })
+            ->min();
+
+        return $cursor;
     }
 
     /**

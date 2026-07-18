@@ -9,6 +9,7 @@ use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Platforms\Contracts\ClipMetadata;
 use Illuminate\Contracts\Bus\Dispatcher;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
@@ -44,19 +45,27 @@ readonly class FindOrCreateAudioClip
 
         // Create the audio clip from the metadata with processing=true. While this column is true, the clip will not
         // show up in RSS feeds. A queued job will be dispatched to download the audio and set processing=false.
-        /** @var AudioClip $clip */
-        $clip = AudioClip::query()->create([
-            AudioClip::COL_PLATFORM_URL => $metadata->canonicalUrl,
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-            AudioClip::COL_TITLE => Str::limit($metadata->title, 500 - 3),
-            AudioClip::COL_DESCRIPTION => Str::limit($metadata->description, 1000 - 3),
-            AudioClip::COL_PUBLISHED_AT => $metadata->publishedAt,
-            AudioClip::COL_DURATION => 0,
-            AudioClip::COL_STORAGE_PATH => $storagePath,
-            AudioClip::COL_GUID => Uuid::uuid4()->toString(),
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,
-            AudioClip::COL_SIZE => 0,
-        ]);
+        try {
+            /** @var AudioClip $clip */
+            $clip = AudioClip::query()->create([
+                AudioClip::COL_PLATFORM_URL => $metadata->canonicalUrl,
+                AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
+                AudioClip::COL_TITLE => Str::limit($metadata->title, 500 - 3),
+                AudioClip::COL_DESCRIPTION => Str::limit($metadata->description, 1000 - 3),
+                AudioClip::COL_PUBLISHED_AT => $metadata->publishedAt,
+                AudioClip::COL_DURATION => 0,
+                AudioClip::COL_STORAGE_PATH => $storagePath,
+                AudioClip::COL_GUID => Uuid::uuid4()->toString(),
+                AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,
+                AudioClip::COL_SIZE => 0,
+            ]);
+        } catch (UniqueConstraintViolationException $e) {
+            // The existence check above and this insert aren't atomic, and platform_url is unique. Two concurrent
+            // updates of the same subscription can both pass the check and race to create the same clip; whichever
+            // insert loses lands here. The other job already created the clip and dispatched its download, so return
+            // the winner rather than failing the whole update.
+            return AudioClip::query()->where(AudioClip::COL_PLATFORM_URL, $metadata->canonicalUrl)->firstOrFail();
+        }
 
         // Queue a job to download the clip.
         $this->dispatcher->dispatch(new DownloadAndStoreAudioClip($clip));

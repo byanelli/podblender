@@ -56,4 +56,50 @@ class ShowRssTest extends TestCase
         $this->assertStringContainsString("<enclosure url=\"$clip->audio_url", $response);
         $this->assertStringContainsString("<guid isPermaLink=\"false\">$clip->guid</guid>", $response);
     }
+
+    #[Test]
+    public function it_orders_items_by_the_date_the_feed_presents_them_newest_first()
+    {
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id]);
+
+        /** @var AudioSource $source */
+        $source = AudioSource::factory()->create();
+
+        // Create the clips in the opposite order to how they should come out, so that emitting them in insert order
+        // (the bug) would fail this test.
+        /** @var AudioClip $older */
+        $older = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
+            AudioClip::COL_TITLE => $olderTitle = 'The older episode',
+            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+        ]);
+
+        /** @var AudioClip $newer */
+        $newer = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
+            AudioClip::COL_TITLE => $newerTitle = 'The newer episode',
+            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+        ]);
+
+        // The pivot date, not the clip's own publication date, is what the feed orders by.
+        $feed->audioClips()->attach($older, [
+            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::parse('2025-01-01 00:00:00'),
+        ]);
+        $feed->audioClips()->attach($newer, [
+            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::parse('2025-06-01 00:00:00'),
+        ]);
+
+        $response = $this->get("rss/{$feed->uuid}")->content();
+
+        $this->assertStringContainsString($newerTitle, $response);
+        $this->assertStringContainsString($olderTitle, $response);
+
+        // Newest first: the newer episode's title appears before the older one's in the RSS body.
+        $this->assertLessThan(
+            strpos($response, $olderTitle),
+            strpos($response, $newerTitle),
+            'RSS items are not ordered newest-first by the pivot published_at.'
+        );
+    }
 }

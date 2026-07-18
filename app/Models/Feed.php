@@ -59,7 +59,11 @@ class Feed extends Model
     {
         /** @phpstan-ignore-next-line */
         return $this->audioClips()
-            ->where(AudioClip::COL_PROCESSING_STATE, ClipProcessingState::Processed);
+            ->where(AudioClip::COL_PROCESSING_STATE, ClipProcessingState::Processed)
+            // Newest episode first, in the order the feed itself presents them (the pivot date, not the clip's own
+            // publication date). Without this the RSS emits clips in insert order, which is not the order a podcast
+            // app expects and not the order ShowFeed renders them in.
+            ->orderByPivot(AudioClipFeed::COL_PUBLISHED_AT, 'desc');
     }
 
     public function subscription(): BelongsTo

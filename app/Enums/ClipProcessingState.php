@@ -12,4 +12,8 @@ enum ClipProcessingState: int implements Arrayable
     case Processing = 0;
     case Processed = 1;
     case Unavailable = 2;
+
+    // The download failed after exhausting its retries. Unlike Unavailable, which is the platform telling us the
+    // content is gone for good, this is a clip we could still download later; it just isn't finished processing now.
+    case Failed = 3;
 }

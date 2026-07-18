@@ -21,8 +21,9 @@ trait FakesPlatform
         array $clipMetadataList = [],
         ?string $audioPath = null,
         ?string $audioContent = null,
+        ?\Throwable $downloadError = null,
     ): void {
-        $platform = new readonly class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent) implements SubscribablePlatform
+        $platform = new readonly class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent, $downloadError) implements SubscribablePlatform
         {
             public function __construct(
                 private ?ClipMetadata $clipMetadata = null,
@@ -30,6 +31,7 @@ trait FakesPlatform
                 private array $clipMetadataList = [],
                 private ?string $audioPath = null,
                 private ?string $audioContent = null,
+                private ?\Throwable $downloadError = null,
             ) {}
 
             public function getClipMetadata(string $clipUrl): ClipMetadata
@@ -39,6 +41,11 @@ trait FakesPlatform
 
             public function downloadAudio(string $clipUrl): string
             {
+                // Let a test make the download itself fail, to exercise the job's error handling.
+                if ($this->downloadError !== null) {
+                    throw $this->downloadError;
+                }
+
                 file_put_contents(
                     $path = $this->audioPath ?: sys_get_temp_dir().DIRECTORY_SEPARATOR.Uuid::uuid4()->toString(),
                     $this->audioContent ?: Uuid::uuid4()->toString(),

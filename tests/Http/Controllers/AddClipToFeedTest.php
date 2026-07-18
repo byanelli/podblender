@@ -2,6 +2,7 @@
 
 namespace Tests\Http\Controllers;
 
+use App\Enums\ClipProcessingState;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
@@ -128,6 +129,45 @@ class AddClipToFeedTest extends TestCase
         // ...but this feed presents it as new, so that it arrives at the top of a podcast app rather than three years
         // down the listing where nobody would ever come across it.
         $this->assertEquals($now, $clip->pivot->published_at);
+    }
+
+    #[Test]
+    public function it_adds_the_same_clip_url_only_once()
+    {
+        $this->fakePlatform(
+            clipMetadata: new ClipMetadata(
+                title: 'Some title',
+                description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                canonicalUrl: $url = 'https://youtube.com/watch?v=lijwliejfwlef',
+                publishedAt: now()->subDay()->roundSeconds(),
+                source: new SourceMetadata(
+                    name: 'Some channel',
+                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf'
+                ),
+            ),
+        );
+
+        $this->fakeNoOpDispatcher();
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_PLATFORM_URL => $url,
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+        ]);
+
+        // Add the same clip to the same feed twice, as an impatient user double-submitting the form would.
+        $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $url]);
+        $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $url]);
+
+        // A single pivot row: the second add is a no-op, not a duplicate.
+        $this->assertEquals(1, $feed->audioClips()->count());
+        $this->assertDatabaseCount('audio_clip_feed', 1);
+
+        // And so a single item in the RSS.
+        $response = $this->get("rss/{$feed->uuid}")->content();
+        $this->assertEquals(1, substr_count($response, "<guid isPermaLink=\"false\">{$clip->guid}</guid>"));
     }
 
     #[Test]

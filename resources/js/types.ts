@@ -15,7 +15,7 @@ export type PlatformType = {
 };
 
 export type ClipProcessingState = {
-    name: 'Processing' | 'Processed' | 'Unavailable';
+    name: 'Processing' | 'Processed' | 'Unavailable' | 'Failed';
 };
 
 export type AudioSource = {
