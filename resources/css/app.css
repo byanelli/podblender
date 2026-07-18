@@ -1,30 +1,194 @@
 @import 'tailwindcss';
-
-@plugin '@tailwindcss/forms';
+@import 'tw-animate-css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@theme {
-  --font-sans:
-    Figtree, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
-    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-}
+@custom-variant dark (&:is(.dark *));
 
 /*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  tube2pod — "late-night radio studio"
+  Warm near-black canvas, signal-amber accent (tube glow / RSS orange / VU meter),
+  Fraunces display serif, Instrument Sans body, IBM Plex Mono console readouts.
+  The app commits to the dark studio look (the <html> element carries `dark`).
 */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Light "paper" mode — warm cream studio sheet. Kept cohesive but the app runs dark. */
+  --background: oklch(0.975 0.012 85);
+  --foreground: oklch(0.22 0.02 60);
+  --card: oklch(0.99 0.008 85);
+  --card-foreground: oklch(0.22 0.02 60);
+  --popover: oklch(0.99 0.008 85);
+  --popover-foreground: oklch(0.22 0.02 60);
+  --primary: oklch(0.68 0.16 55);
+  --primary-foreground: oklch(0.99 0.01 85);
+  --secondary: oklch(0.93 0.014 80);
+  --secondary-foreground: oklch(0.28 0.02 60);
+  --muted: oklch(0.94 0.012 80);
+  --muted-foreground: oklch(0.50 0.02 65);
+  --accent: oklch(0.92 0.03 70);
+  --accent-foreground: oklch(0.28 0.03 55);
+  --destructive: oklch(0.58 0.20 27);
+  --destructive-foreground: oklch(0.99 0.01 85);
+  --success: oklch(0.60 0.14 150);
+  --success-foreground: oklch(0.99 0.01 85);
+  --warning: oklch(0.72 0.15 65);
+  --warning-foreground: oklch(0.25 0.03 60);
+  --border: oklch(0.88 0.014 75);
+  --input: oklch(0.88 0.014 75);
+  --ring: oklch(0.68 0.16 55);
+}
+
+.dark {
+  /* The real subject: a warm, dimly-lit broadcast booth at 2am. */
+  --background: oklch(0.175 0.012 62);
+  --foreground: oklch(0.93 0.016 82);
+  --card: oklch(0.215 0.014 60);
+  --card-foreground: oklch(0.93 0.016 82);
+  --popover: oklch(0.205 0.014 60);
+  --popover-foreground: oklch(0.93 0.016 82);
+  --primary: oklch(0.80 0.148 72);
+  --primary-foreground: oklch(0.20 0.03 60);
+  --secondary: oklch(0.27 0.016 60);
+  --secondary-foreground: oklch(0.93 0.016 82);
+  --muted: oklch(0.245 0.013 60);
+  --muted-foreground: oklch(0.71 0.022 76);
+  --accent: oklch(0.31 0.03 58);
+  --accent-foreground: oklch(0.94 0.016 82);
+  --destructive: oklch(0.63 0.19 27);
+  --destructive-foreground: oklch(0.96 0.02 40);
+  --success: oklch(0.74 0.14 148);
+  --success-foreground: oklch(0.18 0.03 150);
+  --warning: oklch(0.80 0.148 72);
+  --warning-foreground: oklch(0.20 0.03 60);
+  --border: oklch(0.30 0.014 60);
+  --input: oklch(0.32 0.016 60);
+  --ring: oklch(0.80 0.148 72);
+}
+
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /*
+    Studio atmosphere: a warm amber glow bleeding down from the top (the "on air"
+    lamp), a faint film grain, and the faintest horizontal signal lines. Fixed so
+    it stays put while feeds scroll past.
+  */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        120% 80% at 50% -20%,
+        color-mix(in oklch, var(--color-primary) 16%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        90% 60% at 100% 0%,
+        color-mix(in oklch, var(--color-destructive) 7%, transparent),
+        transparent 50%
+      );
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--color-primary) 35%, transparent);
+    color: var(--color-foreground);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  /* A hairline reticle used for section eyebrows / console labels. */
+  .tracking-console {
+    letter-spacing: 0.18em;
+  }
+
+  @keyframes signal-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-warning) 55%, transparent);
+    }
+    50% {
+      opacity: 0.55;
+      box-shadow: 0 0 0 4px color-mix(in oklch, var(--color-warning) 0%, transparent);
+    }
+  }
+
+  .animate-signal {
+    animation: signal-pulse 1.6s ease-in-out infinite;
   }
 }
