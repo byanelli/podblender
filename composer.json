@@ -70,6 +70,7 @@
         "test": [
             "./vendor/bin/phpunit"
         ],
+        "coverage": "php -d pcov.enabled=1 ./vendor/bin/phpunit --coverage-text",
         "pint": [
             "./vendor/bin/pint"
         ],

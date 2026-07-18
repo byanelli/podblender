@@ -63,7 +63,7 @@ final class Platforms
 
     public function typeForUrl(string $url): PlatformType
     {
-        $host = Uri::fromBaseUri($this->fixUrlSchemeAndHost($url))->getHost();
+        $host = Uri::new($this->fixUrlSchemeAndHost($url))->getHost();
 
         return in_array($host, self::YOUTUBE_HOSTS) ? PlatformType::YouTube : PlatformType::Web;
     }

@@ -2,19 +2,18 @@
 
 namespace App\Concerns;
 
-use Illuminate\Pipeline\Pipeline;
 use League\Uri\Uri;
 
 trait FixesUrls
 {
     protected function ensureSchemeIsHttps(string $url): string
     {
-        return Uri::fromBaseUri($url)->withScheme('https')->toString();
+        return Uri::new($url)->withScheme('https')->toString();
     }
 
     protected function removeWwwFromHost(string $url): string
     {
-        $uri = Uri::fromBaseUri($url);
+        $uri = Uri::new($url);
 
         $host = $uri->getHost();
 
@@ -32,7 +31,7 @@ trait FixesUrls
 
     protected function removeUtmCodesFromUrl(string $url): string
     {
-        $url = Uri::fromBaseUri($url);
+        $url = Uri::new($url);
 
         if (empty($url->getQuery())) {
             return $url;
@@ -53,10 +52,10 @@ trait FixesUrls
 
     protected function fixUrl(string $url): string
     {
-        return (new Pipeline)->send($url)->through([
-            $this->ensureSchemeIsHttps(...),
-            $this->removeWwwFromHost(...),
-            $this->removeUtmCodesFromUrl(...),
-        ])->thenReturn();
+        return $this->removeUtmCodesFromUrl(
+            $this->removeWwwFromHost(
+                $this->ensureSchemeIsHttps($url)
+            )
+        );
     }
 }

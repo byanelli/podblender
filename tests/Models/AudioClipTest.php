@@ -1,0 +1,49 @@
+<?php
+
+namespace Tests\Models;
+
+use App\Enums\PlatformType;
+use App\Models\AudioClip;
+use App\Models\AudioSource;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+class AudioClipTest extends TestCase
+{
+    #[Test]
+    public function it_formats_a_time_of_at_least_an_hour_with_hours()
+    {
+        $clip = AudioClip::factory()->make([AudioClip::COL_DURATION => 3661]);
+
+        $this->assertEquals('1:01:01', $clip->formatted_time);
+    }
+
+    #[Test]
+    public function it_formats_a_time_under_an_hour_without_hours()
+    {
+        $clip = AudioClip::factory()->make([AudioClip::COL_DURATION => 125]);
+
+        $this->assertEquals('2:05', $clip->formatted_time);
+    }
+
+    #[Test]
+    public function its_platform_type_comes_from_its_audio_source()
+    {
+        $source = AudioSource::factory()->create([AudioSource::COL_PLATFORM_TYPE => PlatformType::Web]);
+        $clip = AudioClip::factory()->create([AudioClip::COL_AUDIO_SOURCE_ID => $source->id]);
+
+        $this->assertEquals(PlatformType::Web, $clip->platform_type);
+    }
+
+    #[Test]
+    public function its_audio_url_is_the_public_url_for_its_storage_path()
+    {
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_STORAGE_PATH => 'some/path.mp3',
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+        ]);
+
+        $this->assertStringContainsString('/storage/some/path.mp3', $clip->audio_url);
+        $this->assertStringStartsWith('http', $clip->audio_url);
+    }
+}

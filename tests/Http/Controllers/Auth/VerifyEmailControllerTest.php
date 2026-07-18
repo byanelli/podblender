@@ -33,6 +33,26 @@ class VerifyEmailControllerTest extends TestCase
         $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
     }
 
+    public function test_already_verified_users_are_redirected_without_reverifying(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+
+        Event::fake();
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        $response = $this->actingAs($user)->get($verificationUrl);
+
+        // No second Verified event fires for an address that was already verified.
+        Event::assertNotDispatched(Verified::class);
+        $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+    }
+
     public function test_email_is_not_verified_with_invalid_hash(): void
     {
         $this->withExceptionHandling();

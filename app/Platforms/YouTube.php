@@ -53,7 +53,7 @@ readonly class YouTube implements SubscribablePlatform
     {
         $url = $this->fixUrlSchemeAndHost($url);
 
-        $uri = Uri::fromBaseUri($url);
+        $uri = Uri::new($url);
 
         if (! collect(Platforms::YOUTUBE_HOSTS)->contains($uri->getHost() ?? '')) {
             throw new \RuntimeException("Invalid host for YouTube URL: {$uri->getHost()}");
@@ -119,7 +119,7 @@ readonly class YouTube implements SubscribablePlatform
 
     private function getLastPathPiece(string $url): string
     {
-        return (string) collect(explode('/', Uri::fromBaseUri($url)->getPath()))->last();
+        return (string) collect(explode('/', Uri::new($url)->getPath()))->last();
     }
 
     private function convertChannelMetadataToSourceMetadata(ChannelMetadata $channel): SourceMetadata

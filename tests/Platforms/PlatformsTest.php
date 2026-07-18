@@ -48,6 +48,13 @@ class PlatformsTest extends TestCase
     }
 
     #[Test]
+    public function it_resolves_the_concrete_platform_straight_from_a_url()
+    {
+        $this->assertInstanceOf(YouTube::class, $this->platforms()->forUrl('https://youtube.com/watch?v=abc'));
+        $this->assertInstanceOf(Web::class, $this->platforms()->forUrl('https://www.nytimes.com/2024/04/13/movies/ai.html'));
+    }
+
+    #[Test]
     public function it_returns_a_subscribable_platform_for_a_subscribable_type()
     {
         $this->assertInstanceOf(SubscribablePlatform::class, $this->platforms()->subscribableFor(PlatformType::YouTube));

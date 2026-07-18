@@ -11,14 +11,14 @@ use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\Concerns\FakesDispatcher;
 use Tests\Concerns\FakesPlatform;
 use Tests\TestCase;
 
 class AddClipToFeedTest extends TestCase
 {
-    use FakesDispatcher, FakesPlatform;
+    use FakesPlatform;
 
     #[Test]
     public function it_adds_a_new_clip_to_the_feed()
@@ -39,7 +39,7 @@ class AddClipToFeedTest extends TestCase
         );
 
         // We don't want to run the DownloadAndStore job
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $user = User::factory()->create();
         $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
@@ -113,7 +113,7 @@ class AddClipToFeedTest extends TestCase
             ),
         );
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $user = User::factory()->create();
         $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
@@ -147,7 +147,7 @@ class AddClipToFeedTest extends TestCase
             ),
         );
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $user = User::factory()->create();
         $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);

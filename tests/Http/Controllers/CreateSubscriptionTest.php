@@ -7,13 +7,13 @@ use App\Models\Feed;
 use App\Models\User;
 use App\Platforms\Contracts\SourceMetadata;
 use Carbon\CarbonImmutable;
-use Tests\Concerns\FakesDispatcher;
+use Illuminate\Support\Facades\Bus;
 use Tests\Concerns\FakesPlatform;
 use Tests\TestCase;
 
 class CreateSubscriptionTest extends TestCase
 {
-    use FakesDispatcher, FakesPlatform;
+    use FakesPlatform;
 
     public function test_create_subscription()
     {
@@ -34,7 +34,7 @@ class CreateSubscriptionTest extends TestCase
             )
         );
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $this->postJson('/feeds/subscription', $requestPayload)
             ->assertOk();
@@ -72,7 +72,7 @@ class CreateSubscriptionTest extends TestCase
             )
         );
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $this->postJson('/feeds/subscription', ['url' => $sourceUrl, 'name' => 'Test Feed'])
             ->assertOk();

@@ -2,11 +2,13 @@
 
 namespace Tests\Platforms;
 
+use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Web;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Tests\Concerns\FakesWhisper;
 use Tests\TestCase;
 
@@ -79,5 +81,25 @@ class WebTest extends TestCase
 
         $this->assertFileExists($mp3);
         $this->assertEquals($text, file_get_contents($mp3));
+    }
+
+    #[Test]
+    public function it_wraps_a_metadata_failure_in_a_platform_exception()
+    {
+        Http::fake(fn () => throw new RuntimeException('boom'));
+
+        $this->expectException(PlatformException::class);
+
+        $this->app->make(Web::class)->getClipMetadata('https://theonion.com/some-article');
+    }
+
+    #[Test]
+    public function it_wraps_a_download_failure_in_a_platform_exception()
+    {
+        Http::fake(fn () => throw new RuntimeException('boom'));
+
+        $this->expectException(PlatformException::class);
+
+        $this->app->make(Web::class)->downloadAudio('https://theonion.com/some-article');
     }
 }

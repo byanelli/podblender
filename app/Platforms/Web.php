@@ -39,7 +39,7 @@ readonly class Web implements Platform
                 publishedAt: $article->publicationDate,
                 source: new SourceMetadata(
                     name: $article->publisher,
-                    canonicalUrl: 'https://'.Uri::fromBaseUri($clipUrl)->getHost()
+                    canonicalUrl: 'https://'.Uri::new($clipUrl)->getHost()
                 ),
             );
         } catch (\Exception $e) {

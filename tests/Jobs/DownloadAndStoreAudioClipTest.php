@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Ramsey\Uuid\Uuid;
 use RuntimeException;
-use Tests\Concerns\FakesDispatcher;
 use Tests\Concerns\FakesFfmpeg;
 use Tests\Concerns\FakesPlatform;
 use Tests\Concerns\FakesStorage;
@@ -24,7 +23,7 @@ use Tests\TestCase;
 
 class DownloadAndStoreAudioClipTest extends TestCase
 {
-    use FakesDispatcher, FakesFfmpeg, FakesPlatform, FakesStorage;
+    use FakesFfmpeg, FakesPlatform, FakesStorage;
 
     private function clipAttachedToFeed(): AudioClip
     {

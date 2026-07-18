@@ -3,7 +3,9 @@
 namespace Tests\Http\Controllers\Auth;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class AuthenticatedSessionControllerTest extends TestCase
@@ -41,6 +43,26 @@ class AuthenticatedSessionControllerTest extends TestCase
             'password' => 'wrong-password',
         ]);
 
+        $this->assertGuest();
+    }
+
+    public function test_users_are_locked_out_after_too_many_failed_attempts(): void
+    {
+        $this->withExceptionHandling();
+
+        Event::fake();
+
+        $user = User::factory()->create();
+
+        // Five failures reach the limit; the sixth attempt is rejected before it even checks the password.
+        foreach (range(1, 5) as $ignored) {
+            $this->post('/login', ['email' => $user->email, 'password' => 'wrong-password']);
+        }
+
+        $response = $this->post('/login', ['email' => $user->email, 'password' => 'wrong-password']);
+
+        Event::assertDispatched(Lockout::class);
+        $response->assertSessionHasErrors('email');
         $this->assertGuest();
     }
 

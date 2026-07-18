@@ -10,15 +10,15 @@ use App\Models\Feed;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Bus;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
-use Tests\Concerns\FakesDispatcher;
 use Tests\Concerns\FakesPlatform;
 use Tests\TestCase;
 
 class UpdateSubscriptionTest extends TestCase
 {
-    use FakesDispatcher, FakesPlatform;
+    use FakesPlatform;
 
     private function sourceMetadataFor(AudioSource $subscription): SourceMetadata
     {
@@ -43,7 +43,7 @@ class UpdateSubscriptionTest extends TestCase
             canonicalUrl: $subscription->platform_url,
         );
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $this->fakePlatform(clipMetadataList: [
             new ClipMetadata(
@@ -104,7 +104,7 @@ class UpdateSubscriptionTest extends TestCase
             Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subYears(2),
         ]);
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $this->fakePlatform(clipMetadataList: [
             new ClipMetadata(
@@ -139,7 +139,7 @@ class UpdateSubscriptionTest extends TestCase
             Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDay(),
         ]);
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $this->fakePlatform(clipMetadataList: [
             new ClipMetadata(
@@ -190,7 +190,7 @@ class UpdateSubscriptionTest extends TestCase
             Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDays(10),
         ]);
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         // A clip published between when the lagging subscriber joined and the caught-up subscriber's newest clip. The
         // old cursor (yesterday) would never fetch this; the fix reaches back to the lagging subscriber's join date.
@@ -232,7 +232,7 @@ class UpdateSubscriptionTest extends TestCase
             AudioClipFeed::COL_PUBLISHED_AT => $existing->published_at,
         ]);
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $this->fakePlatform(clipMetadataList: [
             new ClipMetadata(
@@ -270,7 +270,7 @@ class UpdateSubscriptionTest extends TestCase
             Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subYear(),
         ]);
 
-        $this->fakeNoOpDispatcher();
+        Bus::fake();
 
         $this->fakePlatform(clipMetadataList: [
             new ClipMetadata(

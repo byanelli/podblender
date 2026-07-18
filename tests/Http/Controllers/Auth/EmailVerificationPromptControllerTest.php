@@ -15,4 +15,13 @@ class EmailVerificationPromptControllerTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_already_verified_users_are_redirected_to_the_dashboard(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/verify-email');
+
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
 }
