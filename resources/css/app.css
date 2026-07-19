@@ -4,13 +4,13 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-@custom-variant dark (&:is(.dark *));
-
 /*
-  tube2pod — "late-night radio studio"
-  Warm near-black canvas, signal-amber accent (tube glow / RSS orange / VU meter),
-  Fraunces display serif, Instrument Sans body, IBM Plex Mono console readouts.
-  The app commits to the dark studio look (the <html> element carries `dark`).
+  Podblender — "friendly blender bar"
+  A light, cheerful workshop where YouTube channels and web articles get blended
+  into podcast feeds. Cream-mint canvas, deep-teal primary, pastel aqua/mint/sky
+  accents, chunky ink outlines with hard offset shadows, pill-shaped controls,
+  and a bold rounded display face (Baloo 2) over a warm sans (Nunito Sans).
+  The app is light-only.
 */
 
 @theme inline {
@@ -37,71 +37,60 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-ink: var(--ink);
 
-  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Fraunces', ui-serif, Georgia, serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-sans: 'Nunito Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Baloo 2', ui-rounded, 'Segoe UI Rounded', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, 'SFMono-Regular', monospace;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 1rem;
 
-  /* Light "paper" mode — warm cream studio sheet. Kept cohesive but the app runs dark. */
-  --background: oklch(0.975 0.012 85);
-  --foreground: oklch(0.22 0.02 60);
-  --card: oklch(0.99 0.008 85);
-  --card-foreground: oklch(0.22 0.02 60);
-  --popover: oklch(0.99 0.008 85);
-  --popover-foreground: oklch(0.22 0.02 60);
-  --primary: oklch(0.68 0.16 55);
-  --primary-foreground: oklch(0.99 0.01 85);
-  --secondary: oklch(0.93 0.014 80);
-  --secondary-foreground: oklch(0.28 0.02 60);
-  --muted: oklch(0.94 0.012 80);
-  --muted-foreground: oklch(0.50 0.02 65);
-  --accent: oklch(0.92 0.03 70);
-  --accent-foreground: oklch(0.28 0.03 55);
-  --destructive: oklch(0.58 0.20 27);
-  --destructive-foreground: oklch(0.99 0.01 85);
-  --success: oklch(0.60 0.14 150);
-  --success-foreground: oklch(0.99 0.01 85);
-  --warning: oklch(0.72 0.15 65);
-  --warning-foreground: oklch(0.25 0.03 60);
-  --border: oklch(0.88 0.014 75);
-  --input: oklch(0.88 0.014 75);
-  --ring: oklch(0.68 0.16 55);
-}
+  /* Cream-mint paper and deep-teal ink. */
+  --background: oklch(0.972 0.018 165);
+  --foreground: oklch(0.26 0.035 200);
 
-.dark {
-  /* The real subject: a warm, dimly-lit broadcast booth at 2am. */
-  --background: oklch(0.175 0.012 62);
-  --foreground: oklch(0.93 0.016 82);
-  --card: oklch(0.215 0.014 60);
-  --card-foreground: oklch(0.93 0.016 82);
-  --popover: oklch(0.205 0.014 60);
-  --popover-foreground: oklch(0.93 0.016 82);
-  --primary: oklch(0.80 0.148 72);
-  --primary-foreground: oklch(0.20 0.03 60);
-  --secondary: oklch(0.27 0.016 60);
-  --secondary-foreground: oklch(0.93 0.016 82);
-  --muted: oklch(0.245 0.013 60);
-  --muted-foreground: oklch(0.71 0.022 76);
-  --accent: oklch(0.31 0.03 58);
-  --accent-foreground: oklch(0.94 0.016 82);
-  --destructive: oklch(0.63 0.19 27);
-  --destructive-foreground: oklch(0.96 0.02 40);
-  --success: oklch(0.74 0.14 148);
-  --success-foreground: oklch(0.18 0.03 150);
-  --warning: oklch(0.80 0.148 72);
-  --warning-foreground: oklch(0.20 0.03 60);
-  --border: oklch(0.30 0.014 60);
-  --input: oklch(0.32 0.016 60);
-  --ring: oklch(0.80 0.148 72);
+  --card: oklch(0.995 0.008 150);
+  --card-foreground: oklch(0.26 0.035 200);
+  --popover: oklch(0.995 0.008 150);
+  --popover-foreground: oklch(0.26 0.035 200);
+
+  /* Deep teal — dark enough that white labels clear WCAG AA. */
+  --primary: oklch(0.50 0.10 194);
+  --primary-foreground: oklch(0.99 0.012 150);
+
+  /* Soft aqua pill fill. */
+  --secondary: oklch(0.90 0.05 190);
+  --secondary-foreground: oklch(0.30 0.05 205);
+
+  --muted: oklch(0.94 0.022 175);
+  --muted-foreground: oklch(0.44 0.035 200);
+
+  /* Mint accent. */
+  --accent: oklch(0.88 0.07 175);
+  --accent-foreground: oklch(0.28 0.05 205);
+
+  --destructive: oklch(0.52 0.19 25);
+  --destructive-foreground: oklch(0.99 0.012 150);
+
+  --success: oklch(0.46 0.11 157);
+  --success-foreground: oklch(0.99 0.012 150);
+
+  --warning: oklch(0.75 0.14 78);
+  --warning-foreground: oklch(0.28 0.05 80);
+
+  /* Soft border for incidental dividers; --ink is the chunky outline. */
+  --border: oklch(0.86 0.025 185);
+  --input: oklch(0.26 0.035 200);
+  --ring: oklch(0.50 0.10 194);
+
+  --ink: oklch(0.26 0.035 200);
 }
 
 @layer base {
@@ -110,7 +99,7 @@
   }
 
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
@@ -122,9 +111,8 @@
   }
 
   /*
-    Studio atmosphere: a warm amber glow bleeding down from the top (the "on air"
-    lamp), a faint film grain, and the faintest horizontal signal lines. Fixed so
-    it stays put while feeds scroll past.
+    A soft mint wash drifting in from the top corners — just enough warmth to keep
+    the cream from reading as flat white. Fixed so it stays put while feeds scroll.
   */
   body::before {
     content: '';
@@ -134,30 +122,19 @@
     pointer-events: none;
     background:
       radial-gradient(
-        120% 80% at 50% -20%,
-        color-mix(in oklch, var(--color-primary) 16%, transparent),
-        transparent 55%
+        70% 55% at 8% -10%,
+        color-mix(in oklch, var(--color-accent) 45%, transparent),
+        transparent 60%
       ),
       radial-gradient(
-        90% 60% at 100% 0%,
-        color-mix(in oklch, var(--color-destructive) 7%, transparent),
-        transparent 50%
+        60% 50% at 100% 0%,
+        color-mix(in oklch, var(--color-secondary) 40%, transparent),
+        transparent 55%
       );
   }
 
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: 0.4;
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  }
-
   ::selection {
-    background: color-mix(in oklch, var(--color-primary) 35%, transparent);
+    background: color-mix(in oklch, var(--color-primary) 25%, transparent);
     color: var(--color-foreground);
   }
 }
@@ -171,24 +148,47 @@
     font-family: var(--font-mono);
   }
 
-  /* A hairline reticle used for section eyebrows / console labels. */
+  /* Gentle letterspacing for small all-caps labels. */
   .tracking-console {
-    letter-spacing: 0.18em;
+    letter-spacing: 0.1em;
   }
 
+  /* Chunky offset shadows — the hard, no-blur drop that defines the outline look. */
+  .shadow-hard-sm {
+    box-shadow: 2px 2px 0 0 var(--ink);
+  }
+
+  .shadow-hard {
+    box-shadow: 4px 4px 0 0 var(--ink);
+  }
+
+  .shadow-hard-lg {
+    box-shadow: 6px 6px 0 0 var(--ink);
+  }
+
+  /* Hand-drawn highlight stroke tucked under a key word in a heading. */
+  .accent-underline {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M3 6 Q30 1 60 5 T117 4' fill='none' stroke='%2314a396' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 0.92em;
+    background-size: 100% 0.34em;
+    padding-bottom: 0.08em;
+  }
+
+  /* A small friendly pulse for live/processing dots. */
   @keyframes signal-pulse {
     0%,
     100% {
       opacity: 1;
-      box-shadow: 0 0 0 0 color-mix(in oklch, var(--color-warning) 55%, transparent);
+      transform: scale(1);
     }
     50% {
       opacity: 0.55;
-      box-shadow: 0 0 0 4px color-mix(in oklch, var(--color-warning) 0%, transparent);
+      transform: scale(0.8);
     }
   }
 
   .animate-signal {
-    animation: signal-pulse 1.6s ease-in-out infinite;
+    animation: signal-pulse 1.4s ease-in-out infinite;
   }
 }

@@ -103,7 +103,7 @@ export default function Feed({ feed }: { feed: FeedType }) {
         <AuthenticatedLayout
             header={
                 <div>
-                    <p className="flex items-center gap-2 font-mono text-[0.6875rem] tracking-console text-muted-foreground uppercase">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground shadow-hard-sm">
                         {feed.subscription != null ? (
                             <>
                                 <Radio className="size-3.5" />
@@ -116,11 +116,11 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                 Custom feed
                             </>
                         )}
-                    </p>
-                    <h1 className="mt-1.5 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+                    </span>
+                    <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
                         {feed.name}
                     </h1>
-                    <p className="mt-1 font-mono text-xs text-muted-foreground">
+                    <p className="mt-1 text-sm font-semibold text-muted-foreground">
                         {clipCount} {clipCount === 1 ? 'clip' : 'clips'}
                     </p>
                 </div>
@@ -157,11 +157,11 @@ export default function Feed({ feed }: { feed: FeedType }) {
                     <ul className="space-y-2">
                         {feed.audio_clips.map((clip) => (
                             <li key={clip.id}>
-                                <Card className="gap-0 py-0">
+                                <Card className="gap-0 py-0 transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-hard-lg">
                                     <div className="flex items-start justify-between gap-4 p-4">
                                         <div className="min-w-0 flex-1">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <p className="font-medium">
+                                                <p className="font-bold">
                                                     {clip.title}
                                                 </p>
                                                 <StatusBadge

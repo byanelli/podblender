@@ -37,7 +37,7 @@ export default function DeleteUserForm() {
     return (
         <section className="space-y-6">
             <header>
-                <h2 className="font-display text-lg font-medium">Delete account</h2>
+                <h2 className="font-display text-xl font-bold">Delete account</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                     Once deleted, all of your feeds and data are permanently removed.
                     Download anything you want to keep first.

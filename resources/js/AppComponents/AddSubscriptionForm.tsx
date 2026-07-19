@@ -82,10 +82,10 @@ export default function AddSubscriptionForm({
                             type="button"
                             onClick={() => setNewFeedType(option.value)}
                             className={cn(
-                                'group flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors',
+                                'group flex flex-col items-start gap-1 rounded-xl border-2 border-ink p-3 text-left transition-all',
                                 active
-                                    ? 'border-primary/60 bg-primary/10'
-                                    : 'border-border/70 hover:border-border hover:bg-accent/40',
+                                    ? 'bg-accent shadow-hard-sm'
+                                    : 'bg-card hover:-translate-x-px hover:-translate-y-px hover:shadow-hard-sm',
                             )}
                         >
                             <span className="flex items-center gap-2">
@@ -106,7 +106,7 @@ export default function AddSubscriptionForm({
                                 )}
                                 <span
                                     className={cn(
-                                        'font-mono text-xs tracking-console uppercase',
+                                        'text-sm font-bold',
                                         active ? 'text-foreground' : 'text-muted-foreground',
                                     )}
                                 >
@@ -128,7 +128,7 @@ export default function AddSubscriptionForm({
                     name="name"
                     required
                     value={name}
-                    placeholder="Late Night Lectures"
+                    placeholder="Weekend Listening"
                     onChange={(e) => setName(e.target.value)}
                 />
             </div>

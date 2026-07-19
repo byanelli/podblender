@@ -21,7 +21,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
         <GuestLayout>
             <Head title="Forgot Password" />
 
-            <h1 className="font-display text-xl font-semibold">Reset password</h1>
+            <h1 className="font-display text-2xl font-bold">Reset password</h1>
             <p className="mt-1 mb-6 text-sm text-muted-foreground">
                 Tell us your email and we'll send a reset link.
             </p>

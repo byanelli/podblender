@@ -16,7 +16,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
         <GuestLayout>
             <Head title="Email Verification" />
 
-            <h1 className="font-display text-xl font-semibold">Verify your email</h1>
+            <h1 className="font-display text-2xl font-bold">Verify your email</h1>
             <p className="mt-1 mb-4 text-sm text-muted-foreground">
                 Thanks for signing up! Click the link we just emailed you to verify
                 your address. Didn't get it? We'll gladly send another.

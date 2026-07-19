@@ -29,7 +29,7 @@ export default function UpdateProfileInformationForm({
     return (
         <section>
             <header>
-                <h2 className="font-display text-lg font-medium">Profile information</h2>
+                <h2 className="font-display text-xl font-bold">Profile information</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                     Update your account's name and email address.
                 </p>

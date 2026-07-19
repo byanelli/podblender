@@ -31,9 +31,9 @@ export default function Login({
         <GuestLayout>
             <Head title="Log in" />
 
-            <h1 className="font-display text-xl font-semibold">Welcome back</h1>
+            <h1 className="font-display text-2xl font-bold">Welcome back</h1>
             <p className="mt-1 mb-6 text-sm text-muted-foreground">
-                Sign in to tune into your feeds.
+                Sign in to get back to your feeds.
             </p>
 
             {status && (

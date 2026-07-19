@@ -10,16 +10,16 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                 <div className="mb-8 flex flex-col items-center gap-3 text-center">
                     <Link href="/" className="flex items-center gap-3">
                         <ApplicationLogo className="size-11" />
-                        <span className="font-display text-2xl font-semibold tracking-tight">
-                            tube<span className="text-primary">2</span>pod
+                        <span className="font-display text-3xl font-extrabold tracking-tight">
+                            Pod<span className="text-primary">blender</span>
                         </span>
                     </Link>
-                    <p className="font-mono text-[0.6875rem] tracking-console text-muted-foreground uppercase">
-                        Your private broadcast booth
+                    <p className="text-sm font-semibold text-muted-foreground">
+                        Blend the web into your own podcast feed
                     </p>
                 </div>
 
-                <div className="rounded-xl border border-border/70 bg-card/80 p-7 shadow-2xl shadow-black/30 backdrop-blur-sm">
+                <div className="rounded-2xl border-2 border-ink bg-card p-7 shadow-hard-lg">
                     {children}
                 </div>
             </div>

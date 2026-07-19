@@ -26,9 +26,9 @@ export default function Register() {
         <GuestLayout>
             <Head title="Register" />
 
-            <h1 className="font-display text-xl font-semibold">Set up your booth</h1>
+            <h1 className="font-display text-2xl font-bold">Create your account</h1>
             <p className="mt-1 mb-6 text-sm text-muted-foreground">
-                Create an account to start building feeds.
+                Sign up to start blending feeds.
             </p>
 
             <form onSubmit={submit} className="space-y-5">

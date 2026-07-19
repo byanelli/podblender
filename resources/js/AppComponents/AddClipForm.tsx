@@ -85,18 +85,18 @@ export default function AddClipForm({
                     >
                         <ArrowLeft className="size-4" />
                     </button>
-                    <h3 className="font-display text-base font-semibold">
+                    <h3 className="font-display text-base font-bold">
                         Confirm this clip
                     </h3>
                 </div>
 
-                <dl className="divide-y divide-border/60 rounded-lg border border-border/60">
+                <dl className="divide-y divide-border rounded-xl border-2 border-ink">
                     {metadataRows.map((row) => (
                         <div
                             key={row.key}
                             className="grid gap-1 px-4 py-3 sm:grid-cols-3 sm:gap-4"
                         >
-                            <dt className="font-mono text-[0.6875rem] tracking-console text-muted-foreground uppercase">
+                            <dt className="text-xs font-bold tracking-console text-muted-foreground uppercase">
                                 {row.key}
                             </dt>
                             <dd className="text-sm break-words sm:col-span-2">

@@ -23,7 +23,7 @@ export default function AuthenticatedLayout({
 
     return (
         <div className="min-h-screen">
-            <nav className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
+            <nav className="sticky top-0 z-40 border-b-2 border-ink bg-card">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-8">
                         <Link
@@ -31,8 +31,8 @@ export default function AuthenticatedLayout({
                             className="flex items-center gap-2.5"
                         >
                             <ApplicationLogo className="size-8" />
-                            <span className="font-display text-lg font-semibold tracking-tight">
-                                tube<span className="text-primary">2</span>pod
+                            <span className="font-display text-xl font-extrabold tracking-tight">
+                                Pod<span className="text-primary">blender</span>
                             </span>
                         </Link>
 
@@ -40,16 +40,18 @@ export default function AuthenticatedLayout({
                             <Link
                                 href={route('dashboard')}
                                 className={cn(
-                                    'flex items-center gap-2 rounded-md px-2.5 py-1.5 font-mono text-xs tracking-console uppercase transition-colors',
+                                    'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold transition-colors',
                                     onDashboard
-                                        ? 'bg-primary/10 text-primary'
+                                        ? 'border-2 border-ink bg-accent text-foreground shadow-hard-sm'
                                         : 'text-muted-foreground hover:text-foreground',
                                 )}
                             >
                                 <span
                                     className={cn(
                                         'size-1.5 rounded-full',
-                                        onDashboard ? 'bg-primary animate-signal' : 'bg-muted-foreground/40',
+                                        onDashboard
+                                            ? 'bg-primary animate-signal'
+                                            : 'bg-muted-foreground/40',
                                     )}
                                 />
                                 Feeds
@@ -64,7 +66,7 @@ export default function AuthenticatedLayout({
                                 size="sm"
                                 className="gap-2 text-muted-foreground hover:text-foreground"
                             >
-                                <span className="grid size-6 place-items-center rounded-full bg-primary/15 font-mono text-xs text-primary">
+                                <span className="grid size-6 place-items-center rounded-full border-2 border-ink bg-primary text-xs font-bold text-primary-foreground">
                                     {user.name.charAt(0).toUpperCase()}
                                 </span>
                                 <span className="hidden max-w-[10rem] truncate sm:inline">
@@ -76,7 +78,7 @@ export default function AuthenticatedLayout({
                         <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuLabel className="flex flex-col gap-0.5">
                                 <span className="truncate font-medium">{user.name}</span>
-                                <span className="truncate font-mono text-xs font-normal text-muted-foreground">
+                                <span className="truncate text-xs font-normal text-muted-foreground">
                                     {user.email}
                                 </span>
                             </DropdownMenuLabel>
@@ -99,8 +101,8 @@ export default function AuthenticatedLayout({
             </nav>
 
             {header && (
-                <header className="border-b border-border/50">
-                    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+                <header>
+                    <div className="mx-auto max-w-6xl px-4 pt-8 pb-2 sm:px-6 lg:px-8">
                         {header}
                     </div>
                 </header>

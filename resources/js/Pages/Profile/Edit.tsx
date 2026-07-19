@@ -17,10 +17,10 @@ export default function Edit({
         <AuthenticatedLayout
             header={
                 <div>
-                    <p className="font-mono text-[0.6875rem] tracking-console text-muted-foreground uppercase">
+                    <span className="inline-block rounded-full border-2 border-ink bg-accent px-3 py-1 text-xs font-bold text-foreground shadow-hard-sm">
                         Settings
-                    </p>
-                    <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">
+                    </span>
+                    <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight">
                         Profile
                     </h1>
                 </div>

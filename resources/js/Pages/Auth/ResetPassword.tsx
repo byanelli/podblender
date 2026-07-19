@@ -32,7 +32,7 @@ export default function ResetPassword({
         <GuestLayout>
             <Head title="Reset Password" />
 
-            <h1 className="font-display text-xl font-semibold">Choose a new password</h1>
+            <h1 className="font-display text-2xl font-bold">Choose a new password</h1>
             <p className="mt-1 mb-6 text-sm text-muted-foreground">
                 Pick a long, random password to stay secure.
             </p>
