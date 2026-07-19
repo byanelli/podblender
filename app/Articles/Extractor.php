@@ -72,31 +72,133 @@ readonly class Extractor
      */
     private function extractTitle(string $url, ?array $node, array $meta, string $html, ?Readability $readability): string
     {
-        $headline = $node['headline'] ?? null;
+        $pageTitle = $this->pageTitle($html);
 
-        if (is_string($headline) && trim($headline) !== '') {
-            return trim($headline);
-        }
+        $rawHeadline = $node['headline'] ?? null;
+        $headline = (is_string($rawHeadline) && trim($rawHeadline) !== '') ? trim($rawHeadline) : null;
 
+        $ogTitle = null;
         foreach (['og:title', 'twitter:title'] as $key) {
             if (isset($meta[$key]) && trim($meta[$key]) !== '') {
-                return trim($meta[$key]);
+                $ogTitle = trim($meta[$key]);
+                break;
             }
+        }
+
+        // Prefer og:title over the JSON-LD headline when the page's own <title>
+        // reflects the og:title but NOT the headline. That mismatch is the tell of
+        // a site (Wikipedia is the classic case) whose schema.org headline holds a
+        // short description rather than the article title. Gated on og:title being
+        // present and corroborated, so a site with a generic <title> and a good
+        // headline (and no og:title) still keeps its headline.
+        if ($headline !== null && $ogTitle !== null && $pageTitle !== null
+            && $this->reflectedIn($ogTitle, $pageTitle)
+            && ! $this->reflectedIn($headline, $pageTitle)) {
+            return $ogTitle;
+        }
+
+        if ($headline !== null) {
+            return $headline;
+        }
+
+        if ($ogTitle !== null) {
+            return $ogTitle;
         }
 
         if ($readability !== null && ($title = $readability->getTitle()) !== null && trim($title) !== '') {
             return trim($title);
         }
 
-        if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m) === 1) {
-            $title = trim(html_entity_decode($m[1]));
-
-            if ($title !== '') {
-                return $title;
-            }
+        if ($pageTitle !== null) {
+            // The raw <title> usually carries the site name (" - Wikipedia",
+            // " | The Guardian"). Strip it by matching a known site name at
+            // either end, so we never have to guess which side it's on.
+            return $this->stripSiteName($pageTitle, $this->siteNameCandidates($url, $node, $meta));
         }
 
         return $this->getNameFromSlug($url);
+    }
+
+    private function pageTitle(string $html): ?string
+    {
+        if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m) !== 1) {
+            return null;
+        }
+
+        $title = trim(html_entity_decode($m[1]));
+
+        return $title !== '' ? $title : null;
+    }
+
+    /**
+     * Is $needle present in $haystack, ignoring case and whitespace runs? Used to
+     * ask whether a page's <title> actually contains a candidate title.
+     */
+    private function reflectedIn(string $needle, string $haystack): bool
+    {
+        $normalize = fn (string $s): string => mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $s)));
+
+        $n = $normalize($needle);
+
+        return $n !== '' && str_contains($normalize($haystack), $n);
+    }
+
+    /**
+     * The names a site might tack onto its <title>, best first: the OpenGraph
+     * site name, the JSON-LD publisher, then the bare host as a weak fallback.
+     *
+     * @param  array<string, mixed>|null  $node
+     * @param  array<string, string>  $meta
+     * @return array<int, string>
+     */
+    private function siteNameCandidates(string $url, ?array $node, array $meta): array
+    {
+        $publisherName = null;
+        $publisher = $node['publisher'] ?? null;
+        if (is_array($publisher) && isset($publisher['name']) && is_string($publisher['name'])) {
+            $publisherName = $publisher['name'];
+        }
+
+        $host = Uri::new($url)->getHost();
+        $host = is_string($host) ? (string) preg_replace('/^www\./', '', $host) : null;
+
+        return array_values(array_filter(
+            [$meta['og:site_name'] ?? null, $publisherName, $host],
+            fn ($name): bool => is_string($name) && trim($name) !== '',
+        ));
+    }
+
+    /**
+     * Remove a leading or trailing "<separator> Site Name" (or "Site Name
+     * <separator>") from a page title. Anchoring on a known site name rather than
+     * on position handles the rare site that leads with its name, and never
+     * strips the title down to nothing.
+     *
+     * @param  array<int, string>  $names
+     */
+    private function stripSiteName(string $title, array $names): string
+    {
+        $separator = '[|\x{2013}\x{2014}\-:»·]';
+
+        foreach ($names as $name) {
+            $quoted = preg_quote(trim($name), '/');
+
+            if ($quoted === '') {
+                continue;
+            }
+
+            $stripped = trim((string) preg_replace(
+                ['/\s+'.$separator.'\s*'.$quoted.'\s*$/iu', '/^\s*'.$quoted.'\s*'.$separator.'\s+/iu'],
+                '',
+                $title,
+            ));
+
+            if ($stripped !== '' && $stripped !== $title) {
+                return $stripped;
+            }
+        }
+
+        return $title;
     }
 
     // ----- Publisher --------------------------------------------------------

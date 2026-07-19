@@ -73,6 +73,42 @@ class ExtractorTest extends TestCase
     }
 
     #[Test]
+    public function it_prefers_og_title_when_the_page_title_reflects_it_but_not_the_json_ld_headline()
+    {
+        // Wikipedia fills schema.org headline with a short description; its own
+        // <title> ("Podcast - Wikipedia") reflects og:title, not the headline.
+        $article = $this->extract('wikipedia-headline', 'https://en.wikipedia.org/wiki/Podcast');
+
+        $this->assertEquals('Podcast', $article->title);
+    }
+
+    #[Test]
+    public function it_strips_a_trailing_site_name_from_the_page_title()
+    {
+        $article = $this->extract('title-site-suffix', 'https://dailybugle.example/library-vote');
+
+        $this->assertEquals('Council Votes To Fund The New Library', $article->title);
+    }
+
+    #[Test]
+    public function it_strips_a_leading_site_name_from_the_page_title()
+    {
+        $article = $this->extract('title-site-prefix', 'https://dailybugle.example/library-vote');
+
+        $this->assertEquals('Council Votes To Fund The New Library', $article->title);
+    }
+
+    #[Test]
+    public function it_strips_only_the_trailing_site_name_when_the_title_equals_the_site_name()
+    {
+        // The Wikipedia article about Wikipedia: "Wikipedia - Wikipedia" must
+        // become "Wikipedia", not empty — only the trailing occurrence is a suffix.
+        $article = $this->extract('title-name-equals-topic', 'https://en.wikipedia.org/wiki/Wikipedia');
+
+        $this->assertEquals('Wikipedia', $article->title);
+    }
+
+    #[Test]
     public function it_defaults_the_publication_date_to_now_when_none_is_published()
     {
         $before = CarbonImmutable::now()->subMinute();
