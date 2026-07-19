@@ -5,6 +5,7 @@ namespace Tests\Articles;
 use App\Articles\ArchiveBlockedException;
 use App\Articles\ArchiveSnapshotNotFoundException;
 use App\Articles\Contracts\Fetcher;
+use App\Articles\WaybackSnapshotNotFoundException;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
@@ -83,6 +84,76 @@ class FetcherTest extends TestCase
         $this->expectException(RequestException::class);
 
         $this->fetcher()->fetchDirect('https://theonion.com/some-article');
+    }
+
+    /**
+     * A Wayback availability envelope reporting a closest snapshot at $timestamp.
+     */
+    private function waybackAvailable(string $timestamp): PromiseInterface
+    {
+        return Http::response([
+            'archived_snapshots' => [
+                'closest' => [
+                    'available' => true,
+                    'url' => "http://web.archive.org/web/$timestamp/https://www.example.com/x",
+                    'timestamp' => $timestamp,
+                    'status' => '200',
+                ],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function it_fetches_the_raw_id_snapshot_when_wayback_has_a_capture()
+    {
+        Http::fake(function (Request $request) {
+            return str_contains($request->url(), '/wayback/available')
+                ? $this->waybackAvailable('20260115184700')
+                : Http::response('<html>wayback body</html>');
+        });
+
+        $body = $this->fetcher()->fetchFromWayback('https://www.example.com/x');
+
+        $this->assertEquals('<html>wayback body</html>', $body);
+
+        // The availability API is asked about the requested URL, on archive.org.
+        Http::assertSent(function (Request $request) {
+            $query = [];
+            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+
+            return str_starts_with($request->url(), 'https://archive.org/wayback/available')
+                && ($query['url'] ?? null) === 'https://www.example.com/x';
+        });
+
+        // The snapshot is fetched raw: web.archive.org, the response timestamp,
+        // the "id_" (toolbar-free) modifier, and the original URL.
+        Http::assertSent(fn (Request $request) => $request->url()
+            === 'https://web.archive.org/web/20260115184700id_/https://www.example.com/x'
+            && $request->hasHeader('User-Agent', config('articles.user_agent')));
+    }
+
+    #[Test]
+    public function it_throws_wayback_not_found_when_no_snapshot_is_available()
+    {
+        Http::fake(['*' => Http::response(['archived_snapshots' => []])]);
+
+        $this->expectException(WaybackSnapshotNotFoundException::class);
+
+        $this->fetcher()->fetchFromWayback('https://www.example.com/never-archived');
+    }
+
+    #[Test]
+    public function it_throws_wayback_not_found_when_the_snapshot_fetch_errors()
+    {
+        Http::fake(function (Request $request) {
+            return str_contains($request->url(), '/wayback/available')
+                ? $this->waybackAvailable('20260115184700')
+                : Http::response('boom', 500);
+        });
+
+        $this->expectException(WaybackSnapshotNotFoundException::class);
+
+        $this->fetcher()->fetchFromWayback('https://www.example.com/x');
     }
 
     #[Test]

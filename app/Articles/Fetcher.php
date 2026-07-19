@@ -43,6 +43,89 @@ readonly class Fetcher implements FetcherContract
             ->body();
     }
 
+    /**
+     * The free middle tier. web.archive.org is NOT Cloudflare-fronted, so this
+     * is a plain Guzzle GET — no Scrapfly, no credits. Two hops:
+     *   1. the availability API tells us the closest snapshot's timestamp; and
+     *   2. we GET that snapshot in raw "id_" form (Wayback's injected toolbar
+     *      stripped) so the Extractor sees the original archived markup.
+     *
+     * A miss or any hiccup becomes WaybackSnapshotNotFoundException so the Reader
+     * can fall through to archive.is — a Wayback stumble must never fail a read.
+     */
+    public function fetchFromWayback(string $url): string
+    {
+        $timestamp = $this->waybackClosestTimestamp($url);
+
+        if ($timestamp === null) {
+            throw new WaybackSnapshotNotFoundException("No Wayback snapshot exists for: $url");
+        }
+
+        try {
+            return $this->http
+                ->withHeaders(['User-Agent' => $this->config->get('articles.user_agent')])
+                ->timeout(30)
+                ->get($this->waybackSnapshotUrl($timestamp, $url))
+                ->throw()
+                ->body();
+        } catch (\Throwable $e) {
+            // Wayback is best-effort; archive.is is the backstop. A snapshot-fetch
+            // error must not escalate — degrade it to a "no snapshot" miss.
+            throw new WaybackSnapshotNotFoundException('Wayback snapshot fetch failed: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Hit the availability API and return the closest snapshot's timestamp, or
+     * null when there is none. An API-level hiccup is treated as "no snapshot"
+     * too, so the whole read degrades to the archive.is backstop rather than
+     * failing on a free tier.
+     */
+    private function waybackClosestTimestamp(string $url): ?string
+    {
+        try {
+            $response = $this->http
+                ->withHeaders(['User-Agent' => $this->config->get('articles.user_agent')])
+                ->timeout(30)
+                ->get($this->waybackAvailabilityUrl(), ['url' => $url])
+                ->throw();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        $closest = $response->json('archived_snapshots.closest');
+
+        if (! is_array($closest) || ($closest['available'] ?? null) !== true) {
+            return null;
+        }
+
+        $timestamp = $closest['timestamp'] ?? null;
+
+        return (is_string($timestamp) && $timestamp !== '') ? $timestamp : null;
+    }
+
+    private function waybackAvailabilityUrl(): string
+    {
+        return rtrim((string) $this->config->get('articles.wayback_base_url'), '/').'/wayback/available';
+    }
+
+    /**
+     * Build the raw snapshot URL. Availability answers on the bare host
+     * (archive.org), but snapshots are served from web.archive.org, so we derive
+     * the web host by prefixing "web." The "id_" after the timestamp is what
+     * suppresses Wayback's injected navigation toolbar.
+     */
+    private function waybackSnapshotUrl(string $timestamp, string $url): string
+    {
+        $base = rtrim((string) $this->config->get('articles.wayback_base_url'), '/');
+
+        $scheme = parse_url($base, PHP_URL_SCHEME) ?: 'https';
+        $host = (string) (parse_url($base, PHP_URL_HOST) ?: 'archive.org');
+        $webHost = str_starts_with($host, 'web.') ? $host : 'web.'.$host;
+
+        return "$scheme://$webHost/web/{$timestamp}id_/$url";
+    }
+
     public function fetchFromArchive(string $url): string
     {
         $snapshotUrl = $this->newestSnapshotUrl($this->fetchListing($url));

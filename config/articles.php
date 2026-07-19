@@ -96,6 +96,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Wayback Machine Base URL
+    |--------------------------------------------------------------------------
+    |
+    | Base of the Internet Archive used for the free Wayback tier that sits
+    | BETWEEN the direct fetch and the paid archive.is backstop. The host serves
+    | two endpoints: the availability API lives on this host directly
+    | ({base}/wayback/available), while raw snapshots are served from the
+    | web.archive.org host (derived by prefixing "web." to this host) as
+    | {web-base}/web/{timestamp}id_/{url} — the "id_" modifier strips Wayback's
+    | injected toolbar so the Extractor sees the original archived markup.
+    |
+    | Wayback is NOT Cloudflare-fronted, so it is a plain, free Guzzle GET (no
+    | Scrapfly). Its snapshots are often the paywalled capture, so anything it
+    | returns is re-validated by the PaywallDetector before it is trusted.
+    |
+    */
+
+    'wayback_base_url' => env('ARTICLES_WAYBACK_BASE_URL', 'https://archive.org'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Scrapfly Archive Fetch
     |--------------------------------------------------------------------------
     |

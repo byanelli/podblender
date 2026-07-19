@@ -43,21 +43,56 @@ readonly class Reader implements ReaderContract
         );
     }
 
+    /**
+     * Three fetch tiers, cheapest first, each archive tier re-validated by the
+     * PaywallDetector and falling through when it comes back gated or absent:
+     *
+     *   1. Direct (free) — skipped for a hard-paywall domain, which never serves
+     *      a logged-out reader a usable page. Returned only if not gated.
+     *   2. Wayback (free) — web.archive.org is not Cloudflare-fronted, but its
+     *      snapshot is often the SAME paywalled capture, so accept it only when
+     *      the detector clears it; a miss or a gated snapshot falls through.
+     *   3. archive.is (paid, ~55 Scrapfly credits) — the terminal backstop. Its
+     *      snapshots are user-submitted un-paywalled captures, so its result is
+     *      accepted as-is: there is nowhere left to fall.
+     */
     private function fetchAndExtract(string $url, string $canonical): Article
     {
-        // Known-gated hosts never serve a logged-out reader a usable page, so
-        // skip the doomed direct fetch and go straight to the archive.
-        if ($this->isHardPaywallDomain($url)) {
-            return $this->extractor->extract($url, $this->fetcher->fetchFromArchive($canonical));
+        if (! $this->isHardPaywallDomain($url)) {
+            $direct = $this->extractor->extract($url, $html = $this->fetcher->fetchDirect($url));
+
+            if (! $this->paywallDetector->isGated($html, $direct)) {
+                return $direct;
+            }
         }
 
-        $direct = $this->extractor->extract($url, $html = $this->fetcher->fetchDirect($url));
+        // Wayback keys on the published (www-preserved) URL, same as archive.is.
+        $wayback = $this->tryWaybackTier($url, $canonical);
 
-        if (! $this->paywallDetector->isGated($html, $direct)) {
-            return $direct;
+        if ($wayback !== null) {
+            return $wayback;
         }
 
         return $this->extractor->extract($url, $this->fetcher->fetchFromArchive($canonical));
+    }
+
+    /**
+     * Attempt the free Wayback tier: fetch the snapshot, extract it, and return
+     * the Article only if the detector clears it. Returns null — meaning "fall
+     * through to archive.is" — for BOTH a missing snapshot (the exception) and a
+     * snapshot that is still gated or hollow. A Wayback miss never escapes.
+     */
+    private function tryWaybackTier(string $url, string $canonical): ?Article
+    {
+        try {
+            $html = $this->fetcher->fetchFromWayback($canonical);
+        } catch (WaybackSnapshotNotFoundException) {
+            return null;
+        }
+
+        $article = $this->extractor->extract($url, $html);
+
+        return $this->paywallDetector->isGated($html, $article) ? null : $article;
     }
 
     private function isHardPaywallDomain(string $url): bool
