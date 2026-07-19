@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
-import { ExternalLink, Radio, Rss, Trash2 } from 'lucide-react';
+import { ExternalLink, ListMusic, Trash2 } from 'lucide-react';
+import RadioWaves from '@/Components/RadioWaves';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AddClipForm from '@/AppComponents/AddClipForm';
@@ -106,13 +107,13 @@ export default function Feed({ feed }: { feed: FeedType }) {
                     <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground shadow-hard-sm">
                         {feed.subscription != null ? (
                             <>
-                                <Radio className="size-3.5" />
+                                <RadioWaves className="size-3.5" />
                                 {feed.subscription.name} ·{' '}
                                 {feed.subscription.platform_type.name}
                             </>
                         ) : (
                             <>
-                                <Rss className="size-3.5" />
+                                <ListMusic className="size-3.5" />
                                 Custom feed
                             </>
                         )}
@@ -174,7 +175,7 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                                     }
                                                 </Badge>
                                             </div>
-                                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-muted-foreground">
+                                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                                                 <span>From {clip.audio_source.name}</span>
                                                 <span className="opacity-40">/</span>
                                                 <span>

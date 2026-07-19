@@ -10,13 +10,14 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 default:
-                    'border-2 border-ink bg-primary text-primary-foreground shadow-hard-sm hover:-translate-x-px hover:-translate-y-px hover:shadow-hard active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
+                    'border-2 border-ink bg-primary text-primary-foreground shadow-hard-sm hover:translate-x-px hover:translate-y-px hover:shadow-hard-xs active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
                 destructive:
-                    'border-2 border-ink bg-destructive text-destructive-foreground shadow-hard-sm hover:-translate-x-px hover:-translate-y-px hover:shadow-hard active:translate-x-0.5 active:translate-y-0.5 active:shadow-none focus-visible:ring-destructive/40',
+                    'border-2 border-ink bg-destructive text-destructive-foreground shadow-hard-sm hover:translate-x-px hover:translate-y-px hover:shadow-hard-xs active:translate-x-0.5 active:translate-y-0.5 active:shadow-none focus-visible:ring-destructive/40',
                 outline:
-                    'border-2 border-ink bg-card text-foreground shadow-hard-sm hover:-translate-x-px hover:-translate-y-px hover:shadow-hard hover:bg-accent active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
+                    'border-2 border-ink bg-card text-foreground shadow-hard-sm hover:translate-x-px hover:translate-y-px hover:shadow-hard-xs hover:bg-accent active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
                 secondary:
-                    'border-2 border-ink bg-secondary text-secondary-foreground shadow-hard-sm hover:-translate-x-px hover:-translate-y-px hover:shadow-hard active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
+                    'border-2 border-ink bg-secondary text-secondary-foreground shadow-hard-sm hover:translate-x-px hover:translate-y-px hover:shadow-hard-xs active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
+                flat: 'border-2 border-ink bg-card text-foreground transition-colors hover:bg-accent',
                 ghost: 'rounded-full hover:bg-accent hover:text-accent-foreground',
                 link: 'text-primary underline-offset-4 hover:underline',
             },

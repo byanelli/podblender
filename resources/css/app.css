@@ -66,8 +66,10 @@
   --primary-foreground: oklch(0.99 0.012 150);
 
   /* Soft aqua pill fill. */
-  --secondary: oklch(0.90 0.05 190);
-  --secondary-foreground: oklch(0.30 0.05 205);
+  /* Deliberately identical to --accent: the design uses exactly one medium green (nav pill, count pill, badges,
+     toggle chips). Only the page background is lighter and only --primary is darker. */
+  --secondary: oklch(0.88 0.07 175);
+  --secondary-foreground: oklch(0.28 0.05 205);
 
   --muted: oklch(0.94 0.022 175);
   --muted-foreground: oklch(0.44 0.035 200);
@@ -139,6 +141,25 @@
   }
 }
 
+/* Chunky offset shadows — the hard, no-blur drop that defines the outline look. Declared with @utility (not plain
+   classes in a layer) so Tailwind generates hover:/active: variants; the hover states rely on swapping shadow size
+   against a translate so the shadow's outer edge stays planted while the element pops or depresses. */
+@utility shadow-hard-xs {
+  box-shadow: 1px 1px 0 0 var(--ink);
+}
+
+@utility shadow-hard-sm {
+  box-shadow: 2px 2px 0 0 var(--ink);
+}
+
+@utility shadow-hard {
+  box-shadow: 4px 4px 0 0 var(--ink);
+}
+
+@utility shadow-hard-lg {
+  box-shadow: 6px 6px 0 0 var(--ink);
+}
+
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
@@ -153,26 +174,30 @@
     letter-spacing: 0.1em;
   }
 
-  /* Chunky offset shadows — the hard, no-blur drop that defines the outline look. */
-  .shadow-hard-sm {
-    box-shadow: 2px 2px 0 0 var(--ink);
-  }
-
-  .shadow-hard {
-    box-shadow: 4px 4px 0 0 var(--ink);
-  }
-
-  .shadow-hard-lg {
-    box-shadow: 6px 6px 0 0 var(--ink);
-  }
-
-  /* Hand-drawn highlight stroke tucked under a key word in a heading. */
+  /* Hand-drawn highlight stroke tucked under a key word in a heading. The 0.98em offset was tuned visually against
+     Baloo 2's metrics: its baseline sits unusually low in the em box, so bottom-relative positioning lands too deep
+     and small top offsets strike through the glyphs. */
   .accent-underline {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M3 6 Q30 1 60 5 T117 4' fill='none' stroke='%2314a396' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: left 0.92em;
-    background-size: 100% 0.34em;
-    padding-bottom: 0.08em;
+    background-position: left 1.15em;
+    background-size: 100% 0.3em;
+  }
+
+  /* Comic-style action lines that pop outward once, e.g. around the RSS button after a copy. */
+  @keyframes action-burst {
+    0% {
+      opacity: 1;
+      transform: scale(0.5);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.25);
+    }
+  }
+
+  .animate-action-burst {
+    animation: action-burst 0.5s ease-out forwards;
   }
 
   /* A small friendly pulse for live/processing dots. */

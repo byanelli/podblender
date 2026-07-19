@@ -1,6 +1,7 @@
 import { FormEventHandler, useState } from 'react';
 import axios from 'axios';
-import { Link2, Loader2, Radio, Rss, TriangleAlert } from 'lucide-react';
+import { Link2, ListMusic, Loader2, TriangleAlert } from 'lucide-react';
+import RadioWaves from '@/Components/RadioWaves';
 
 import routes from '@/routes';
 import { Alert, AlertDescription, AlertTitle } from '@/Components/ui/alert';
@@ -82,22 +83,22 @@ export default function AddSubscriptionForm({
                             type="button"
                             onClick={() => setNewFeedType(option.value)}
                             className={cn(
-                                'group flex flex-col items-start gap-1 rounded-xl border-2 border-ink p-3 text-left transition-all',
+                                'group flex cursor-pointer flex-col items-start gap-1 rounded-xl border-2 border-ink p-3 text-left transition-colors',
                                 active
-                                    ? 'bg-accent shadow-hard-sm'
-                                    : 'bg-card hover:-translate-x-px hover:-translate-y-px hover:shadow-hard-sm',
+                                    ? 'bg-accent'
+                                    : 'bg-card hover:bg-accent',
                             )}
                         >
                             <span className="flex items-center gap-2">
                                 {option.value === 'custom' ? (
-                                    <Rss
+                                    <ListMusic
                                         className={cn(
                                             'size-4',
                                             active ? 'text-primary' : 'text-muted-foreground',
                                         )}
                                     />
                                 ) : (
-                                    <Radio
+                                    <RadioWaves
                                         className={cn(
                                             'size-4',
                                             active ? 'text-primary' : 'text-muted-foreground',
@@ -128,7 +129,7 @@ export default function AddSubscriptionForm({
                     name="name"
                     required
                     value={name}
-                    placeholder="Weekend Listening"
+                    placeholder="Lectures"
                     onChange={(e) => setName(e.target.value)}
                 />
             </div>

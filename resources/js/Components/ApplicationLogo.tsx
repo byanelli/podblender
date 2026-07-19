@@ -19,19 +19,15 @@ export default function ApplicationLogo({ className }: { className?: string }) {
             aria-hidden="true"
         >
             {/* Base plinth */}
-            <rect
-                x="8.5"
-                y="23"
-                width="15"
-                height="4.6"
-                rx="1.9"
+            <path
+                d="M8.5 23.55h15v3.8q0 1.9-1.9 1.9h-11.2q-1.9 0-1.9-1.9Z"
                 className="fill-primary stroke-foreground"
                 strokeWidth="1.5"
             />
             {/* Power button on the base */}
             <circle
                 cx="19.4"
-                cy="25.3"
+                cy="26.4"
                 r="1.15"
                 className="fill-warning stroke-foreground"
                 strokeWidth="1"
@@ -63,17 +59,17 @@ export default function ApplicationLogo({ className }: { className?: string }) {
             {/* Lid */}
             <rect
                 x="6.6"
-                y="6"
+                y="7.4"
                 width="18.8"
-                height="3.4"
-                rx="1.7"
+                height="2"
+                rx="1"
                 className="fill-primary stroke-foreground"
                 strokeWidth="1.5"
             />
             {/* Lid knob */}
             <rect
                 x="13.7"
-                y="3.7"
+                y="4.6"
                 width="4.6"
                 height="2.8"
                 rx="1.4"

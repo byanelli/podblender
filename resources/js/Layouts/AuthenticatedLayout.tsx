@@ -30,8 +30,8 @@ export default function AuthenticatedLayout({
                             href={route('dashboard')}
                             className="flex items-center gap-2.5"
                         >
-                            <ApplicationLogo className="size-8" />
-                            <span className="font-display text-xl font-extrabold tracking-tight">
+                            <ApplicationLogo className="size-10" />
+                            <span className="font-display text-3xl font-extrabold tracking-tight">
                                 Pod<span className="text-primary">blender</span>
                             </span>
                         </Link>

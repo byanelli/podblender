@@ -1,15 +1,17 @@
-import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import axios from 'axios';
-import { Radio, Rss, Trash2 } from 'lucide-react';
+import { useState } from "react";
+import { Head, Link, router } from "@inertiajs/react";
+import axios from "axios";
+import { ListMusic, Rss, Trash2 } from "lucide-react";
+import RadioWaves from "@/Components/RadioWaves";
 
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import AddSubscriptionForm from '@/AppComponents/AddSubscriptionForm';
-import ErrorPanel from '@/AppComponents/ErrorPanel';
-import routes from '@/routes';
-import { Badge } from '@/Components/ui/badge';
-import { Button } from '@/Components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import AddSubscriptionForm from "@/AppComponents/AddSubscriptionForm";
+import CopyRssButton from "@/AppComponents/CopyRssButton";
+import ErrorPanel from "@/AppComponents/ErrorPanel";
+import routes from "@/routes";
+import { Badge } from "@/Components/ui/badge";
+import { Button } from "@/Components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,7 +22,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from '@/Components/ui/alert-dialog';
+} from "@/Components/ui/alert-dialog";
 
 type Feed = {
     id: number;
@@ -36,13 +38,13 @@ type User = {
 };
 
 export default function Dashboard({ user }: { user: User }) {
-    const [errorMessage, setErrorMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const reloadUser = () => router.reload({ only: ['user'] });
+    const reloadUser = () => router.reload({ only: ["user"] });
 
     const deleteFeed = (feed: Feed) => {
-        setErrorMessage('');
+        setErrorMessage("");
         setIsLoading(true);
 
         axios
@@ -54,7 +56,8 @@ export default function Dashboard({ user }: { user: User }) {
             .catch((error) => {
                 setIsLoading(false);
                 setErrorMessage(
-                    error.response?.data?.message ?? error.response?.data?.error,
+                    error.response?.data?.message ??
+                        error.response?.data?.error,
                 );
             });
     };
@@ -67,8 +70,8 @@ export default function Dashboard({ user }: { user: User }) {
                         Your <span className="accent-underline">feeds</span>
                     </h1>
                     <span className="hidden shrink-0 rounded-full border-2 border-ink bg-secondary px-3 py-1 text-sm font-bold text-secondary-foreground shadow-hard-sm sm:inline-block">
-                        {user.feeds.length}{' '}
-                        {user.feeds.length === 1 ? 'feed' : 'feeds'}
+                        {user.feeds.length}{" "}
+                        {user.feeds.length === 1 ? "feed" : "feeds"}
                     </span>
                 </div>
             }
@@ -77,7 +80,7 @@ export default function Dashboard({ user }: { user: User }) {
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="space-y-4 lg:col-span-2">
-                    {errorMessage !== '' && (
+                    {errorMessage !== "" && (
                         <ErrorPanel
                             message={errorMessage}
                             operation="deleting your feed"
@@ -92,7 +95,8 @@ export default function Dashboard({ user }: { user: User }) {
                                     No feeds yet
                                 </p>
                                 <p className="mt-1 text-sm text-muted-foreground">
-                                    Create your first feed to start collecting clips.
+                                    Create your first feed to start collecting
+                                    clips.
                                 </p>
                             </CardContent>
                         </Card>
@@ -100,56 +104,49 @@ export default function Dashboard({ user }: { user: User }) {
                         <ul className="space-y-3">
                             {user.feeds.map((feed) => (
                                 <li key={feed.id}>
-                                    <Card className="gap-0 py-0 transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-hard-lg">
+                                    <Card className="relative gap-0 py-0 transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg">
                                         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div className="min-w-0">
                                                 <Link
                                                     href={routes.feed(feed.id)}
-                                                    className="font-display text-lg font-bold transition-colors hover:text-primary"
+                                                    className="font-display text-lg font-bold transition-colors hover:text-primary after:absolute after:inset-0 after:content-['']"
                                                 >
                                                     {feed.name}
                                                 </Link>
                                                 <div className="mt-1.5 flex items-center gap-2">
                                                     <Badge
                                                         variant={
-                                                            feed.subscription_id == null
-                                                                ? 'secondary'
-                                                                : 'default'
+                                                            feed.subscription_id ==
+                                                            null
+                                                                ? "secondary"
+                                                                : "default"
                                                         }
                                                     >
-                                                        {feed.subscription_id == null ? (
-                                                            <Rss />
+                                                        {feed.subscription_id ==
+                                                        null ? (
+                                                            <ListMusic />
                                                         ) : (
-                                                            <Radio />
+                                                            <RadioWaves />
                                                         )}
-                                                        {feed.subscription_id == null
-                                                            ? 'Custom'
-                                                            : 'Subscription'}
+                                                        {feed.subscription_id ==
+                                                        null
+                                                            ? "Custom"
+                                                            : "Subscription"}
                                                     </Badge>
                                                     <span className="text-xs font-semibold text-muted-foreground">
-                                                        {feed.audio_clips_count}{' '}
-                                                        {feed.audio_clips_count === 1
-                                                            ? 'clip'
-                                                            : 'clips'}
+                                                        {feed.audio_clips_count}{" "}
+                                                        {feed.audio_clips_count ===
+                                                        1
+                                                            ? "clip"
+                                                            : "clips"}
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            <div className="flex flex-none items-center gap-2">
-                                                <Button
-                                                    asChild
-                                                    variant="outline"
-                                                    size="sm"
-                                                >
-                                                    <a
-                                                        href={routes.rss(feed.uuid)}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                    >
-                                                        <Rss />
-                                                        RSS
-                                                    </a>
-                                                </Button>
+                                            <div className="relative z-10 flex flex-none items-center gap-2">
+                                                <CopyRssButton
+                                                    url={routes.rss(feed.uuid)}
+                                                />
 
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
@@ -166,13 +163,15 @@ export default function Dashboard({ user }: { user: User }) {
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>
-                                                                Delete {feed.name}?
+                                                                Delete{" "}
+                                                                {feed.name}?
                                                             </AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                This permanently removes
-                                                                the feed and its RSS
-                                                                link. This can't be
-                                                                undone.
+                                                                This permanently
+                                                                removes the feed
+                                                                and its RSS
+                                                                link. This can't
+                                                                be undone.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
@@ -181,7 +180,9 @@ export default function Dashboard({ user }: { user: User }) {
                                                             </AlertDialogCancel>
                                                             <AlertDialogAction
                                                                 onClick={() =>
-                                                                    deleteFeed(feed)
+                                                                    deleteFeed(
+                                                                        feed,
+                                                                    )
                                                                 }
                                                                 className="bg-destructive text-destructive-foreground hover:brightness-110"
                                                             >

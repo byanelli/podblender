@@ -9,8 +9,8 @@ export default function GuestLayout({ children }: PropsWithChildren) {
             <div className="w-full max-w-md">
                 <div className="mb-8 flex flex-col items-center gap-3 text-center">
                     <Link href="/" className="flex items-center gap-3">
-                        <ApplicationLogo className="size-11" />
-                        <span className="font-display text-3xl font-extrabold tracking-tight">
+                        <ApplicationLogo className="size-[66px]" />
+                        <span className="font-display text-[45px] leading-tight font-extrabold tracking-tight">
                             Pod<span className="text-primary">blender</span>
                         </span>
                     </Link>
