@@ -6,6 +6,7 @@ use App\Articles\ArchiveBlockedException;
 use App\Articles\ArchiveSnapshotNotFoundException;
 use App\Articles\Contracts\Fetcher;
 use App\Articles\WaybackSnapshotNotFoundException;
+use App\Proxies\Contracts\ResidentialProxyConfig;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
@@ -15,6 +16,29 @@ use Tests\TestCase;
 
 class FetcherTest extends TestCase
 {
+    public const PROXY_URL = 'http://residential.proxy.test:7777';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Stub the residential proxy with a fixed URL so we can assert exactly
+        // that the Wayback hops are proxied, rather than fighting the real
+        // config's random session id.
+        $this->app->bind(ResidentialProxyConfig::class, fn () => new readonly class implements ResidentialProxyConfig
+        {
+            public function getUrlForDownload(): string
+            {
+                return FetcherTest::PROXY_URL;
+            }
+
+            public function requiresInsecureTls(): bool
+            {
+                return false;
+            }
+        });
+    }
+
     private function fetcher(): Fetcher
     {
         return $this->app->make(Fetcher::class);
@@ -106,7 +130,11 @@ class FetcherTest extends TestCase
     #[Test]
     public function it_fetches_the_raw_id_snapshot_when_wayback_has_a_capture()
     {
-        Http::fake(function (Request $request) {
+        $proxied = [];
+
+        Http::fake(function (Request $request, array $options) use (&$proxied) {
+            $proxied[] = $options['proxy'] ?? null;
+
             return str_contains($request->url(), '/wayback/available')
                 ? $this->waybackAvailable('20260115184700')
                 : Http::response('<html>wayback body</html>');
@@ -115,6 +143,11 @@ class FetcherTest extends TestCase
         $body = $this->fetcher()->fetchFromWayback('https://www.example.com/x');
 
         $this->assertEquals('<html>wayback body</html>', $body);
+
+        // Both Wayback hops go out through the residential proxy — production runs
+        // from a datacenter IP archive.org rate-limits and blocks.
+        $this->assertCount(2, $proxied);
+        $this->assertSame([self::PROXY_URL, self::PROXY_URL], $proxied);
 
         // The availability API is asked about the requested URL, on archive.org.
         Http::assertSent(function (Request $request) {

@@ -6,11 +6,13 @@ use App\Apis\Scrapfly\Contracts\Client as Scrapfly;
 use App\Apis\Scrapfly\ScrapflyException;
 use App\Apis\Scrapfly\ScrapflyResult;
 use App\Articles\Contracts\Fetcher as FetcherContract;
+use App\Proxies\Contracts\ResidentialProxyConfig;
 use Carbon\CarbonImmutable;
 use DOMDocument;
 use DOMXPath;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\PendingRequest;
 
 /**
  * Retrieves the raw HTML for an article. A free, direct Guzzle GET for open
@@ -31,6 +33,7 @@ readonly class Fetcher implements FetcherContract
         private Factory $http,
         private Config $config,
         private Scrapfly $scrapfly,
+        private ResidentialProxyConfig $residentialProxy,
     ) {}
 
     public function fetchDirect(string $url): string
@@ -44,8 +47,10 @@ readonly class Fetcher implements FetcherContract
     }
 
     /**
-     * The free middle tier. web.archive.org is NOT Cloudflare-fronted, so this
-     * is a plain Guzzle GET — no Scrapfly, no credits. Two hops:
+     * The cheap middle tier. web.archive.org isn't Cloudflare-CAPTCHA'd like
+     * archive.is, so it needs no Scrapfly — but production runs from a datacenter
+     * IP that archive.org rate-limits and blocks, so both hops go through the
+     * residential proxy (cheap bandwidth, not Scrapfly credits). Two hops:
      *   1. the availability API tells us the closest snapshot's timestamp; and
      *   2. we GET that snapshot in raw "id_" form (Wayback's injected toolbar
      *      stripped) so the Extractor sees the original archived markup.
@@ -62,9 +67,7 @@ readonly class Fetcher implements FetcherContract
         }
 
         try {
-            return $this->http
-                ->withHeaders(['User-Agent' => $this->config->get('articles.user_agent')])
-                ->timeout(30)
+            return $this->waybackRequest()
                 ->get($this->waybackSnapshotUrl($timestamp, $url))
                 ->throw()
                 ->body();
@@ -84,9 +87,7 @@ readonly class Fetcher implements FetcherContract
     private function waybackClosestTimestamp(string $url): ?string
     {
         try {
-            $response = $this->http
-                ->withHeaders(['User-Agent' => $this->config->get('articles.user_agent')])
-                ->timeout(30)
+            $response = $this->waybackRequest()
                 ->get($this->waybackAvailabilityUrl(), ['url' => $url])
                 ->throw();
         } catch (\Throwable) {
@@ -102,6 +103,19 @@ readonly class Fetcher implements FetcherContract
         $timestamp = $closest['timestamp'] ?? null;
 
         return (is_string($timestamp) && $timestamp !== '') ? $timestamp : null;
+    }
+
+    /**
+     * A Wayback-bound request, pinned to a residential exit address. archive.org
+     * doesn't challenge with a CAPTCHA, so unlike the archive.is path this needs
+     * no Scrapfly — just an IP that doesn't look like a datacenter.
+     */
+    private function waybackRequest(): PendingRequest
+    {
+        return $this->http
+            ->withOptions(['proxy' => $this->residentialProxy->getUrlForDownload()])
+            ->withHeaders(['User-Agent' => $this->config->get('articles.user_agent')])
+            ->timeout(30);
     }
 
     private function waybackAvailabilityUrl(): string
