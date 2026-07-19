@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>The Open Press</title>
+    <link>https://theopenpress.com</link>
+    <description>An open feed whose items are missing their dates</description>
+    <item>
+      <title>Feed Title That Wins</title>
+      <link>https://theopenpress.com/harvest-festival</link>
+    </item>
+  </channel>
+</rss>

@@ -5,3 +5,5 @@ parameters:
     level: 8
     paths:
         - app
+    stubFiles:
+        - phpstan-stubs/laminas-feed-entry.stub

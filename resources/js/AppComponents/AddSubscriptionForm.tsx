@@ -61,7 +61,7 @@ export default function AddSubscriptionForm({
 
     const options: { value: NewFeedType; label: string; hint: string }[] = [
         { value: 'custom', label: 'Custom', hint: 'Add clips by hand' },
-        { value: 'subscription', label: 'Subscription', hint: 'Auto-pull a channel' },
+        { value: 'subscription', label: 'Subscription', hint: 'Auto-pull a channel or feed' },
     ];
 
     return (
@@ -136,7 +136,7 @@ export default function AddSubscriptionForm({
 
             {newFeedType === 'subscription' && (
                 <div className="space-y-2">
-                    <Label htmlFor="feed-url">Channel URL</Label>
+                    <Label htmlFor="feed-url">Channel or RSS feed URL</Label>
                     <div className="relative">
                         <Link2 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input

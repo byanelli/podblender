@@ -26,7 +26,7 @@ readonly class Reader implements ReaderContract
         private Config $config,
     ) {}
 
-    public function read(string $url): Article
+    public function read(string $url, ?ArticleHints $hints = null): Article
     {
         // Two normalizations from the same URL: the www-STRIPPED form is the
         // article's identity (cache key + hard-paywall-domain check), while the
@@ -39,7 +39,7 @@ readonly class Reader implements ReaderContract
         return $this->cache->remember(
             "article:$url",
             now()->addHours((int) $this->config->get('articles.cache_ttl_hours')),
-            fn () => $this->fetchAndExtract($url, $canonical),
+            fn () => $this->fetchAndExtract($url, $canonical, $hints),
         );
     }
 
@@ -56,10 +56,10 @@ readonly class Reader implements ReaderContract
      *      snapshots are user-submitted un-paywalled captures, so its result is
      *      accepted as-is: there is nowhere left to fall.
      */
-    private function fetchAndExtract(string $url, string $canonical): Article
+    private function fetchAndExtract(string $url, string $canonical, ?ArticleHints $hints): Article
     {
         if (! $this->isHardPaywallDomain($url)) {
-            $direct = $this->extractor->extract($url, $html = $this->fetcher->fetchDirect($url));
+            $direct = $this->extractor->extract($url, $html = $this->fetcher->fetchDirect($url), $hints);
 
             if (! $this->paywallDetector->isGated($html, $direct)) {
                 return $direct;
@@ -67,13 +67,13 @@ readonly class Reader implements ReaderContract
         }
 
         // Wayback keys on the published (www-preserved) URL, same as archive.is.
-        $wayback = $this->tryWaybackTier($url, $canonical);
+        $wayback = $this->tryWaybackTier($url, $canonical, $hints);
 
         if ($wayback !== null) {
             return $wayback;
         }
 
-        return $this->extractor->extract($url, $this->fetcher->fetchFromArchive($canonical));
+        return $this->extractor->extract($url, $this->fetcher->fetchFromArchive($canonical), $hints);
     }
 
     /**
@@ -82,7 +82,7 @@ readonly class Reader implements ReaderContract
      * through to archive.is" — for BOTH a missing snapshot (the exception) and a
      * snapshot that is still gated or hollow. A Wayback miss never escapes.
      */
-    private function tryWaybackTier(string $url, string $canonical): ?Article
+    private function tryWaybackTier(string $url, string $canonical, ?ArticleHints $hints): ?Article
     {
         try {
             $html = $this->fetcher->fetchFromWayback($canonical);
@@ -90,7 +90,7 @@ readonly class Reader implements ReaderContract
             return null;
         }
 
-        $article = $this->extractor->extract($url, $html);
+        $article = $this->extractor->extract($url, $html, $hints);
 
         return $this->paywallDetector->isGated($html, $article) ? null : $article;
     }

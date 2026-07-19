@@ -18,4 +18,5 @@ enum PlatformType: int implements Arrayable
 
     case YouTube = 1;
     case Web = 2;
+    case Rss = 3;
 }

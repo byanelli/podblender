@@ -33,6 +33,7 @@ final class Platforms
     private const array PLATFORMS = [
         PlatformType::YouTube->value => YouTube::class,
         PlatformType::Web->value => Web::class,
+        PlatformType::Rss->value => Rss::class,
     ];
 
     public function __construct(private readonly Container $container) {}
@@ -66,5 +67,20 @@ final class Platforms
         $host = Uri::new($this->fixUrlSchemeAndHost($url))->getHost();
 
         return in_array($host, self::YOUTUBE_HOSTS) ? PlatformType::YouTube : PlatformType::Web;
+    }
+
+    /**
+     * The platform a SUBSCRIPTION URL belongs to. Unlike typeForUrl — which
+     * classifies a single clip's URL, where non-YouTube means a web article —
+     * a subscription to anything that isn't a YouTube channel can only mean an
+     * RSS/Atom feed, since a bare web page has nothing to poll. The Rss
+     * platform accepts either the feed URL itself or a page that advertises
+     * one via autodiscovery.
+     */
+    public function subscribableTypeForUrl(string $url): PlatformType
+    {
+        return $this->typeForUrl($url) === PlatformType::YouTube
+            ? PlatformType::YouTube
+            : PlatformType::Rss;
     }
 }

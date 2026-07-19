@@ -3,6 +3,7 @@
 export const PlatformTypeEnum = {
   YouTube: { name: 'YouTube', value: 1 },
   Web: { name: 'Web', value: 2 },
+  Rss: { name: 'Rss', value: 3 },
 } as const;
 
 export type PlatformTypeEnum = typeof PlatformTypeEnum[keyof typeof PlatformTypeEnum];

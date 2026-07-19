@@ -3,6 +3,7 @@
 namespace Tests\Articles;
 
 use App\Articles\Article;
+use App\Articles\ArticleHints;
 use App\Articles\Extractor;
 use Carbon\CarbonImmutable;
 use PHPUnit\Framework\Attributes\Test;
@@ -106,6 +107,46 @@ class ExtractorTest extends TestCase
         $article = $this->extract('title-name-equals-topic', 'https://en.wikipedia.org/wiki/Wikipedia');
 
         $this->assertEquals('Wikipedia', $article->title);
+    }
+
+    #[Test]
+    public function it_prefers_hinted_metadata_over_everything_the_page_says()
+    {
+        $html = (string) file_get_contents(__DIR__.'/fixtures/jsonld-full-body.html');
+
+        $article = (new Extractor)->extract(
+            'https://riversidegazette.com/city-council-approves-riverside-park',
+            $html,
+            new ArticleHints(
+                title: 'The Feed Knew Better',
+                authors: ['Feed Author'],
+                publicationDate: CarbonImmutable::parse('2026-07-15T09:30:00+00:00'),
+            ),
+        );
+
+        // The hints outrank the page's JSON-LD for the fields they cover...
+        $this->assertEquals('The Feed Knew Better', $article->title);
+        $this->assertEquals(['Feed Author'], $article->authors);
+        $this->assertEquals(CarbonImmutable::parse('2026-07-15T09:30:00+00:00'), $article->publicationDate);
+
+        // ...while everything they don't still comes from the page.
+        $this->assertEquals('The Riverside Gazette', $article->publisher);
+        $this->assertStringContainsString('ending a decade of debate', $article->text);
+    }
+
+    #[Test]
+    public function it_ignores_blank_hints()
+    {
+        $html = (string) file_get_contents(__DIR__.'/fixtures/jsonld-full-body.html');
+
+        $article = (new Extractor)->extract(
+            'https://riversidegazette.com/city-council-approves-riverside-park',
+            $html,
+            new ArticleHints(title: '   ', authors: ['  ']),
+        );
+
+        $this->assertEquals('City Council Approves Riverside Park', $article->title);
+        $this->assertEquals(['Ada Reporter', 'Ben Writer'], $article->authors);
     }
 
     #[Test]

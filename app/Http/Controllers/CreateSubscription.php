@@ -21,7 +21,7 @@ readonly class CreateSubscription
         CreateSubscriptionRequest $request,
         #[CurrentUser] User $user,
     ): void {
-        $platformType = $platforms->typeForUrl($request->url);
+        $platformType = $platforms->subscribableTypeForUrl($request->url);
 
         // Fetch the source metadata before opening the transaction: it's a network call to the platform, and holding a
         // database transaction open across it would be pointless and slow.

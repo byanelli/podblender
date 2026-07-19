@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>The Riverside Gazette</title>
+    <link>https://riversidegazette.com</link>
+    <description>News from Riverside</description>
+    <item>
+      <title>City Council Approves Riverside Park</title>
+      <link>https://www.riversidegazette.com/city-council-approves-riverside-park?utm_source=rss</link>
+      <guid>https://riversidegazette.com/city-council-approves-riverside-park</guid>
+      <pubDate>Wed, 15 Jul 2026 09:30:00 +0000</pubDate>
+      <dc:creator>Ada Reporter</dc:creator>
+      <description><![CDATA[<p>The council voted <b>unanimously</b> on Tuesday.</p>]]></description>
+    </item>
+    <item>
+      <title>Harbor Master Reports Calm Seas</title>
+      <link>https://riversidegazette.com/harbor-calm-seas</link>
+      <guid>https://riversidegazette.com/harbor-calm-seas</guid>
+      <pubDate>Mon, 01 Jun 2026 08:00:00 +0000</pubDate>
+      <dc:creator>Ben Writer</dc:creator>
+      <description>Quiet week on the water.</description>
+    </item>
+  </channel>
+</rss>

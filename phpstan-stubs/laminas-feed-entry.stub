@@ -1,0 +1,34 @@
+<?php
+
+namespace Laminas\Feed\Reader\Entry;
+
+/**
+ * Corrects laminas-feed's docblocks: EntryInterface documents getTitle(),
+ * getDescription(), getContent(), and getLink() as returning string, but the
+ * RSS/Atom implementations return null whenever the entry simply lacks the
+ * element (verified at runtime against laminas-feed 2.26). Only the methods
+ * with wrong docblocks are stubbed; the rest keep their upstream types.
+ */
+interface EntryInterface
+{
+    /**
+     * @return string|null
+     */
+    public function getContent();
+
+    /**
+     * @return string|null
+     */
+    public function getDescription();
+
+    /**
+     * @param  int  $index
+     * @return string|null
+     */
+    public function getLink($index = 0);
+
+    /**
+     * @return string|null
+     */
+    public function getTitle();
+}

@@ -6,6 +6,7 @@ use App\Enums\PlatformType;
 use App\Platforms\Contracts\SubscribablePlatform;
 use App\Platforms\Exceptions\PlatformNotSubscribableException;
 use App\Platforms\Platforms;
+use App\Platforms\Rss;
 use App\Platforms\Web;
 use App\Platforms\YouTube;
 use PHPUnit\Framework\Attributes\Test;
@@ -45,6 +46,22 @@ class PlatformsTest extends TestCase
     {
         $this->assertInstanceOf(YouTube::class, $this->platforms()->for(PlatformType::YouTube));
         $this->assertInstanceOf(Web::class, $this->platforms()->for(PlatformType::Web));
+        $this->assertInstanceOf(Rss::class, $this->platforms()->for(PlatformType::Rss));
+    }
+
+    #[Test]
+    public function it_resolves_subscription_urls_to_youtube_or_rss()
+    {
+        // A clip URL that isn't YouTube means a web article; a SUBSCRIPTION
+        // URL that isn't YouTube can only mean a feed.
+        $this->assertEquals(
+            PlatformType::YouTube,
+            $this->platforms()->subscribableTypeForUrl('https://www.youtube.com/@channel'),
+        );
+        $this->assertEquals(
+            PlatformType::Rss,
+            $this->platforms()->subscribableTypeForUrl('https://riversidegazette.com/feed.xml'),
+        );
     }
 
     #[Test]
@@ -58,6 +75,7 @@ class PlatformsTest extends TestCase
     public function it_returns_a_subscribable_platform_for_a_subscribable_type()
     {
         $this->assertInstanceOf(SubscribablePlatform::class, $this->platforms()->subscribableFor(PlatformType::YouTube));
+        $this->assertInstanceOf(SubscribablePlatform::class, $this->platforms()->subscribableFor(PlatformType::Rss));
     }
 
     #[Test]

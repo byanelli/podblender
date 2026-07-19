@@ -19,7 +19,7 @@ use League\Uri\Uri;
  */
 readonly class Extractor
 {
-    public function extract(string $url, string $html): Article
+    public function extract(string $url, string $html, ?ArticleHints $hints = null): Article
     {
         $jsonLd = JsonLd::parse($html);
         $node = $jsonLd->articleNode();
@@ -27,12 +27,19 @@ readonly class Extractor
         $readability = $this->readability($url, $html);
         $meta = $this->parseMetaTags($html);
 
+        // Hints come from a source that already knew about this specific
+        // article (an RSS feed item), so where one is present it wins over
+        // anything scraped off the page.
+        $hints ??= new ArticleHints;
+
         return new Article(
             url: $url,
-            title: $this->extractTitle($url, $node, $meta, $html, $readability),
+            title: $hints->title() ?? $this->extractTitle($url, $node, $meta, $html, $readability),
             publisher: $this->extractPublisher($url, $node, $meta),
-            publicationDate: $this->extractDate($node, $meta),
-            authors: $this->extractAuthors($node, $meta),
+            publicationDate: $hints->publicationDate !== null
+                ? CarbonImmutable::instance($hints->publicationDate)
+                : $this->extractDate($node, $meta),
+            authors: $hints->authors() !== [] ? $hints->authors() : $this->extractAuthors($node, $meta),
             text: $this->extractBody($node, $readability),
         );
 

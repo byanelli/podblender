@@ -20,10 +20,20 @@ readonly class Web implements Platform
     use FixesUrls;
 
     public function __construct(
-        private ArticleReader $reader,
-        private WhisperApi $whisper,
-        private Factory $http,
+        protected ArticleReader $reader,
+        protected WhisperApi $whisper,
+        protected Factory $http,
     ) {}
+
+    /**
+     * Which platform this instance reports itself as in errors. Rss extends
+     * this class (a feed item is a web article), and its failures should be
+     * attributed to Rss, not Web.
+     */
+    protected function type(): PlatformType
+    {
+        return PlatformType::Web;
+    }
 
     public function getClipMetadata(string $clipUrl): ClipMetadata
     {
@@ -43,7 +53,7 @@ readonly class Web implements Platform
                 ),
             );
         } catch (\Exception $e) {
-            throw new PlatformException(PlatformType::Web, PlatformOperation::Metadata, $e);
+            throw new PlatformException($this->type(), PlatformOperation::Metadata, $e);
         }
     }
 
@@ -70,7 +80,7 @@ readonly class Web implements Platform
 
             return $this->whisper->convertTextToSpeech($article->text);
         } catch (\Exception $e) {
-            throw new PlatformException(PlatformType::Web, PlatformOperation::Download, $e);
+            throw new PlatformException($this->type(), PlatformOperation::Download, $e);
         }
     }
 }
