@@ -71,4 +71,22 @@ class ExtractorTest extends TestCase
 
         $this->assertEquals(['John Doe', 'Jane Doe'], $article->authors);
     }
+
+    #[Test]
+    public function it_defaults_the_publication_date_to_now_when_none_is_published()
+    {
+        $before = CarbonImmutable::now()->subMinute();
+
+        $article = $this->extract('no-date', 'https://example.com/the-undated-almanac');
+
+        // The rest of the metadata still extracts from the JSON-LD...
+        $this->assertEquals('The Almanac That Forgot Its Own Date', $article->title);
+        $this->assertEquals('The Timeless Register', $article->publisher);
+        $this->assertEquals(['Morgan Undated'], $article->authors);
+
+        // ...but with no date in the JSON-LD or the meta tags, it falls back to
+        // "now" rather than failing the whole extraction.
+        $this->assertTrue($article->publicationDate->greaterThanOrEqualTo($before));
+        $this->assertTrue($article->publicationDate->lessThanOrEqualTo(CarbonImmutable::now()->addMinute()));
+    }
 }
