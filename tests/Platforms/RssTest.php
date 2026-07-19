@@ -7,7 +7,6 @@ use App\Platforms\Exceptions\FeedNotFoundException;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Rss;
 use Carbon\CarbonImmutable;
-use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -114,31 +113,22 @@ class RssTest extends TestCase
     }
 
     #[Test]
-    public function it_fills_in_an_undated_item_by_reading_the_article_with_the_feed_as_hints()
+    public function it_skips_items_missing_a_title_or_publication_date()
     {
-        Http::fake(function (Request $request) {
-            return match (true) {
-                str_contains($request->url(), 'feed.xml') => Http::response($this->fixture('feed-sparse.xml')),
-                default => Http::response((string) file_get_contents(__DIR__.'/../Articles/fixtures/clean-full.html')),
-            };
-        });
+        Http::fake(['https://theopenpress.com/feed.xml' => Http::response($this->fixture('feed-sparse.xml'))]);
 
         $clips = $this->rss()->getMetadataForAllClipsPublishedSince(
             'https://theopenpress.com/feed.xml',
             CarbonImmutable::parse('2020-01-01T00:00:00+00:00'),
         );
 
+        // A feed that won't say what an item is called or when it was
+        // published hasn't described an item: the undated and untitled
+        // entries are dropped, and — crucially — their article pages are
+        // never fetched to fill the gaps. One request: the feed itself.
         $this->assertCount(1, $clips);
-
-        // The feed's title outranks the page's own metadata (the page says
-        // "A Complete, Freely Readable Article")...
-        $this->assertEquals('Feed Title That Wins', $clips[0]->title);
-        // ...while the date the feed omitted comes from the page.
-        $this->assertEquals(CarbonImmutable::parse('2023-03-03T12:00:00+00:00'), $clips[0]->publishedAt);
-        // The item had no description either, so the article's authors stand in.
-        $this->assertEquals('Article by Freely Available', $clips[0]->description);
-
-        // The article page was fetched (feed + article = two requests).
-        Http::assertSentCount(2);
+        $this->assertEquals('The One Complete Item', $clips[0]->title);
+        $this->assertEquals('https://theopenpress.com/complete-item', $clips[0]->canonicalUrl);
+        Http::assertSentCount(1);
     }
 }

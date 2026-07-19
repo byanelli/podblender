@@ -44,8 +44,11 @@ class FeedParser
     }
 
     /**
-     * @throws ExceptionInterface when the body
-     *                            isn't a parseable feed
+     * Parse a feed into its valid items. An entry missing its link, title, or
+     * publication date is silently dropped — we won't fetch an article page
+     * just to reconstruct metadata the feed was supposed to supply.
+     *
+     * @throws ExceptionInterface when the body isn't a parseable feed
      */
     public function parse(string $body): ParsedFeed
     {
@@ -55,18 +58,19 @@ class FeedParser
 
         foreach ($feed as $entry) {
             /** @var EntryInterface $entry */
-            $url = $entry->getLink();
+            $url = $this->presence($entry->getLink());
+            $title = $this->presence($entry->getTitle());
+            $publishedAt = $this->date($entry);
 
-            // An entry that doesn't point anywhere can't become a clip.
-            if (! is_string($url) || trim($url) === '') {
+            if ($url === null || $title === null || $publishedAt === null) {
                 continue;
             }
 
             $items[] = new FeedItem(
-                url: trim($url),
-                title: $this->presence($entry->getTitle()),
+                url: $url,
+                title: $title,
+                publishedAt: $publishedAt,
                 description: $this->summarize($entry->getDescription() ?? $entry->getContent()),
-                publishedAt: $this->date($entry),
                 authors: $this->authors($entry),
             );
         }

@@ -3,10 +3,19 @@
   <channel>
     <title>The Open Press</title>
     <link>https://theopenpress.com</link>
-    <description>An open feed whose items are missing their dates</description>
+    <description>A feed whose items are variously incomplete</description>
     <item>
-      <title>Feed Title That Wins</title>
-      <link>https://theopenpress.com/harvest-festival</link>
+      <title>The One Complete Item</title>
+      <link>https://theopenpress.com/complete-item</link>
+      <pubDate>Tue, 14 Jul 2026 10:00:00 +0000</pubDate>
+    </item>
+    <item>
+      <title>An Item Missing Its Date</title>
+      <link>https://theopenpress.com/undated-item</link>
+    </item>
+    <item>
+      <link>https://theopenpress.com/untitled-item</link>
+      <pubDate>Tue, 14 Jul 2026 11:00:00 +0000</pubDate>
     </item>
   </channel>
 </rss>

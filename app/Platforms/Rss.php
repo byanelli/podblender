@@ -3,7 +3,6 @@
 namespace App\Platforms;
 
 use App\Apis\Whisper\Contracts\Client as WhisperApi;
-use App\Articles\ArticleHints;
 use App\Articles\Contracts\Reader as ArticleReader;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
@@ -73,50 +72,25 @@ readonly class Rss extends Web implements SubscribablePlatform
         $source = $this->sourceMetadataFor($feed, $sourceUrl);
 
         return collect($feed->items)
-            // An item the feed itself dates as old is skipped without ever
-            // touching its article page; an undated one survives to be dated
-            // by the page below.
-            ->filter(fn (FeedItem $item) => $item->publishedAt === null || $item->publishedAt >= $publicationTime)
+            ->filter(fn (FeedItem $item) => $item->publishedAt >= $publicationTime)
             ->map(fn (FeedItem $item) => $this->clipMetadataFor($item, $source))
-            ->filter(fn (ClipMetadata $clip) => $clip->publishedAt >= $publicationTime)
             ->values()
             ->all();
     }
 
     /**
-     * Build a clip from a feed item. A complete item never costs a page fetch:
-     * the feed's own title/date/description are publisher-authored and
-     * item-specific, so they're used as-is. An incomplete item is filled in by
-     * reading the article, with whatever the feed DID say forwarded as hints
-     * that outrank the page's own metadata — a site with a dirty page but a
-     * clean feed still yields clean clips. Reading here also primes the article
-     * cache the download job will draw from.
+     * Build a clip from a feed item, straight from the feed's own metadata —
+     * publisher-authored and item-specific, so polling never costs an article
+     * page fetch. The page is only ever read later, when the download job
+     * narrates the clip.
      */
     private function clipMetadataFor(FeedItem $item, SourceMetadata $source): ClipMetadata
     {
-        $clipUrl = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($item->url));
-
-        if ($item->title !== null && $item->publishedAt !== null) {
-            return new ClipMetadata(
-                title: $item->title,
-                description: $item->description ?? $this->describeAuthors($item->authors),
-                canonicalUrl: $clipUrl,
-                publishedAt: $item->publishedAt,
-                source: $source,
-            );
-        }
-
-        $article = $this->reader->read($clipUrl, new ArticleHints(
-            title: $item->title,
-            authors: $item->authors,
-            publicationDate: $item->publishedAt,
-        ));
-
         return new ClipMetadata(
-            title: $article->title,
-            description: $item->description ?? $this->describeAuthors($article->authors),
-            canonicalUrl: $clipUrl,
-            publishedAt: $article->publicationDate,
+            title: $item->title,
+            description: $item->description ?? $this->describeAuthors($item->authors),
+            canonicalUrl: $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($item->url)),
+            publishedAt: $item->publishedAt,
             source: $source,
         );
     }
