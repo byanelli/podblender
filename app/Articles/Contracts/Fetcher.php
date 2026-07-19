@@ -2,6 +2,9 @@
 
 namespace App\Articles\Contracts;
 
+use App\Articles\ArchiveBlockedException;
+use App\Articles\ArchiveSnapshotNotFoundException;
+
 interface Fetcher
 {
     /**
@@ -12,10 +15,11 @@ interface Fetcher
     public function fetchDirect(string $url): string;
 
     /**
-     * Retrieve the newest archive.is snapshot of the URL, routed through the
-     * residential proxy.
+     * Retrieve the newest archive.is snapshot of the URL via Scrapfly's ASP:
+     * fetch the snapshot listing, parse the newest snapshot, and return its HTML.
      *
-     * @throws \RuntimeException when no snapshot exists
+     * @throws ArchiveSnapshotNotFoundException when the listing holds no snapshot
+     * @throws ArchiveBlockedException when the archive is blocked or errors
      */
     public function fetchFromArchive(string $url): string;
 }

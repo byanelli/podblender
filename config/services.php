@@ -39,6 +39,12 @@ return [
         'key' => env('YOUTUBE_DATA_API_KEY'),
     ],
 
+    'scrapfly' => [
+        // Anti-Scraping-Protection scrape API, used to clear archive.is's
+        // Cloudflare CAPTCHA for gated articles. Every scrape spends credits.
+        'key' => env('SCRAPFLY_API_KEY'),
+    ],
+
     'oxylabs' => [
         'residential' => [
             'user' => env('OXYLABS_USERNAME'),

@@ -96,6 +96,33 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Scrapfly Archive Fetch
+    |--------------------------------------------------------------------------
+    |
+    | archive.is is fronted by Cloudflare and serves a CAPTCHA to raw HTTP
+    | clients, so gated articles are retrieved through Scrapfly's ASP. Resolving
+    | one paywalled article is TWO scrapes, and EACH SPENDS CREDITS:
+    |
+    |   1. the snapshot listing ({base}/{url}, JS render off, ~25 credits), and
+    |   2. the chosen snapshot ({snapshot-url}, JS render on, ~30 credits)
+    |      — roughly 55 credits per paywalled article.
+    |
+    | The listing is static HTML so it renders without JS (cheaper); the snapshot
+    | needs JS to materialize the archived body. Scrapfly is slow on this target
+    | (~50-75s) and drops connections intermittently, hence the generous timeout.
+    |
+    */
+
+    'scrapfly_country' => env('ARTICLES_SCRAPFLY_COUNTRY', 'us'),
+
+    'scrapfly_timeout' => (int) env('ARTICLES_SCRAPFLY_TIMEOUT', 180),
+
+    'scrapfly_listing_render_js' => (bool) env('ARTICLES_SCRAPFLY_LISTING_RENDER_JS', false),
+
+    'scrapfly_snapshot_render_js' => (bool) env('ARTICLES_SCRAPFLY_SNAPSHOT_RENDER_JS', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | User Agent
     |--------------------------------------------------------------------------
     |

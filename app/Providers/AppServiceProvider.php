@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Apis\Ffmpeg\Client as FfmpegClient;
 use App\Apis\Ffmpeg\Contracts\Client as FfmpegClientContract;
+use App\Apis\Scrapfly\Client as ScrapflyClient;
+use App\Apis\Scrapfly\Contracts\Client as ScrapflyClientContract;
 use App\Apis\Whisper\Client as WhisperClient;
 use App\Apis\Whisper\Contracts\Client as WhisperClientContract;
 use App\Apis\YouTubeData\Client as YouTubeDataClient;
@@ -47,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(WhisperClientContract::class, WhisperClient::class);
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
         $this->app->bind(YouTubeDataClientContract::class, YouTubeDataClient::class);
+        $this->app->bind(ScrapflyClientContract::class, ScrapflyClient::class);
 
         $this->app->bind(FetcherContract::class, Fetcher::class);
         $this->app->bind(ReaderContract::class, Reader::class);
