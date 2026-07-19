@@ -5,7 +5,6 @@ namespace Tests\Platforms;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Web;
 use Carbon\CarbonImmutable;
-use DateTimeInterface;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
@@ -16,30 +15,27 @@ class WebTest extends TestCase
 {
     use FakesWhisper;
 
+    private function articleHtml(): string
+    {
+        return (string) file_get_contents(__DIR__.'/../Articles/fixtures/clean-full.html');
+    }
+
     #[Test]
     public function it_gets_clip_metadata()
     {
-        Http::fake(['*' => Http::response(body: json_encode([
-            [
-                'title' => $title = 'Kitten Thinks Of Nothing But Murder All Day',
-                'publisher' => $publisher = 'The Onion',
-                'date' => ($date = CarbonImmutable::parse('2020-01-01'))->format(DateTimeInterface::RFC3339),
-                'author' => ['foo', 'bar'],
-                'text' => 'zzz',
-            ],
-        ]))]);
+        Http::fake(['*' => Http::response($this->articleHtml())]);
 
         /** @var Web $web */
         $web = $this->app->make(Web::class);
 
-        $metadata = $web->getClipMetadata($url = 'https://theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260');
+        $metadata = $web->getClipMetadata($url = 'https://theopenpress.com/harvest-festival');
 
         $this->assertEquals($url, $metadata->canonicalUrl);
-        $this->assertEquals($title, $metadata->title);
-        $this->assertEquals('Article by foo and bar', $metadata->description);
-        $this->assertEquals($date, $metadata->publishedAt);
-        $this->assertEquals('https://theonion.com', $metadata->source->canonicalUrl);
-        $this->assertEquals($publisher, $metadata->source->name);
+        $this->assertEquals('A Complete, Freely Readable Article', $metadata->title);
+        $this->assertEquals('Article by Freely Available', $metadata->description);
+        $this->assertEquals(CarbonImmutable::parse('2023-03-03T12:00:00+00:00'), $metadata->publishedAt);
+        $this->assertEquals('https://theopenpress.com', $metadata->source->canonicalUrl);
+        $this->assertEquals('The Open Press', $metadata->source->name);
     }
 
     #[Test]
@@ -62,25 +58,17 @@ class WebTest extends TestCase
     #[Test]
     public function it_downloads_audio()
     {
-        Http::fake(['*' => Http::response(body: json_encode([
-            [
-                'title' => 'Kitten Thinks Of Nothing But Murder All Day',
-                'publisher' => 'The Onion',
-                'author' => ['foo', 'bar'],
-                'date' => CarbonImmutable::parse('2020-01-01')->format(DateTimeInterface::RFC3339),
-                'text' => $text = 'zzz',
-            ],
-        ]))]);
+        Http::fake(['*' => Http::response($this->articleHtml())]);
 
         $this->fakeWhisper();
 
         /** @var Web $web */
         $web = $this->app->make(Web::class);
 
-        $mp3 = $web->downloadAudio('https://www.theonion.com/kitten-thinks-of-nothing-but-murder-all-day-1819588260');
+        $mp3 = $web->downloadAudio('https://theopenpress.com/harvest-festival');
 
         $this->assertFileExists($mp3);
-        $this->assertEquals($text, file_get_contents($mp3));
+        $this->assertStringContainsString('harvest festival', (string) file_get_contents($mp3));
     }
 
     #[Test]

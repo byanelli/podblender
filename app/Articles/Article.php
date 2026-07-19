@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Apis\ArticleExtractor;
+namespace App\Articles;
 
 use BYanelli\Roma\Response\IsArrayable;
 use DateTimeInterface;

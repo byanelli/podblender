@@ -1,0 +1,74 @@
+<?php
+
+namespace Tests\Articles;
+
+use App\Articles\Article;
+use App\Articles\Extractor;
+use Carbon\CarbonImmutable;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+class ExtractorTest extends TestCase
+{
+    private function extract(string $fixture, string $url): Article
+    {
+        $html = (string) file_get_contents(__DIR__."/fixtures/$fixture.html");
+
+        return (new Extractor)->extract($url, $html);
+    }
+
+    #[Test]
+    public function it_takes_the_body_from_json_ld_when_it_ships_the_article_body()
+    {
+        $article = $this->extract('jsonld-full-body', 'https://riversidegazette.com/city-council-approves-riverside-park');
+
+        $this->assertEquals('City Council Approves Riverside Park', $article->title);
+        $this->assertEquals('The Riverside Gazette', $article->publisher);
+        $this->assertEquals(['Ada Reporter', 'Ben Writer'], $article->authors);
+        $this->assertEquals(CarbonImmutable::parse('2021-06-15T09:30:00+00:00'), $article->publicationDate);
+        $this->assertStringContainsString('ending a decade of debate', $article->text);
+        $this->assertStringNotContainsString('Boilerplate', $article->text);
+    }
+
+    #[Test]
+    public function it_takes_metadata_from_json_ld_and_the_body_from_readability()
+    {
+        $article = $this->extract('jsonld-metadata', 'https://metroherald.com/the-long-road-to-the-new-bridge');
+
+        $this->assertEquals('The Long Road To The New Bridge', $article->title);
+        $this->assertEquals('The Metropolitan Herald', $article->publisher);
+        $this->assertEquals(['Clara Byline'], $article->authors);
+        $this->assertEquals(CarbonImmutable::parse('2019-11-02T14:00:00+00:00'), $article->publicationDate);
+        $this->assertStringContainsString('Engineers spent the better part of the morning', $article->text);
+    }
+
+    #[Test]
+    public function it_takes_metadata_from_open_graph_tags_and_the_body_from_readability()
+    {
+        $article = $this->extract('og-tags', 'https://mountaindispatch.com/a-quiet-town-wakes-to-snow');
+
+        $this->assertEquals('A Quiet Town Wakes To Snow', $article->title);
+        $this->assertEquals('Mountain Dispatch', $article->publisher);
+        $this->assertEquals(['Dana Columnist'], $article->authors);
+        $this->assertEquals(CarbonImmutable::parse('2022-01-20T06:15:00+00:00'), $article->publicationDate);
+        $this->assertStringContainsString('The first heavy snow of the season', $article->text);
+    }
+
+    #[Test]
+    public function it_falls_back_to_the_domain_for_the_publisher_and_the_slug_for_the_title()
+    {
+        $article = $this->extract('bare', 'https://www.nytimes.com/breaking-news-story');
+
+        $this->assertEquals('nytimes.com', $article->publisher);
+        $this->assertEquals('Breaking News Story', $article->title);
+        $this->assertStringContainsString('The harbor master reported calm seas', $article->text);
+    }
+
+    #[Test]
+    public function it_derives_author_names_from_profile_url_slugs()
+    {
+        $article = $this->extract('authors-from-slugs', 'https://news.com/breaking-news');
+
+        $this->assertEquals(['John Doe', 'Jane Doe'], $article->authors);
+    }
+}

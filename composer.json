@@ -8,6 +8,7 @@
         "php": "^8.5",
         "ext-zip": "*",
         "byanelli/roma": "@dev",
+        "fivefilters/readability.php": "^3.3",
         "guzzlehttp/guzzle": "^7.2",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/framework": "^13.0",

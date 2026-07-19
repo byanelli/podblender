@@ -2,8 +2,8 @@
 
 namespace App\Platforms;
 
-use App\Apis\ArticleExtractor\Client as ArticlesApi;
 use App\Apis\Whisper\Contracts\Client as WhisperApi;
+use App\Articles\Contracts\Reader as ArticleReader;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
@@ -20,7 +20,7 @@ readonly class Web implements Platform
     use FixesUrls;
 
     public function __construct(
-        private ArticlesApi $articleExtractor,
+        private ArticleReader $reader,
         private WhisperApi $whisper,
         private Factory $http,
     ) {}
@@ -30,7 +30,7 @@ readonly class Web implements Platform
         try {
             $clipUrl = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($clipUrl));
 
-            $article = $this->articleExtractor->getArticle($clipUrl);
+            $article = $this->reader->read($clipUrl);
 
             return new ClipMetadata(
                 title: $article->title,
@@ -66,7 +66,7 @@ readonly class Web implements Platform
         try {
             $clipUrl = $this->fixUrlSchemeAndHost($clipUrl);
 
-            $article = $this->articleExtractor->getArticle($clipUrl);
+            $article = $this->reader->read($clipUrl);
 
             return $this->whisper->convertTextToSpeech($article->text);
         } catch (\Exception $e) {

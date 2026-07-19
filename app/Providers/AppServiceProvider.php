@@ -8,6 +8,10 @@ use App\Apis\Whisper\Client as WhisperClient;
 use App\Apis\Whisper\Contracts\Client as WhisperClientContract;
 use App\Apis\YouTubeData\Client as YouTubeDataClient;
 use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClientContract;
+use App\Articles\Contracts\Fetcher as FetcherContract;
+use App\Articles\Contracts\Reader as ReaderContract;
+use App\Articles\Fetcher;
+use App\Articles\Reader;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Proxies\Contracts\ResidentialProxyConfig;
 use App\Proxies\OxylabsResidentialProxyConfig;
@@ -43,6 +47,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(WhisperClientContract::class, WhisperClient::class);
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
         $this->app->bind(YouTubeDataClientContract::class, YouTubeDataClient::class);
+
+        $this->app->bind(FetcherContract::class, Fetcher::class);
+        $this->app->bind(ReaderContract::class, Reader::class);
 
         $this->app->bind(ResidentialProxyConfig::class, OxylabsResidentialProxyConfig::class);
 
