@@ -39,6 +39,16 @@ return [
         'key' => env('YOUTUBE_DATA_API_KEY'),
     ],
 
+    'gemini' => [
+        // Generative Language API key (aistudio.google.com/apikey). Used for
+        // text-to-speech via App\Apis\Tts\GeminiClient.
+        'api_key' => env('GEMINI_API_KEY'),
+        'tts' => [
+            'model' => env('GEMINI_TTS_MODEL', 'gemini-3.1-flash-tts-preview'),
+            'voice' => env('GEMINI_TTS_VOICE', 'Aoede'),
+        ],
+    ],
+
     'scrapfly' => [
         // Anti-Scraping-Protection scrape API, used to clear archive.is's
         // Cloudflare CAPTCHA for gated articles. Every scrape spends credits.

@@ -2,7 +2,7 @@
 
 namespace App\Platforms;
 
-use App\Apis\Whisper\Contracts\Client as WhisperApi;
+use App\Apis\Tts\Contracts\Client as TtsApi;
 use App\Articles\Contracts\Reader as ArticleReader;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
@@ -21,7 +21,7 @@ readonly class Web implements Platform
 
     public function __construct(
         protected ArticleReader $reader,
-        protected WhisperApi $whisper,
+        protected TtsApi $tts,
         protected Factory $http,
     ) {}
 
@@ -78,7 +78,7 @@ readonly class Web implements Platform
 
             $article = $this->reader->read($clipUrl);
 
-            return $this->whisper->convertTextToSpeech($article->text);
+            return $this->tts->convertTextToSpeech($article->text);
         } catch (\Exception $e) {
             throw new PlatformException($this->type(), PlatformOperation::Download, $e);
         }

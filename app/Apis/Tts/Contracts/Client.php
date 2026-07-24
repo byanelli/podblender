@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Apis\Whisper\Contracts;
+namespace App\Apis\Tts\Contracts;
 
 interface Client
 {

@@ -2,16 +2,16 @@
 
 namespace Tests\Concerns;
 
-use App\Apis\Whisper\Contracts\Client;
+use App\Apis\Tts\Contracts\Client;
 use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
 /**
  * @mixin TestCase
  */
-trait FakesWhisper
+trait FakesTts
 {
-    protected function fakeWhisper(?string $mp3 = null): void
+    protected function fakeTts(?string $mp3 = null): void
     {
         $mp3 ??= sys_get_temp_dir().'/'.Uuid::uuid4().'.mp3';
 

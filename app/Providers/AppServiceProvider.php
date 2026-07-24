@@ -6,8 +6,8 @@ use App\Apis\Ffmpeg\Client as FfmpegClient;
 use App\Apis\Ffmpeg\Contracts\Client as FfmpegClientContract;
 use App\Apis\Scrapfly\Client as ScrapflyClient;
 use App\Apis\Scrapfly\Contracts\Client as ScrapflyClientContract;
-use App\Apis\Whisper\Client as WhisperClient;
-use App\Apis\Whisper\Contracts\Client as WhisperClientContract;
+use App\Apis\Tts\Contracts\Client as TtsClientContract;
+use App\Apis\Tts\GeminiClient as TtsClient;
 use App\Apis\YouTubeData\Client as YouTubeDataClient;
 use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClientContract;
 use App\Articles\Contracts\Fetcher as FetcherContract;
@@ -46,7 +46,7 @@ class AppServiceProvider extends ServiceProvider
         Model::preventLazyLoading();
         Date::use(CarbonImmutable::class);
 
-        $this->app->bind(WhisperClientContract::class, WhisperClient::class);
+        $this->app->bind(TtsClientContract::class, TtsClient::class);
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
         $this->app->bind(YouTubeDataClientContract::class, YouTubeDataClient::class);
         $this->app->bind(ScrapflyClientContract::class, ScrapflyClient::class);

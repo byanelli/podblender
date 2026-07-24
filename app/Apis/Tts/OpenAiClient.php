@@ -1,19 +1,28 @@
 <?php
 
-namespace App\Apis\Whisper;
+namespace App\Apis\Tts;
 
 use App\Apis\Ffmpeg\Contracts\Client as FfmpegClient;
-use App\Apis\Whisper\Contracts\Client as ClientContract;
-use OpenAI\Contracts\ClientContract as OpenAiClient;
+use App\Apis\Tts\Concerns\SegmentsText;
+use App\Apis\Tts\Contracts\Client as TtsClientContract;
+use OpenAI\Contracts\ClientContract as OpenAiClientContract;
 use OpenAI\Responses\Audio\SpeechStreamResponse;
 use Ramsey\Uuid\Uuid;
 
-readonly class Client implements ClientContract
+/**
+ * Text-to-speech backed by OpenAI's tts-1 model. Retained behind the shared
+ * Tts contract but currently unbound — GeminiClient is the active backend. Its
+ * streamed responses are already MP3, so segments go straight to the concat.
+ */
+readonly class OpenAiClient implements TtsClientContract
 {
+    use SegmentsText;
+
+    // tts-1 rejects input longer than 4096 characters.
     private const SEGMENT_LENGTH = 4096;
 
     public function __construct(
-        private OpenAiClient $openAi,
+        private OpenAiClientContract $openAi,
         private FfmpegClient $ffmpeg,
     ) {}
 
@@ -41,31 +50,6 @@ readonly class Client implements ClientContract
         fclose($handle) || throw new \RuntimeException("Error closing file: $file");
     }
 
-    private function segmentText(string $text): \Generator
-    {
-        $currentSegment = '';
-        $currentLength = 0;
-
-        $words = preg_split('/\\s+/', $text) ?: [];
-
-        foreach ($words as $word) {
-            $wordLength = strlen($word);
-
-            if (($currentLength + $wordLength + 1) < self::SEGMENT_LENGTH) {
-                $currentSegment .= ' '.$word;
-                $currentLength += $wordLength + 1;
-            } else {
-                yield $currentSegment;
-                $currentSegment = '';
-                $currentLength = 0;
-            }
-        }
-
-        if (! empty($currentSegment)) {
-            yield $currentSegment;
-        }
-    }
-
     /**
      * @return string -- returns the path to an MP3 file
      */
@@ -74,7 +58,7 @@ readonly class Client implements ClientContract
         $mp3s = [];
 
         try {
-            foreach ($this->segmentText($text) as $segment) {
+            foreach ($this->segmentText($text, self::SEGMENT_LENGTH) as $segment) {
                 $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
 
                 $this->writeStreamResponseToFile($outputPath, $this->getSpeechStream($segment));
@@ -82,9 +66,19 @@ readonly class Client implements ClientContract
                 $mp3s[] = $outputPath;
             }
 
-            return $this->ffmpeg->combineMp3s($mp3s);
-        } finally {
-            collect($mp3s)->each(fn ($mp3) => unlink($mp3));
+            $combined = $this->ffmpeg->combineMp3s($mp3s);
+
+            // Clean up the intermediates — but never the combined result, which
+            // with a single segment IS one of the segment files.
+            collect($mp3s)
+                ->reject(fn ($mp3) => $mp3 === $combined)
+                ->each(fn ($mp3) => unlink($mp3));
+
+            return $combined;
+        } catch (\Throwable $e) {
+            collect($mp3s)->each(fn ($mp3) => @unlink($mp3));
+
+            throw $e;
         }
     }
 }

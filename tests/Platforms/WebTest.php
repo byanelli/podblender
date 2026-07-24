@@ -8,12 +8,12 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
-use Tests\Concerns\FakesWhisper;
+use Tests\Concerns\FakesTts;
 use Tests\TestCase;
 
 class WebTest extends TestCase
 {
-    use FakesWhisper;
+    use FakesTts;
 
     private function articleHtml(): string
     {
@@ -60,7 +60,7 @@ class WebTest extends TestCase
     {
         Http::fake(['*' => Http::response($this->articleHtml())]);
 
-        $this->fakeWhisper();
+        $this->fakeTts();
 
         /** @var Web $web */
         $web = $this->app->make(Web::class);

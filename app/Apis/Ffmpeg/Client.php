@@ -64,6 +64,34 @@ readonly class Client implements ClientContract
         return $outputPath;
     }
 
+    /**
+     * Encode a raw, headerless PCM file (signed 16-bit little-endian, mono) to
+     * MP3. Gemini's TTS returns audio as bare PCM samples with no container, so
+     * ffmpeg has to be told the format explicitly rather than sniffing it.
+     */
+    public function pcmToMp3(string $pcm, int $sampleRate): string
+    {
+        $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
+
+        $this->runSuccessfully(600 /* todo */, [
+            '-f',
+            's16le',
+            '-ar',
+            (string) $sampleRate,
+            '-ac',
+            '1',
+            '-i',
+            $pcm,
+            // ffmpeg's default MP3 encode is ~32 kb/s, which sounds terrible.
+            // Encode at a floor of 128 kb/s instead.
+            '-b:a',
+            '128k',
+            $outputPath,
+        ]);
+
+        return $outputPath;
+    }
+
     private function parseDurationString(string $duration): int
     {
         $match = Regex::match('/(\d\d):(\d\d):(\d\d).(\d\d)/', $duration);

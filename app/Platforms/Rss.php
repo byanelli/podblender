@@ -2,7 +2,7 @@
 
 namespace App\Platforms;
 
-use App\Apis\Whisper\Contracts\Client as WhisperApi;
+use App\Apis\Tts\Contracts\Client as TtsApi;
 use App\Articles\Contracts\Reader as ArticleReader;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
@@ -27,11 +27,11 @@ readonly class Rss extends Web implements SubscribablePlatform
 {
     public function __construct(
         ArticleReader $reader,
-        WhisperApi $whisper,
+        TtsApi $tts,
         Factory $http,
         private FeedParser $feedParser,
     ) {
-        parent::__construct($reader, $whisper, $http);
+        parent::__construct($reader, $tts, $http);
     }
 
     protected function type(): PlatformType

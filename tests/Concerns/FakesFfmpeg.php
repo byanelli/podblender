@@ -3,6 +3,7 @@
 namespace Tests\Concerns;
 
 use App\Apis\Ffmpeg\Contracts\Client;
+use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
 /**
@@ -24,6 +25,18 @@ trait FakesFfmpeg
             public function combineMp3s(array $mp3s): string
             {
                 return collect($mp3s)->map(fn ($mp3) => file_get_contents($mp3))->implode('');
+            }
+
+            public function pcmToMp3(string $pcm, int $sampleRate): string
+            {
+                // Pretend transcode: copy the bytes to a fresh .mp3 path (the
+                // real method returns a distinct file), so a convertTextToSpeech
+                // round-trip reassembles the original text.
+                $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
+
+                copy($pcm, $outputPath);
+
+                return $outputPath;
             }
         });
     }
