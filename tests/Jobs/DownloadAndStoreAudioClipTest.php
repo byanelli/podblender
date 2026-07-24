@@ -40,6 +40,40 @@ class DownloadAndStoreAudioClipTest extends TestCase
     }
 
     #[Test]
+    public function it_floors_the_timeout_at_the_legacy_fixed_value_without_an_estimate(): void
+    {
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            AudioClip::COL_ESTIMATED_DOWNLOAD_TIME => null,
+        ]);
+
+        $this->assertEquals(3600, (new DownloadAndStoreAudioClip($clip))->timeout);
+    }
+
+    #[Test]
+    public function it_scales_the_timeout_with_the_estimate_buffer_and_expected_attempts(): void
+    {
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            AudioClip::COL_ESTIMATED_DOWNLOAD_TIME => 2400, // e.g. a long article
+        ]);
+
+        // (2400 estimate + 300 buffer) * 3 attempts
+        $this->assertEquals(8100, (new DownloadAndStoreAudioClip($clip))->timeout);
+    }
+
+    #[Test]
+    public function it_keeps_the_floor_when_the_scaled_timeout_would_be_smaller(): void
+    {
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            AudioClip::COL_ESTIMATED_DOWNLOAD_TIME => 100, // short clip: (100+300)*3 = 1200
+        ]);
+
+        $this->assertEquals(3600, (new DownloadAndStoreAudioClip($clip))->timeout);
+    }
+
+    #[Test]
     public function it_downloads_stores_and_marks_a_clip_processed_and_broadcasts(): void
     {
         Event::fake(FinishedProcessingClip::class);

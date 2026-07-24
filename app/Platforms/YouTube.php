@@ -35,8 +35,33 @@ readonly class YouTube implements SubscribablePlatform
             canonicalUrl: "https://youtube.com/watch?v=$video->id",
             publishedAt: $video->publishedAt,
             source: $this->convertChannelMetadataToSourceMetadata($video->channel),
+            estimatedDownloadTime: $this->estimateDownloadTime($video),
         );
     }
+
+    /**
+     * A conservative guess at one download's wall-clock time. yt-dlp pulls the
+     * audio track (~160 kbps) and paces its own requests, so assume a slow
+     * connection (2 Mbps usable) plus fixed overhead, and lean on the flat
+     * default when the API didn't report a duration.
+     */
+    private function estimateDownloadTime(VideoMetadata $video): ?int
+    {
+        if ($video->durationSeconds === null) {
+            return null;
+        }
+
+        $audioBytes = $video->durationSeconds * self::AUDIO_BITRATE_BYTES_PER_SECOND;
+
+        return (int) ceil($audioBytes / self::ASSUMED_DOWNLOAD_BYTES_PER_SECOND)
+            + self::DOWNLOAD_OVERHEAD_SECONDS;
+    }
+
+    private const AUDIO_BITRATE_BYTES_PER_SECOND = 20_000; // ~160 kbps
+
+    private const ASSUMED_DOWNLOAD_BYTES_PER_SECOND = 250_000; // ~2 Mbps
+
+    private const DOWNLOAD_OVERHEAD_SECONDS = 60;
 
     public function getClipMetadata(string $clipUrl): ClipMetadata
     {

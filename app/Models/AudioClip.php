@@ -21,6 +21,7 @@ use Illuminate\Support\Traits\Tappable;
  * @property string $description
  * @property CarbonImmutable $published_at
  * @property int $duration
+ * @property int|null $estimated_download_time
  * @property string $guid
  * @property string $platform_url
  * @property ClipProcessingState $processing_state
@@ -60,6 +61,7 @@ class AudioClip extends Model
     const string COL_DESCRIPTION = 'description';
     const string COL_PUBLISHED_AT = 'published_at';
     const string COL_DURATION = 'duration';
+    const string COL_ESTIMATED_DOWNLOAD_TIME = 'estimated_download_time';
     const string COL_GUID = 'guid';
     const string COL_ID = 'id';
     const string COL_PLATFORM_URL = 'platform_url';

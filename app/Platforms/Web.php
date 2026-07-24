@@ -3,6 +3,7 @@
 namespace App\Platforms;
 
 use App\Apis\Tts\Contracts\Client as TtsApi;
+use App\Articles\Article;
 use App\Articles\Contracts\Reader as ArticleReader;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
@@ -35,6 +36,26 @@ readonly class Web implements Platform
         return PlatformType::Web;
     }
 
+    /**
+     * A conservative guess at one download's wall-clock time. Narration runs
+     * text-to-speech a segment at a time, each taking far longer than the audio
+     * it yields, so scale the article's spoken length by a pessimistic
+     * wall-clock-per-audio-second factor and add fixed overhead for fetching.
+     */
+    private function estimateDownloadTime(Article $article): int
+    {
+        $spokenSeconds = str_word_count($article->text) / self::WORDS_PER_MINUTE * 60;
+
+        return (int) ceil($spokenSeconds * self::WALL_CLOCK_PER_AUDIO_SECOND)
+            + self::DOWNLOAD_OVERHEAD_SECONDS;
+    }
+
+    private const WORDS_PER_MINUTE = 190; // Gemini's measured narration rate
+
+    private const WALL_CLOCK_PER_AUDIO_SECOND = 0.4; // TTS is ~2.5x real-time
+
+    private const DOWNLOAD_OVERHEAD_SECONDS = 30;
+
     public function getClipMetadata(string $clipUrl): ClipMetadata
     {
         try {
@@ -51,6 +72,7 @@ readonly class Web implements Platform
                     name: $article->publisher,
                     canonicalUrl: 'https://'.Uri::new($clipUrl)->getHost()
                 ),
+                estimatedDownloadTime: $this->estimateDownloadTime($article),
             );
         } catch (\Exception $e) {
             throw new PlatformException($this->type(), PlatformOperation::Metadata, $e);

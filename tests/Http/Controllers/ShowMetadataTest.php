@@ -29,6 +29,7 @@ class ShowMetadataTest extends TestCase
                     name: $sourceName = 'Some channel',
                     canonicalUrl: $sourceUrl = 'https://youtube.com/channel/lwefjiritlrth',
                 ),
+                estimatedDownloadTime: $estimatedDownloadTime = 1234,
             ),
         );
 
@@ -48,6 +49,7 @@ class ShowMetadataTest extends TestCase
                     'name' => $sourceName,
                     'canonicalUrl' => $sourceUrl,
                 ],
+                'estimatedDownloadTime' => $estimatedDownloadTime,
             ],
             'platformType' => [
                 'name' => 'YouTube',

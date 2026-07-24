@@ -2,6 +2,7 @@
 
 namespace Tests\Platforms;
 
+use App\Articles\Contracts\Reader;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Web;
 use Carbon\CarbonImmutable;
@@ -36,6 +37,27 @@ class WebTest extends TestCase
         $this->assertEquals(CarbonImmutable::parse('2023-03-03T12:00:00+00:00'), $metadata->publishedAt);
         $this->assertEquals('https://theopenpress.com', $metadata->source->canonicalUrl);
         $this->assertEquals('The Open Press', $metadata->source->name);
+    }
+
+    #[Test]
+    public function it_estimates_download_time_from_article_length()
+    {
+        Http::fake(['*' => Http::response($this->articleHtml())]);
+
+        /** @var Web $web */
+        $web = $this->app->make(Web::class);
+
+        $metadata = $web->getClipMetadata('https://theopenpress.com/harvest-festival');
+
+        // Derive the expectation from the fixture itself rather than a magic
+        // number: spoken time at the narration rate, scaled by the pessimistic
+        // wall-clock factor, plus fixed overhead.
+        $reader = $this->app->make(Reader::class);
+        $words = str_word_count($reader->read('https://theopenpress.com/harvest-festival')->text);
+        $expected = (int) ceil(($words / 190 * 60) * 0.4) + 30;
+
+        $this->assertEquals($expected, $metadata->estimatedDownloadTime);
+        $this->assertGreaterThan(0, $metadata->estimatedDownloadTime);
     }
 
     #[Test]

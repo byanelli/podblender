@@ -53,6 +53,7 @@ readonly class FindOrCreateAudioClip
                 AudioClip::COL_DESCRIPTION => Str::limit($metadata->description, 1000 - 3),
                 AudioClip::COL_PUBLISHED_AT => $metadata->publishedAt,
                 AudioClip::COL_DURATION => 0,
+                AudioClip::COL_ESTIMATED_DOWNLOAD_TIME => $metadata->estimatedDownloadTime,
                 AudioClip::COL_STORAGE_PATH => $storagePath,
                 AudioClip::COL_GUID => Uuid::uuid4()->toString(),
                 AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,

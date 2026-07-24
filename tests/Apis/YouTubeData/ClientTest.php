@@ -24,6 +24,9 @@ class ClientTest extends TestCase
                         'channelTitle' => $sourceName = 'some channel',
                         'publishedAt' => ($publishedAt = now()->subDay()->roundSeconds())->format(DateTimeInterface::RFC3339),
                     ],
+                    'contentDetails' => [
+                        'duration' => 'PT4M13S',
+                    ],
                 ],
             ],
         ])]);
@@ -39,6 +42,85 @@ class ClientTest extends TestCase
         $this->assertEquals($publishedAt, $metadata->publishedAt);
         $this->assertEquals($sourceName, $metadata->channel->name);
         $this->assertEquals($sourceId, $metadata->channel->id);
+        $this->assertSame(253, $metadata->durationSeconds);
+    }
+
+    #[Test]
+    public function it_parses_multipart_durations()
+    {
+        Http::fake(['*' => Http::response([
+            'items' => [
+                [
+                    'id' => 'leirjieljrg',
+                    'snippet' => [
+                        'title' => 'some video',
+                        'description' => 'foo bar',
+                        'channelId' => 'eiorjg90ej',
+                        'channelTitle' => 'some channel',
+                        'publishedAt' => now()->format(DateTimeInterface::RFC3339),
+                    ],
+                    'contentDetails' => [
+                        'duration' => 'PT1H2M3S',
+                    ],
+                ],
+            ],
+        ])]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->assertSame(3723, $client->getVideoMetadata('leirjieljrg')->durationSeconds);
+    }
+
+    #[Test]
+    public function it_returns_a_null_duration_when_content_details_are_missing()
+    {
+        Http::fake(['*' => Http::response([
+            'items' => [
+                [
+                    'id' => 'leirjieljrg',
+                    'snippet' => [
+                        'title' => 'some video',
+                        'description' => 'foo bar',
+                        'channelId' => 'eiorjg90ej',
+                        'channelTitle' => 'some channel',
+                        'publishedAt' => now()->format(DateTimeInterface::RFC3339),
+                    ],
+                ],
+            ],
+        ])]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->assertNull($client->getVideoMetadata('leirjieljrg')->durationSeconds);
+    }
+
+    #[Test]
+    public function it_returns_a_null_duration_for_a_malformed_duration()
+    {
+        Http::fake(['*' => Http::response([
+            'items' => [
+                [
+                    'id' => 'leirjieljrg',
+                    'snippet' => [
+                        'title' => 'some video',
+                        'description' => 'foo bar',
+                        'channelId' => 'eiorjg90ej',
+                        'channelTitle' => 'some channel',
+                        'publishedAt' => now()->format(DateTimeInterface::RFC3339),
+                    ],
+                    'contentDetails' => [
+                        'duration' => 'garbage',
+                    ],
+                ],
+            ],
+        ])]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->assertNull($client->getVideoMetadata('leirjieljrg')->durationSeconds);
     }
 
     #[Test]

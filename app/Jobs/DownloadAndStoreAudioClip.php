@@ -38,14 +38,42 @@ class DownloadAndStoreAudioClip implements ShouldQueue
      */
     public int $maxExceptions = 3;
 
+    /**
+     * The smallest timeout we'll allow, so a short clip never regresses below a
+     * comfortably generous budget (the old fixed value).
+     */
+    private const TIMEOUT_FLOOR_SECONDS = 3600;
+
+    /**
+     * Padding on top of the platform's download estimate, covering the parts of
+     * the job that aren't the download itself: storing the file, reading its
+     * duration, and writing to the database.
+     */
+    private const BUFFER_SECONDS = 300;
+
+    /**
+     * How many attempts to budget time for. A download usually fails
+     * transiently and gets retried (see $maxExceptions and backoff()), so the
+     * timeout has to fit more than a single attempt's worth of work.
+     */
+    private const EXPECTED_ATTEMPTS = 3;
+
     public int $timeout;
 
     public function __construct(private readonly AudioClip $clip)
     {
-        // Allow this job to run for up to an hour, because the download may involve exponential backoffs and a
-        // failover to a residential proxy. The timeout also includes time spent within this job storing the file and
-        // updating the database.
-        $this->timeout = 3600;
+        // Scale the timeout with the clip's expected download cost rather than
+        // a fixed ceiling: a long article or video legitimately needs more than
+        // an hour, and a fixed timeout would doom it. The platform estimates one
+        // download conservatively; we add a buffer for the non-download work and
+        // multiply by the attempts we expect to spend, floored so short clips
+        // keep the old generous budget.
+        $this->timeout = $clip->estimated_download_time === null
+            ? self::TIMEOUT_FLOOR_SECONDS
+            : (int) max(
+                self::TIMEOUT_FLOOR_SECONDS,
+                ($clip->estimated_download_time + self::BUFFER_SECONDS) * self::EXPECTED_ATTEMPTS,
+            );
     }
 
     /**

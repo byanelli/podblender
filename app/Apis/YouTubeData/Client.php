@@ -153,7 +153,7 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('videos', [
             'id' => $videoId,
-            'part' => 'id,snippet,status',
+            'part' => 'id,snippet,status,contentDetails',
         ]);
 
         return $this->getVideoMetadataFromResponseObject($response['items'][0]);
@@ -202,6 +202,32 @@ readonly class Client implements Contracts\Client
                 id: $snippet['channelId'],
                 name: $snippet['channelTitle'],
             ),
+            durationSeconds: $this->parseIso8601Duration($video['contentDetails']['duration'] ?? null),
         );
+    }
+
+    /**
+     * Parse an ISO-8601 duration (e.g. "PT4M13S") to seconds. Search results
+     * omit contentDetails, so this returns null when no duration was reported.
+     */
+    private function parseIso8601Duration(?string $duration): ?int
+    {
+        if ($duration === null || $duration === '') {
+            return null;
+        }
+
+        try {
+            $interval = new \DateInterval($duration);
+
+            // DateInterval doesn't normalise into a single field, so sum the
+            // units. (%a total-days is unreliable for durations created from a
+            // string, so build the total explicitly.)
+            return ($interval->d * 86400)
+                + ($interval->h * 3600)
+                + ($interval->i * 60)
+                + $interval->s;
+        } catch (\Exception) {
+            return null;
+        }
     }
 }

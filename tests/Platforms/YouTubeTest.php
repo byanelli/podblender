@@ -31,6 +31,7 @@ class YouTubeTest extends TestCase
                 id: $channelId,
                 name: $channelName = 'some channel',
             ),
+            durationSeconds: 600,
         ));
 
         /** @var YouTube $youtube */
@@ -44,6 +45,48 @@ class YouTubeTest extends TestCase
         $this->assertEquals($publishTime, $metadata->publishedAt);
         $this->assertEquals($channelUrl, $metadata->source->canonicalUrl);
         $this->assertEquals($channelName, $metadata->source->name);
+    }
+
+    #[Test]
+    public function it_estimates_download_time_from_video_duration()
+    {
+        $videoUrl = 'https://youtube.com/watch?v='.($videoId = 'wlijflwijf');
+
+        // 600s of ~160 kbps audio = 12 MB; at a pessimistic 2 Mbps (250 KB/s)
+        // that's 48s, plus fixed overhead.
+        $this->fakeYouTubeData(videoMetadata: new VideoMetadata(
+            id: $videoId,
+            title: 'some video',
+            description: 'some description',
+            publishedAt: now(),
+            channel: new ChannelMetadata(id: 'channel-id', name: 'some channel'),
+            durationSeconds: 600,
+        ));
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $this->assertEquals(108, $youtube->getClipMetadata($videoUrl)->estimatedDownloadTime);
+    }
+
+    #[Test]
+    public function it_reports_no_estimate_when_the_video_has_no_duration()
+    {
+        $videoUrl = 'https://youtube.com/watch?v='.($videoId = 'wlijflwijf');
+
+        $this->fakeYouTubeData(videoMetadata: new VideoMetadata(
+            id: $videoId,
+            title: 'some video',
+            description: 'some description',
+            publishedAt: now(),
+            channel: new ChannelMetadata(id: 'channel-id', name: 'some channel'),
+            durationSeconds: null,
+        ));
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $this->assertNull($youtube->getClipMetadata($videoUrl)->estimatedDownloadTime);
     }
 
     #[Test]
