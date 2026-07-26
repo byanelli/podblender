@@ -2,7 +2,7 @@
 
 namespace Tests\Platforms;
 
-use App\Articles\Contracts\Reader;
+use App\Apis\Tts\Contracts\Client;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Web;
 use Carbon\CarbonImmutable;
@@ -40,24 +40,40 @@ class WebTest extends TestCase
     }
 
     #[Test]
-    public function it_estimates_download_time_from_article_length()
+    public function it_estimates_download_time_from_the_tts_backend()
     {
         Http::fake(['*' => Http::response($this->articleHtml())]);
+
+        $narration = $this->fakeTts();
 
         /** @var Web $web */
         $web = $this->app->make(Web::class);
 
         $metadata = $web->getClipMetadata('https://theopenpress.com/harvest-festival');
 
-        // Derive the expectation from the fixture itself rather than a magic
-        // number: spoken time at the narration rate, scaled by the pessimistic
-        // wall-clock factor, plus fixed overhead.
-        $reader = $this->app->make(Reader::class);
-        $words = str_word_count($reader->read('https://theopenpress.com/harvest-festival')->text);
-        $expected = (int) ceil(($words / 190 * 60) * 0.4) + 30;
+        // Narration dominates the download, and only the backend can price it,
+        // so the estimate is whatever it says plus the fetch overhead.
+        $this->assertEquals($narration + 30, $metadata->estimatedDownloadTime);
+    }
 
-        $this->assertEquals($expected, $metadata->estimatedDownloadTime);
-        $this->assertGreaterThan(0, $metadata->estimatedDownloadTime);
+    #[Test]
+    public function it_estimates_a_longer_download_for_a_longer_article()
+    {
+        $short = 'A short article. '.str_repeat('Words about the harvest. ', 10);
+        $long = 'A long article. '.str_repeat('Words about the harvest. ', 2000);
+
+        /** @var Client $tts */
+        $tts = $this->app->make(Client::class);
+
+        // The real backend, not the fake: an article needing several poolfuls of
+        // narration must be budgeted more time than one that fits in a single
+        // request, or long articles get a timeout sized for short ones.
+        $this->assertGreaterThan(
+            $tts->estimateNarrationTime($short),
+            $tts->estimateNarrationTime($long),
+        );
+
+        $this->assertGreaterThan(0, $tts->estimateNarrationTime($short));
     }
 
     #[Test]

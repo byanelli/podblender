@@ -99,6 +99,39 @@ readonly class GeminiClient implements ClientContract
     }
 
     /**
+     * How long one poolful of segments takes to narrate, whatever their size.
+     * Generation time tracks the segment budget far more than the text in it:
+     * measured 36.1s/43.1s/33.4s for segments of 1494/1005/1499 characters, and
+     * 40.6s and 50.3s for a one-pool and a two-pool article. Rounded up from
+     * those, since this feeds a timeout.
+     */
+    private const SECONDS_PER_POOL = 60;
+
+    /**
+     * Transcoding a segment's PCM to MP3 and adding it to the concatenation.
+     * This is per segment, not a fixed cost: measured at a steady ~1.4s to
+     * transcode plus ~0.1s of concat per segment, from one segment up to twelve.
+     * Rounded up, since this feeds a timeout.
+     */
+    private const FFMPEG_SECONDS_PER_SEGMENT = 3;
+
+    public function estimateNarrationTime(string $text): int
+    {
+        // Count segments the way convertTextToSpeech() actually will, rather
+        // than estimating from length, so this stays right if the segmenter
+        // changes.
+        $segments = iterator_count($this->segmentText($text, self::SEGMENT_LENGTH));
+
+        // Narration is the dominant cost and runs CONCURRENCY segments at a
+        // time, so it's the number of pools that matters there. Transcoding is
+        // sequential, so it scales with every segment.
+        $pools = (int) ceil($segments / self::CONCURRENCY);
+
+        return ($pools * self::SECONDS_PER_POOL)
+            + ($segments * self::FFMPEG_SECONDS_PER_SEGMENT);
+    }
+
+    /**
      * Write a segment's decoded PCM to a temp file for ffmpeg to transcode.
      */
     private function writePcmToFile(string $pcm): string

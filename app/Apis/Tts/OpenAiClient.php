@@ -81,4 +81,25 @@ readonly class OpenAiClient implements TtsClientContract
             throw $e;
         }
     }
+
+    /**
+     * Segments are narrated one after another here, so cost is simply the
+     * segment count. This backend is currently unbound, so the per-segment
+     * figure is an unmeasured guess held deliberately high; measure it before
+     * relying on it.
+     */
+    private const SECONDS_PER_SEGMENT = 120;
+
+    /**
+     * Adding a segment to the concatenation. Unlike Gemini there's no transcode
+     * — the API already returns MP3 — so this is only the concat's share.
+     */
+    private const FFMPEG_SECONDS_PER_SEGMENT = 1;
+
+    public function estimateNarrationTime(string $text): int
+    {
+        $segments = iterator_count($this->segmentText($text, self::SEGMENT_LENGTH));
+
+        return $segments * (self::SECONDS_PER_SEGMENT + self::FFMPEG_SECONDS_PER_SEGMENT);
+    }
 }
