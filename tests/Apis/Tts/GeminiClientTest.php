@@ -120,6 +120,67 @@ class GeminiClientTest extends TestCase
     }
 
     #[Test]
+    public function it_reassembles_segments_in_order_across_pools()
+    {
+        // Enough distinct words to fill several 1500-char segments, so the
+        // narration spans more than one concurrent pool. Pooled responses can
+        // settle in any order, so this is what guards against the audio being
+        // stitched back together shuffled.
+        $text = collect(range(1, 2000))->map(fn (int $i) => "word$i")->implode(' ');
+
+        config()->set('services.gemini.api_key', 'test-key');
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => fn ($request) => Http::response(
+                $this->sseBodyFor((string) $request['input'])
+            ),
+        ]);
+
+        $this->fakeFfmpeg();
+
+        $narrated = app(GeminiClient::class)->convertTextToSpeech($text);
+
+        // The fake ffmpeg concatenates segment audio in the order it's handed
+        // them, so the round trip reproduces the original text only if the
+        // pooled responses were reassembled in the order they were sent.
+        // Compare ignoring whitespace: the space that joined two segments
+        // belongs to neither, so it's absent from the concatenation.
+        $this->assertEquals(
+            preg_replace('/\s+/', '', $text),
+            preg_replace('/\s+/', '', $narrated),
+        );
+
+        // Guard the premise: this only tests ordering if there was more than
+        // one pool's worth of segments.
+        $this->assertGreaterThan(3, Http::recorded()->count());
+    }
+
+    #[Test]
+    public function it_propagates_a_failure_from_any_segment_in_a_pool()
+    {
+        $text = collect(range(1, 500))->map(fn (int $i) => "word$i")->implode(' ');
+
+        config()->set('services.gemini.api_key', 'test-key');
+
+        // One particular segment always fails, however many times it's retried;
+        // the whole narration should fail rather than quietly returning audio
+        // with a hole in it.
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => function ($request) {
+                return str_contains((string) $request['input'], 'word2 ')
+                    ? Http::response('nope', 500)
+                    : Http::response($this->sseBodyFor((string) $request['input']));
+            },
+        ]);
+
+        $this->fakeFfmpeg();
+
+        $this->expectException(\Throwable::class);
+
+        app(GeminiClient::class)->convertTextToSpeech($text);
+    }
+
+    #[Test]
     public function it_throws_when_the_response_has_no_audio()
     {
         config()->set('services.gemini.api_key', 'test-key');

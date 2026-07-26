@@ -31,7 +31,12 @@ readonly class Client implements ClientContract
             ->newPendingProcess()
             ->timeout($timeout)
             ->path($this->getVendorBinPath())
-            ->run(array_merge(['./ffmpeg'], $args));
+            // -y: overwrite the output without asking. Every output path here is
+            // a UUID we just generated, so there's nothing to protect — and if
+            // one does exist, ffmpeg's default is to prompt, read EOF from our
+            // non-interactive stdin, and exit *successfully* having written
+            // nothing, leaving whatever was already there.
+            ->run(array_merge(['./ffmpeg', '-y'], $args));
     }
 
     /**
@@ -40,6 +45,34 @@ readonly class Client implements ClientContract
     private function runSuccessfully(int $timeout, array $args): ProcessResult
     {
         return $this->run($timeout, $args)->throw();
+    }
+
+    /**
+     * Run ffmpeg and insist it actually wrote audio to $outputPath.
+     *
+     * ffmpeg has been observed to exit 0 having written an empty file, which is
+     * worse than an error: an empty MP3 is silently concatenated into the
+     * finished episode as a stretch of nothing, or stored as a clip that plays
+     * for zero seconds. Treat it as the failure it is, so the job retries.
+     *
+     * @param  array<int, string>  $args
+     */
+    private function runProducingAudio(int $timeout, array $args, string $outputPath): void
+    {
+        $result = $this->runSuccessfully($timeout, $args);
+
+        clearstatcache(true, $outputPath);
+
+        if (! file_exists($outputPath) || filesize($outputPath) === 0) {
+            // Include the whole of ffmpeg's output. It's only a few kilobytes,
+            // this is rare and awkward to reproduce, and the log line is the
+            // only evidence we'll get of why it happened — so don't trim it.
+            throw new \RuntimeException(
+                "ffmpeg exited successfully but wrote no audio to $outputPath.\n".
+                'Command: '.implode(' ', $args)."\n".
+                'Output: '.trim($result->errorOutput())
+            );
+        }
     }
 
     /**
@@ -53,13 +86,13 @@ readonly class Client implements ClientContract
 
         $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
 
-        $this->runSuccessfully(600 /* todo */, [
+        $this->runProducingAudio(600 /* todo */, [
             '-i',
             'concat:'.collect($mp3s)->implode('|'),
             '-acodec',
             'copy',
             $outputPath,
-        ]);
+        ], $outputPath);
 
         return $outputPath;
     }
@@ -73,7 +106,7 @@ readonly class Client implements ClientContract
     {
         $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
 
-        $this->runSuccessfully(600 /* todo */, [
+        $this->runProducingAudio(600 /* todo */, [
             '-f',
             's16le',
             '-ar',
@@ -87,7 +120,7 @@ readonly class Client implements ClientContract
             '-b:a',
             '128k',
             $outputPath,
-        ]);
+        ], $outputPath);
 
         return $outputPath;
     }
