@@ -65,6 +65,36 @@ class ExtractorTest extends TestCase
     }
 
     #[Test]
+    public function it_credits_the_publisher_not_the_archive_the_snapshot_came_from()
+    {
+        // A snapshot describes itself in its metadata, so both the JSON-LD
+        // publisher and og:site_name name the archive. Crediting the article to
+        // archive.ph is wrong in a way readers see: it's what the feed shows as
+        // the source. The URL is always the article's own, even here.
+        $article = $this->extract('archive-snapshot', 'https://www.theatlantic.com/ideas/the-tunnel-under-the-old-quarter/');
+
+        $this->assertEquals('theatlantic.com', $article->publisher);
+
+        // The rest of the snapshot's metadata is still the article's own.
+        $this->assertEquals('The Tunnel Under the Old Quarter', $article->title);
+        $this->assertEquals(['Marta Chronicle'], $article->authors);
+        $this->assertStringContainsString('Work on the tunnel began', $article->text);
+    }
+
+    #[Test]
+    public function it_keeps_a_publisher_whose_name_merely_mentions_archives()
+    {
+        // Only the archiving services themselves are rejected. A publication
+        // legitimately called "The Archive" must survive.
+        $html = '<html><head><meta property="og:site_name" content="The Archive"></head>'
+            .'<body><article><p>'.str_repeat('A perfectly ordinary article body. ', 40).'</p></article></body></html>';
+
+        $article = (new Extractor)->extract('https://thearchive.com/a-story', $html);
+
+        $this->assertEquals('The Archive', $article->publisher);
+    }
+
+    #[Test]
     public function it_derives_author_names_from_profile_url_slugs()
     {
         $article = $this->extract('authors-from-slugs', 'https://news.com/breaking-news');

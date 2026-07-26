@@ -211,16 +211,66 @@ readonly class Extractor
     {
         $publisher = $node['publisher'] ?? null;
 
-        if (is_array($publisher) && isset($publisher['name']) && is_string($publisher['name']) && trim($publisher['name']) !== '') {
-            return trim($publisher['name']);
+        if (is_array($publisher) && isset($publisher['name']) && is_string($publisher['name'])) {
+            $name = trim($publisher['name']);
+
+            if ($name !== '' && ! $this->namesAnArchive($name)) {
+                return $name;
+            }
         }
 
-        if (isset($meta['og:site_name']) && trim($meta['og:site_name']) !== '') {
-            return trim($meta['og:site_name']);
+        if (isset($meta['og:site_name'])) {
+            $name = trim($meta['og:site_name']);
+
+            if ($name !== '' && ! $this->namesAnArchive($name)) {
+                return $name;
+            }
         }
 
+        // The URL is always the article's own, even when the HTML came from an
+        // archive, so its host is the one publisher signal a snapshot can't
+        // corrupt.
         return $this->getPublisherFromUrl($url);
     }
+
+    /**
+     * Does this name belong to an archiving service rather than a publisher?
+     *
+     * A snapshot carries the archive's own og:site_name and JSON-LD publisher,
+     * which would otherwise outrank the article's URL and credit the article to
+     * archive.ph. The mirrors are interchangeable front doors to one service, so
+     * match the family rather than whichever host we happened to fetch from.
+     */
+    private function namesAnArchive(string $name): bool
+    {
+        $name = strtolower(trim($name));
+
+        foreach (self::ARCHIVE_NAMES as $archive) {
+            if ($name === $archive || str_starts_with($name, $archive.'/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Names an archived page may claim as its publisher. Bare hosts only: a
+     * publisher legitimately called "The Archive" must not be caught here.
+     */
+    private const ARCHIVE_NAMES = [
+        'archive.ph',
+        'archive.is',
+        'archive.today',
+        'archive.li',
+        'archive.vn',
+        'archive.fo',
+        'archive.md',
+        'web.archive.org',
+        'archive.org',
+        'internet archive',
+        'wayback machine',
+    ];
 
     // ----- Date -------------------------------------------------------------
 
