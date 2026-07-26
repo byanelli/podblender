@@ -50,10 +50,15 @@ readonly class Client implements ClientContract
     /**
      * Run ffmpeg and insist it actually wrote audio to $outputPath.
      *
-     * ffmpeg has been observed to exit 0 having written an empty file, which is
-     * worse than an error: an empty MP3 is silently concatenated into the
-     * finished episode as a stretch of nothing, or stored as a clip that plays
-     * for zero seconds. Treat it as the failure it is, so the job retries.
+     * ffmpeg has been observed to exit 0 having written nothing, which is worse
+     * than an error: silence is silently concatenated into the finished episode,
+     * or a clip is stored that plays for zero seconds. Treat it as the failure
+     * it is, so the job retries.
+     *
+     * Checking the file is non-empty isn't enough — encoding no samples still
+     * produces a small but valid header-only MP3 — so this asks ffmpeg how long
+     * the result actually is. That's a second process per output, which is
+     * cheap next to the encode it's verifying.
      *
      * @param  array<int, string>  $args
      */
@@ -63,7 +68,11 @@ readonly class Client implements ClientContract
 
         clearstatcache(true, $outputPath);
 
-        if (! file_exists($outputPath) || filesize($outputPath) === 0) {
+        $duration = (file_exists($outputPath) && filesize($outputPath) > 0)
+            ? $this->getPreciseDurationOrNull($outputPath)
+            : null;
+
+        if (($duration ?? 0.0) <= 0.0) {
             // Include the whole of ffmpeg's output. It's only a few kilobytes,
             // this is rare and awkward to reproduce, and the log line is the
             // only evidence we'll get of why it happened — so don't trim it.
@@ -119,25 +128,43 @@ readonly class Client implements ClientContract
             // Encode at a floor of 128 kb/s instead.
             '-b:a',
             '128k',
+            // These segments get concatenated byte-wise by combineMp3s(), so
+            // anything that isn't an audio frame ends up spliced into the middle
+            // of the finished episode, where decoders report it as a missing
+            // header and skip it. Leave out the Xing/LAME header and the ID3
+            // tag; the combined file gets its own when it's written.
+            '-write_xing',
+            '0',
+            '-id3v2_version',
+            '0',
             $outputPath,
         ], $outputPath);
 
         return $outputPath;
     }
 
-    private function parseDurationString(string $duration): int
+    public function getDuration(string $path): int
     {
-        $match = Regex::match('/(\d\d):(\d\d):(\d\d).(\d\d)/', $duration);
+        $duration = $this->getPreciseDurationOrNull($path);
 
-        $hours = (int) $match->group(1);
-        $minutes = (int) $match->group(2);
-        $seconds = (int) $match->group(3);
-        // todo: milliseconds?
+        if ($duration === null) {
+            throw new \RuntimeException("Couldn't parse duration from ffmpeg output");
+        }
 
-        return ($hours * 3600) + ($minutes * 60) + $seconds;
+        return (int) $duration;
     }
 
-    public function getDuration(string $path): int
+    /**
+     * The duration ffmpeg reports for a file, or null if it didn't report one
+     * (an unreadable or audio-less file).
+     *
+     * Returns seconds as a float, keeping the fractional part that getDuration()
+     * truncates: this is what the post-encode check tests, and a short segment
+     * lasting under a second is still audio we mustn't reject. Separate from
+     * getDuration() so that check can treat "no duration" as a result rather
+     * than an exception it would have to catch.
+     */
+    private function getPreciseDurationOrNull(string $path): ?float
     {
         // We use "run" instead of "runSuccessfully" and parse the error output because ffmpeg throws an error without
         // any decoder set. Here we're only interested in the metadata it prints at the end of its run.
@@ -145,12 +172,18 @@ readonly class Client implements ClientContract
 
         foreach (explode("\n", $result->errorOutput()) as $line) {
             if (Str::contains($line, 'Duration:')) {
-                $match = Regex::match('/.*Duration: ([\d:\.]+),.*/', $line);
+                $match = Regex::match('/.*Duration: (\d\d):(\d\d):(\d\d[\d\.]*),.*/', $line);
 
-                return $this->parseDurationString($match->group(1));
+                if (! $match->hasMatch()) {
+                    continue;
+                }
+
+                return ((int) $match->group(1) * 3600)
+                    + ((int) $match->group(2) * 60)
+                    + (float) $match->group(3);
             }
         }
 
-        throw new \RuntimeException("Couldn't parse duration from ffmpeg output");
+        return null;
     }
 }
