@@ -12,7 +12,8 @@
         <itunes:owner>
             <itunes:email>{{$feed->user->email}}</itunes:email>
         </itunes:owner>
-        <itunes:author>{{$feed->user->name}}</itunes:author>
+        {{-- Who publishes the podcast: for a subscription that's the channel, not the podblender user who set it up. --}}
+        <itunes:author>{{$feed->author_name}}</itunes:author>
         <itunes:image href="https://placehold.co/400"/> {{--todo: specify image url?--}}
         <language>en-us</language>
         @foreach($feed->audioClipsFinishedProcessing as $clip)
@@ -20,6 +21,8 @@
                 <title>{{$clip->title}}</title>
                 <link>{{$clip->platform_url}}</link>
                 <description>{{$clip->description}}</description>
+                {{-- Per episode, the channel that uploaded it: a playlist can collect several channels' videos. --}}
+                <itunes:author>{{$clip->audioSource->name}}</itunes:author>
                 @if($clip->pivot->published_at)
                     <pubDate>{{$clip->pivot->published_at->format(\DateTimeInterface::RSS)}}</pubDate>
                 @endif

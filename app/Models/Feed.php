@@ -6,6 +6,7 @@ use App\Enums\ClipProcessingState;
 use App\Models\Concerns\HasUuid;
 use Carbon\CarbonImmutable;
 use Database\Factories\FeedFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property Collection<int, AudioClip> $audioClips
  * @property Collection<int, AudioClip> $audioClipsFinishedProcessing
  * @property User $user
- * @property AudioSource $subscription
+ * @property ?AudioSource $subscription
+ * @property string $author_name
  */
 class Feed extends Model
 {
@@ -84,5 +86,23 @@ class Feed extends Model
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(AudioSource::class, 'subscription_id');
+    }
+
+    /**
+     * Who the podcast is "by".
+     *
+     * For a subscription that's whoever publishes it, not the podblender user
+     * who set the feed up — a listener seeing this in their podcast app expects
+     * the channel's name. A hand-built feed has no such publisher, so it falls
+     * back to its owner.
+     */
+    /**
+     * @return Attribute<string, never>
+     */
+    public function authorName(): Attribute
+    {
+        return Attribute::make(
+            fn (): string => $this->subscription?->authorName() ?? $this->user->name,
+        );
     }
 }

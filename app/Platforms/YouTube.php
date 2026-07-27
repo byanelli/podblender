@@ -127,14 +127,54 @@ readonly class YouTube implements SubscribablePlatform
         }
     }
 
+    /**
+     * List a source's clips through its playlist of videos.
+     *
+     * A channel is listed through its "uploads" playlist rather than through
+     * search.list, which stops paging after roughly 500 results: an 864-video
+     * channel returned 303 videos that way and all 864 this way, for 18 quota
+     * units instead of 700. That also means one code path serves channels and
+     * playlists alike, since a channel is a playlist as far as the API cares.
+     */
     public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
     {
-        $videoMetadata = $this->youTubeData->getAllVideoMetadataForChannel(
-            channelId: $this->getChannelIdFromSourceUrl($sourceUrl),
+        $videoMetadata = $this->youTubeData->getAllVideoMetadataForPlaylist(
+            playlistId: $this->getPlaylistIdFromSourceUrl($sourceUrl),
             publishedAfter: $publicationTime,
         );
 
         return collect($videoMetadata)->map($this->convertVideoMetadataToClipMetadata(...))->all();
+    }
+
+    /**
+     * The playlist to page for a subscription's clips: a playlist source is
+     * itself one, and a channel source is served by its uploads playlist.
+     */
+    private function getPlaylistIdFromSourceUrl(string $sourceUrl): string
+    {
+        if ($playlistId = $this->getPlaylistIdFromUrl($sourceUrl)) {
+            return $playlistId;
+        }
+
+        $channelIdOrHandle = $this->getLastPathPiece($sourceUrl);
+
+        return $this->sourceUrlHasChannelId($sourceUrl)
+            ? (new ChannelMetadata(id: $channelIdOrHandle, name: ''))->uploadsPlaylistId()
+            : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle)->uploadsPlaylistId();
+    }
+
+    /**
+     * The playlist id in a URL, if it names one: either /playlist?list=... or a
+     * watch URL carrying a list= parameter. Null for anything else, which is
+     * what distinguishes a playlist source from a channel.
+     */
+    private function getPlaylistIdFromUrl(string $url): ?string
+    {
+        parse_str(Uri::new($this->fixUrlSchemeAndHost($url))->getQuery() ?? '', $query);
+
+        $list = $query['list'] ?? null;
+
+        return is_string($list) && $list !== '' ? $list : null;
     }
 
     private function sourceUrlHasChannelId(string $sourceUrl): bool
@@ -166,12 +206,4 @@ readonly class YouTube implements SubscribablePlatform
         );
     }
 
-    private function getChannelIdFromSourceUrl(string $sourceUrl): string
-    {
-        $channelIdOrHandle = $this->getLastPathPiece($sourceUrl);
-
-        return $this->sourceUrlHasChannelId($sourceUrl)
-            ? $channelIdOrHandle
-            : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle)->id;
-    }
 }

@@ -126,6 +126,7 @@ readonly class Client implements Contracts\Client
         return new ChannelMetadata(
             id: $channel['id'],
             name: $channel['brandingSettings']['channel']['title'],
+            uploadsPlaylistId: $channel['contentDetails']['relatedPlaylists']['uploads'] ?? null,
         );
     }
 
@@ -133,7 +134,7 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('channels', [
             'forHandle' => $channelHandle,
-            'part' => 'id,brandingSettings',
+            'part' => 'id,brandingSettings,contentDetails',
         ]);
 
         return $this->getChannelMetadataFromResponse($response);
@@ -177,6 +178,110 @@ readonly class Client implements Contracts\Client
         return collect($videos)
             ->map(fn ($response) => $this->getVideoMetadataFromResponseObject($response, true))
             ->all();
+    }
+
+    public function getPlaylistMetadata(string $playlistId): PlaylistMetadata
+    {
+        $response = $this->apiGet('playlists', [
+            'id' => $playlistId,
+            'part' => 'id,snippet,contentDetails',
+        ]);
+
+        $playlist = $response['items'][0];
+
+        return new PlaylistMetadata(
+            id: $playlist['id'],
+            title: $playlist['snippet']['title'],
+            channel: new ChannelMetadata(
+                id: $playlist['snippet']['channelId'],
+                name: $playlist['snippet']['channelTitle'],
+            ),
+            itemCount: isset($playlist['contentDetails']['itemCount'])
+                ? (int) $playlist['contentDetails']['itemCount']
+                : null,
+        );
+    }
+
+    public function getAllVideoMetadataForPlaylist(
+        string $playlistId,
+        ?DateTimeInterface $publishedAfter = null,
+    ): array {
+        $publishedAfter ??= CarbonImmutable::parse(0);
+
+        $videos = [];
+        $nextPageToken = null;
+
+        // playlistItems has no server-side date filter (it accepts
+        // publishedAfter and ignores it), so the cutoff is applied here. Items
+        // arrive newest-first, so the first one older than the cutoff means
+        // every remaining page is older too and we can stop paging.
+        do {
+            $page = $this->apiGet('playlistItems', array_filter([
+                'playlistId' => $playlistId,
+                'maxResults' => 50,
+                'part' => 'snippet,contentDetails,status',
+                'pageToken' => $nextPageToken,
+            ], fn ($value) => ! is_null($value)));
+
+            foreach ($page['items'] as $item) {
+                $video = $this->getVideoMetadataFromPlaylistItem($item);
+
+                // Deleted and private videos stay in the playlist as items we
+                // can't do anything with; they have no publication date and
+                // wouldn't be downloadable anyway.
+                if ($video === null) {
+                    continue;
+                }
+
+                if ($video->publishedAt < $publishedAfter) {
+                    return $videos;
+                }
+
+                $videos[] = $video;
+            }
+
+            $nextPageToken = $page['nextPageToken'] ?? null;
+        } while (! is_null($nextPageToken));
+
+        return $videos;
+    }
+
+    /**
+     * Build a video's metadata from its playlist entry, or null if the entry
+     * doesn't describe a usable video.
+     *
+     * Two fields here are easy to confuse. The date is contentDetails'
+     * videoPublishedAt — when the video was published — NOT snippet's
+     * publishedAt, which is when it was added to the playlist: ordering a feed
+     * by the latter would send an old video to the top of a podcast app the day
+     * someone adds it to a playlist. Likewise the channel is the video's OWN
+     * uploader (videoOwnerChannel*), not the playlist's owner, so a playlist
+     * collecting several channels credits each episode correctly.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    private function getVideoMetadataFromPlaylistItem(array $item): ?VideoMetadata
+    {
+        $snippet = $item['snippet'];
+        $publishedAt = $item['contentDetails']['videoPublishedAt'] ?? null;
+        $videoId = $item['contentDetails']['videoId'] ?? null;
+
+        // A private or deleted video keeps its slot in the playlist but loses
+        // its publication date, and there's nothing to download.
+        if (! is_string($publishedAt) || ! is_string($videoId)) {
+            return null;
+        }
+
+        return new VideoMetadata(
+            id: $videoId,
+            title: html_entity_decode($snippet['title']),
+            description: $snippet['description'] ?? '',
+            publishedAt: CarbonImmutable::parse($publishedAt),
+            channel: new ChannelMetadata(
+                id: $snippet['videoOwnerChannelId'] ?? $snippet['channelId'],
+                name: html_entity_decode($snippet['videoOwnerChannelTitle'] ?? $snippet['channelTitle']),
+            ),
+        );
     }
 
     /**

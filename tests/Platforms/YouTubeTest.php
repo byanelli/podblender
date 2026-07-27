@@ -16,6 +16,88 @@ class YouTubeTest extends TestCase
 {
     use FakesYouTubeData;
 
+    private function video(string $id, string $title, \DateTimeInterface $publishedAt, string $channelId = 'chan', string $channelName = 'Some Channel'): VideoMetadata
+    {
+        return new VideoMetadata(
+            id: $id,
+            title: $title,
+            description: 'description of '.$title,
+            publishedAt: $publishedAt,
+            channel: new ChannelMetadata(id: $channelId, name: $channelName),
+            durationSeconds: 600,
+        );
+    }
+
+    #[Test]
+    public function it_lists_a_channels_clips_through_its_uploads_playlist()
+    {
+        // search.list stops paging after ~500 results, so a channel is listed
+        // through its uploads playlist instead — the "UC" id with a "UU"
+        // prefix. Getting this wrong silently truncates a large channel.
+        $this->fakeYouTubeData(
+            channelMetadata: new ChannelMetadata(id: 'UCabc123', name: 'Some Channel'),
+            playlistVideos: [
+                $this->video('v1', 'Newest', now()->subDay()),
+                $this->video('v2', 'Older', now()->subMonths(2)),
+            ],
+        );
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $clips = $youtube->getMetadataForAllClipsPublishedSince(
+            'https://youtube.com/channel/UCabc123',
+            now()->subYear(),
+        );
+
+        $this->assertCount(2, $clips);
+        $this->assertEquals('Newest', $clips[0]->title);
+        $this->assertEquals('https://youtube.com/watch?v=v1', $clips[0]->canonicalUrl);
+    }
+
+    #[Test]
+    public function it_lists_a_playlists_clips_directly()
+    {
+        $this->fakeYouTubeData(playlistVideos: [
+            $this->video('v1', 'First', now()->subDay()),
+        ]);
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $clips = $youtube->getMetadataForAllClipsPublishedSince(
+            'https://youtube.com/playlist?list=PLabc123',
+            now()->subYear(),
+        );
+
+        $this->assertCount(1, $clips);
+        $this->assertEquals('First', $clips[0]->title);
+    }
+
+    #[Test]
+    public function it_credits_each_clip_to_the_channel_that_uploaded_it()
+    {
+        // A playlist can collect videos from several channels, so the source of
+        // a clip is its own uploader — not whoever owns the playlist.
+        $this->fakeYouTubeData(playlistVideos: [
+            $this->video('v1', 'By Alice', now()->subDay(), 'UCalice', 'Alice'),
+            $this->video('v2', 'By Bob', now()->subDays(2), 'UCbob', 'Bob'),
+        ]);
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $clips = $youtube->getMetadataForAllClipsPublishedSince(
+            'https://youtube.com/playlist?list=PLmixed',
+            now()->subYear(),
+        );
+
+        $this->assertEquals('Alice', $clips[0]->source->name);
+        $this->assertEquals('https://youtube.com/channel/UCalice', $clips[0]->source->canonicalUrl);
+        $this->assertEquals('Bob', $clips[1]->source->name);
+        $this->assertEquals('https://youtube.com/channel/UCbob', $clips[1]->source->canonicalUrl);
+    }
+
     #[Test]
     public function it_gets_clip_metadata()
     {
