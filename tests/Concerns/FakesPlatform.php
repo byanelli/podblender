@@ -15,6 +15,19 @@ use Tests\TestCase;
  */
 trait FakesPlatform
 {
+    /**
+     * The publication time the subscription sync last asked the platform for.
+     * This is the fetch cursor, and getting it wrong is expensive but invisible
+     * — too far back re-fetches history on every sweep, too recent silently
+     * skips clips — so tests assert on it directly.
+     */
+    private ?\DateTimeInterface $platformPublicationTimeRequested = null;
+
+    protected function platformPublicationTimeRequested(): ?\DateTimeInterface
+    {
+        return $this->platformPublicationTimeRequested;
+    }
+
     protected function fakePlatform(
         ?ClipMetadata $clipMetadata = null,
         ?SourceMetadata $sourceMetadata = null,
@@ -23,15 +36,20 @@ trait FakesPlatform
         ?string $audioContent = null,
         ?\Throwable $downloadError = null,
     ): void {
-        $platform = new readonly class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent, $downloadError) implements SubscribablePlatform
+        $recordPublicationTime = function (\DateTimeInterface $time) {
+            $this->platformPublicationTimeRequested = $time;
+        };
+
+        $platform = new class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent, $downloadError, $recordPublicationTime) implements SubscribablePlatform
         {
             public function __construct(
-                private ?ClipMetadata $clipMetadata = null,
-                private ?SourceMetadata $sourceMetadata = null,
-                private array $clipMetadataList = [],
-                private ?string $audioPath = null,
-                private ?string $audioContent = null,
-                private ?\Throwable $downloadError = null,
+                private readonly ?ClipMetadata $clipMetadata = null,
+                private readonly ?SourceMetadata $sourceMetadata = null,
+                private readonly array $clipMetadataList = [],
+                private readonly ?string $audioPath = null,
+                private readonly ?string $audioContent = null,
+                private readonly ?\Throwable $downloadError = null,
+                private readonly ?\Closure $recordPublicationTime = null,
             ) {}
 
             public function getClipMetadata(string $clipUrl): ClipMetadata
@@ -61,6 +79,8 @@ trait FakesPlatform
 
             public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
             {
+                ($this->recordPublicationTime)($publicationTime);
+
                 return $this->clipMetadataList;
             }
         };

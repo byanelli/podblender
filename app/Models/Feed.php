@@ -6,12 +6,14 @@ use App\Enums\ClipProcessingState;
 use App\Models\Concerns\HasUuid;
 use Carbon\CarbonImmutable;
 use Database\Factories\FeedFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 /**
  * @property int $id
@@ -21,6 +23,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property int $user_id
  * @property ?int $subscription_id
  * @property ?CarbonImmutable $subscribed_at
+ * @property ?CarbonImmutable $backfill_since
+ * @property bool $tracks_new_episodes
+ * @property ?CarbonImmutable $subscription_filled_at
  * @property CarbonImmutable $created_at
  * @property CarbonImmutable $updated_at
  * @property Collection<int, AudioClip> $audioClips
@@ -38,12 +43,29 @@ class Feed extends Model
 
     protected $casts = [
         'subscribed_at' => 'datetime',
+        'backfill_since' => 'datetime',
+        'subscription_filled_at' => 'datetime',
+        'tracks_new_episodes' => 'boolean',
+    ];
+
+    /**
+     * The column default alone isn't enough: a freshly made model doesn't know
+     * about it until it's been reloaded, so wantsFutureEpisodes() would read
+     * null — and treat a brand-new subscription as one that has finished.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        self::COL_TRACKS_NEW_EPISODES => true,
     ];
 
     const string COL_NAME = 'name';
     const string COL_USER_ID = 'user_id';
     const string COL_SUBSCRIPTION_ID = 'subscription_id';
     const string COL_SUBSCRIBED_AT = 'subscribed_at';
+    const string COL_BACKFILL_SINCE = 'backfill_since';
+    const string COL_TRACKS_NEW_EPISODES = 'tracks_new_episodes';
+    const string COL_SUBSCRIPTION_FILLED_AT = 'subscription_filled_at';
     const string REL_AUDIO_CLIPS = 'audioClips';
     const string REL_AUDIO_CLIPS_FINISHED_PROCESSING = 'audioClipsFinishedProcessing';
     const string REL_USER = 'user';
@@ -89,14 +111,52 @@ class Feed extends Model
     }
 
     /**
+     * Does this subscriber still need its source checked?
+     *
+     * True while it's collecting new episodes, and also true for a one-shot
+     * that hasn't been filled yet — that feed still needs the single sweep that
+     * populates it. Only once a one-shot has had that fill is there nothing
+     * left to do: it captured the source as it stood and asked to be left
+     * alone, and checking it again would cost platform quota forever.
+     */
+    public function needsUpdating(): bool
+    {
+        return $this->tracks_new_episodes || is_null($this->subscription_filled_at);
+    }
+
+    /**
+     * Restrict a query to subscribers that still need their source checked.
+     * Mirrors needsUpdating() in SQL, for the sweep to select sources by.
+     *
+     * @param  Builder<Feed>|Relation<Feed, Model, *>  $query
+     */
+    public static function scopeNeedingUpdates(Builder|Relation $query): void
+    {
+        $query->where(
+            fn (Builder $feeds) => $feeds
+                ->where(self::COL_TRACKS_NEW_EPISODES, true)
+                ->orWhereNull(self::COL_SUBSCRIPTION_FILLED_AT)
+        );
+    }
+
+    /**
+     * The earliest a clip can have been published and still belong in this
+     * feed: whatever backfill the subscriber asked for, or failing that the
+     * moment they subscribed.
+     */
+    public function earliestWantedPublicationTime(): ?\DateTimeInterface
+    {
+        return $this->backfill_since ?? $this->subscribed_at;
+    }
+
+    /**
      * Who the podcast is "by".
      *
      * For a subscription that's whoever publishes it, not the podblender user
      * who set the feed up — a listener seeing this in their podcast app expects
      * the channel's name. A hand-built feed has no such publisher, so it falls
      * back to its owner.
-     */
-    /**
+     *
      * @return Attribute<string, never>
      */
     public function authorName(): Attribute

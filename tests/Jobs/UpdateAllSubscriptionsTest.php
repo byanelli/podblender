@@ -36,6 +36,70 @@ class UpdateAllSubscriptionsTest extends TestCase
     }
 
     #[Test]
+    public function it_skips_a_source_whose_subscribers_have_all_had_their_one_fill()
+    {
+        Bus::fake();
+
+        // A one-shot subscriber captured this source and has been filled, so
+        // there's nothing left to collect. Sweeping it every couple of hours
+        // would spend platform quota forever on a feed nobody wants updated.
+        $finished = AudioSource::factory()->create();
+        Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $finished->id,
+            Feed::COL_TRACKS_NEW_EPISODES => false,
+            Feed::COL_SUBSCRIPTION_FILLED_AT => now()->subDay(),
+        ]);
+
+        $this->app->call([new UpdateAllSubscriptions, 'handle']);
+
+        Bus::assertNotDispatched(UpdateSubscription::class);
+    }
+
+    #[Test]
+    public function it_still_sweeps_a_one_shot_subscription_that_has_not_been_filled_yet()
+    {
+        Bus::fake();
+
+        // Declining future episodes doesn't mean declining the first fill —
+        // that sweep is what populates the feed in the first place.
+        $pending = AudioSource::factory()->create();
+        Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $pending->id,
+            Feed::COL_TRACKS_NEW_EPISODES => false,
+            Feed::COL_SUBSCRIPTION_FILLED_AT => null,
+        ]);
+
+        $this->app->call([new UpdateAllSubscriptions, 'handle']);
+
+        Bus::assertDispatchedTimes(UpdateSubscription::class, 1);
+    }
+
+    #[Test]
+    public function it_sweeps_a_source_that_still_has_one_interested_subscriber()
+    {
+        Bus::fake();
+
+        // Two subscribers to one source disagreeing about future episodes: the
+        // finished one mustn't switch the other one off.
+        $source = AudioSource::factory()->create();
+
+        Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $source->id,
+            Feed::COL_TRACKS_NEW_EPISODES => false,
+            Feed::COL_SUBSCRIPTION_FILLED_AT => now()->subDay(),
+        ]);
+
+        Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $source->id,
+            Feed::COL_TRACKS_NEW_EPISODES => true,
+        ]);
+
+        $this->app->call([new UpdateAllSubscriptions, 'handle']);
+
+        Bus::assertDispatchedTimes(UpdateSubscription::class, 1);
+    }
+
+    #[Test]
     public function it_skips_sources_that_have_no_subscribers()
     {
         Bus::fake();

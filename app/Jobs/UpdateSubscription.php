@@ -10,6 +10,7 @@ use App\Models\Feed;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Exceptions\PlatformNotSubscribableException;
 use App\Platforms\Platforms;
+use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -110,7 +111,25 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
                     ])
                     ->all()
             );
+
+            $this->markFilledIfOneShot($subscriber);
         }
+    }
+
+    /**
+     * A subscriber that doesn't want future episodes gets exactly one fill: it
+     * captures the source as it stands now. Recording that it's had it is what
+     * takes it out of the sweep — and out of the fetch cursor, which would
+     * otherwise be dragged back to this feed's backfill date forever.
+     */
+    private function markFilledIfOneShot(Feed $subscriber): void
+    {
+        if ($subscriber->tracks_new_episodes || ! is_null($subscriber->subscription_filled_at)) {
+            return;
+        }
+
+        $subscriber->subscription_filled_at = CarbonImmutable::now();
+        $subscriber->save();
     }
 
     /**
@@ -135,27 +154,37 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
 
         /** @var \DateTimeInterface $cursor */
         $cursor = $subscribers
+            // A subscriber that has had its one fill is done, and its backfill
+            // date is history. Leaving it in would peg the cursor at that date
+            // forever — a single "everything since 2014" one-shot would make
+            // every future sweep of this source re-fetch a decade of clips. An
+            // unfilled one still counts: its fill hasn't happened yet.
+            ->filter(fn (Feed $subscriber) => $subscriber->needsUpdating())
             ->map(function (Feed $subscriber) {
                 $subscriber->loadMissing(Feed::REL_AUDIO_CLIPS);
 
                 return $subscriber->audioClips->isNotEmpty()
                     ? $subscriber->audioClips->max(fn (AudioClip $clip) => $clip->published_at)
-                    : $subscriber->subscribed_at;
+                    : $subscriber->earliestWantedPublicationTime();
             })
-            ->min();
+            ->min()
+            // Every subscriber is a filled one-shot: there's nothing new anyone
+            // wants, so fetch nothing rather than the whole back catalogue.
+            ?? CarbonImmutable::now();
 
         return $cursor;
     }
 
     /**
      * The earliest a clip can have been published and still belong in this subscriber's feed. Ordinarily that's the
-     * moment they subscribed: a channel's entire back catalogue turning up in someone's podcast app the day they
-     * subscribe isn't what they asked for. Backfilling is the explicit request for exactly that, so it overrides the
-     * subscription date. Without this, a backfill creates the clips and then attaches none of them, because they were
-     * all published before anyone subscribed.
+     * backfill the subscriber asked for when they subscribed — reaching back a month, a decade, or to the beginning,
+     * as they chose — and failing that, the moment they subscribed. A backfill passed to this job overrides both:
+     * it's an explicit request to reach back to a fixed date regardless of what anyone chose earlier. Without this,
+     * a backfill creates the clips and then attaches none of them, because they were all published before anyone
+     * subscribed.
      */
     private function earliestPublicationTimeFor(Feed $subscriber): ?\DateTimeInterface
     {
-        return $this->backfillSince ?: $subscriber->subscribed_at;
+        return $this->backfillSince ?: $subscriber->earliestWantedPublicationTime();
     }
 }

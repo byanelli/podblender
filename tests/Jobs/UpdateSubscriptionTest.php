@@ -164,6 +164,133 @@ class UpdateSubscriptionTest extends TestCase
     }
 
     #[Test]
+    public function it_uses_the_subscribers_chosen_backfill_window()
+    {
+        /** @var AudioSource $subscription */
+        $subscription = AudioSource::factory()->create();
+
+        // Subscribed just now, but asked to reach back a year. The backfill
+        // window and the subscription date are different things: reading the
+        // latter would leave this feed with nothing in it.
+        $subscriber = Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
+            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now(),
+            Feed::COL_BACKFILL_SINCE => CarbonImmutable::now()->subYear(),
+        ]);
+
+        Bus::fake();
+
+        $this->fakePlatform(clipMetadataList: [
+            new ClipMetadata(
+                title: 'A lecture from six months ago',
+                description: 'Description',
+                canonicalUrl: 'https://youtube.com/watch?v=old',
+                publishedAt: CarbonImmutable::now()->subMonths(6)->roundSeconds(),
+                source: $this->sourceMetadataFor($subscription),
+            ),
+        ]);
+
+        $this->app->call([new UpdateSubscription($subscription, $subscriber), 'handle']);
+
+        $this->assertEquals(1, $subscriber->audioClips()->count());
+    }
+
+    #[Test]
+    public function it_marks_a_one_shot_subscription_filled_once_it_has_run()
+    {
+        /** @var AudioSource $subscription */
+        $subscription = AudioSource::factory()->create();
+
+        $subscriber = Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
+            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now(),
+            Feed::COL_BACKFILL_SINCE => CarbonImmutable::now()->subYear(),
+            Feed::COL_TRACKS_NEW_EPISODES => false,
+        ]);
+
+        Bus::fake();
+
+        $this->fakePlatform(clipMetadataList: [
+            new ClipMetadata(
+                title: 'The only episode',
+                description: 'Description',
+                canonicalUrl: 'https://youtube.com/watch?v=one',
+                publishedAt: CarbonImmutable::now()->subMonth()->roundSeconds(),
+                source: $this->sourceMetadataFor($subscription),
+            ),
+        ]);
+
+        $this->app->call([new UpdateSubscription($subscription, $subscriber), 'handle']);
+
+        $subscriber->refresh();
+
+        $this->assertEquals(1, $subscriber->audioClips()->count());
+
+        // Having been filled, it drops out of the sweep for good.
+        $this->assertNotNull($subscriber->subscription_filled_at);
+        $this->assertFalse($subscriber->needsUpdating());
+    }
+
+    #[Test]
+    public function it_leaves_a_tracking_subscription_open_after_an_update()
+    {
+        /** @var AudioSource $subscription */
+        $subscription = AudioSource::factory()->create();
+
+        $subscriber = Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
+            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDay(),
+            Feed::COL_TRACKS_NEW_EPISODES => true,
+        ]);
+
+        Bus::fake();
+
+        $this->fakePlatform(clipMetadataList: []);
+
+        $this->app->call([new UpdateSubscription($subscription, $subscriber), 'handle']);
+
+        $this->assertNull($subscriber->refresh()->subscription_filled_at);
+        $this->assertTrue($subscriber->needsUpdating());
+    }
+
+    #[Test]
+    public function it_does_not_let_a_finished_one_shot_drag_the_fetch_cursor_backwards()
+    {
+        /** @var AudioSource $subscription */
+        $subscription = AudioSource::factory()->create();
+
+        // A one-shot that asked for everything back to 2014 and has had it. If
+        // it stayed in the cursor calculation, every future sweep of this
+        // source would re-fetch a decade of clips forever.
+        Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
+            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDays(2),
+            Feed::COL_BACKFILL_SINCE => CarbonImmutable::parse('2014-01-01'),
+            Feed::COL_TRACKS_NEW_EPISODES => false,
+            Feed::COL_SUBSCRIPTION_FILLED_AT => CarbonImmutable::now()->subDay(),
+        ]);
+
+        // An ordinary subscriber that joined yesterday.
+        Feed::factory()->create([
+            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
+            Feed::COL_SUBSCRIBED_AT => $subscribedAt = CarbonImmutable::now()->subDay(),
+            Feed::COL_BACKFILL_SINCE => $subscribedAt,
+        ]);
+
+        Bus::fake();
+
+        $this->fakePlatform(clipMetadataList: []);
+
+        $this->app->call([new UpdateSubscription($subscription), 'handle']);
+
+        // The platform was asked for clips since yesterday, not since 2014.
+        $this->assertEquals(
+            $subscribedAt->timestamp,
+            $this->platformPublicationTimeRequested()?->getTimestamp(),
+        );
+    }
+
+    #[Test]
     public function it_reaches_back_far_enough_for_a_lagging_subscriber_to_catch_up()
     {
         /** @var AudioSource $subscription */
