@@ -3,6 +3,7 @@
 namespace Tests\Actions;
 
 use App\Actions\FindOrCreateAudioSource;
+use App\Enums\AudioSourceKind;
 use App\Enums\PlatformType;
 use App\Models\AudioSource;
 use App\Platforms\Contracts\SourceMetadata;
@@ -30,6 +31,39 @@ class FindOrCreateAudioSourceTest extends TestCase
         $this->assertEquals($url, $source->platform_url);
         $this->assertEquals($name, $source->name);
         $this->assertEquals(PlatformType::YouTube, $source->platform_type);
+    }
+
+    #[Test]
+    public function it_records_what_kind_of_source_it_is_and_who_publishes_it()
+    {
+        $metadata = new SourceMetadata(
+            name: 'Select Lectures',
+            canonicalUrl: 'https://youtube.com/playlist?list=PLabc',
+            kind: AudioSourceKind::Playlist,
+            authorName: 'Lecture Channel',
+        );
+
+        $source = ($this->action())(PlatformType::YouTube, $metadata);
+
+        $this->assertEquals(AudioSourceKind::Playlist, $source->kind);
+
+        // A playlist isn't its own author, so the feed is credited to the
+        // channel that owns it rather than to "Select Lectures".
+        $this->assertEquals('Lecture Channel', $source->authorName());
+    }
+
+    #[Test]
+    public function it_defaults_a_source_to_a_channel_that_authors_itself()
+    {
+        $metadata = new SourceMetadata(
+            name: 'Some channel',
+            canonicalUrl: 'https://youtube.com/@zzz',
+        );
+
+        $source = ($this->action())(PlatformType::YouTube, $metadata);
+
+        $this->assertEquals(AudioSourceKind::Channel, $source->kind);
+        $this->assertEquals('Some channel', $source->authorName());
     }
 
     #[Test]

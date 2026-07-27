@@ -3,7 +3,9 @@
 namespace Tests\Platforms;
 
 use App\Apis\YouTubeData\ChannelMetadata;
+use App\Apis\YouTubeData\PlaylistMetadata;
 use App\Apis\YouTubeData\VideoMetadata;
+use App\Enums\AudioSourceKind;
 use App\Platforms\YouTube;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
@@ -96,6 +98,72 @@ class YouTubeTest extends TestCase
         $this->assertEquals('https://youtube.com/channel/UCalice', $clips[0]->source->canonicalUrl);
         $this->assertEquals('Bob', $clips[1]->source->name);
         $this->assertEquals('https://youtube.com/channel/UCbob', $clips[1]->source->canonicalUrl);
+    }
+
+    #[Test]
+    public function it_gets_source_metadata_for_a_playlist()
+    {
+        $this->fakeYouTubeData(playlistMetadata: new PlaylistMetadata(
+            id: 'PLabc123',
+            title: 'Select Lectures',
+            channel: new ChannelMetadata(id: 'UCowner', name: 'Lecture Channel'),
+            itemCount: 42,
+        ));
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $metadata = $youtube->getSourceMetadata('https://youtube.com/playlist?list=PLabc123');
+
+        $this->assertEquals('Select Lectures', $metadata->name);
+        $this->assertEquals('https://youtube.com/playlist?list=PLabc123', $metadata->canonicalUrl);
+        $this->assertEquals(AudioSourceKind::Playlist, $metadata->kind);
+        $this->assertEquals(42, $metadata->clipCount);
+
+        // The playlist is named for what it collects, so the channel that owns
+        // it is who the feed gets credited to.
+        $this->assertEquals('Lecture Channel', $metadata->authorName);
+    }
+
+    #[Test]
+    public function it_gets_source_metadata_for_a_channel()
+    {
+        $this->fakeYouTubeData(channelMetadata: new ChannelMetadata(
+            id: 'UCabc123',
+            name: 'Some Channel',
+            videoCount: 864,
+        ));
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $metadata = $youtube->getSourceMetadata('https://youtube.com/channel/UCabc123');
+
+        $this->assertEquals('Some Channel', $metadata->name);
+        $this->assertEquals(AudioSourceKind::Channel, $metadata->kind);
+        $this->assertEquals(864, $metadata->clipCount);
+
+        // A channel is its own author, so there's nothing separate to record.
+        $this->assertNull($metadata->authorName);
+    }
+
+    #[Test]
+    public function it_treats_a_watch_url_carrying_a_list_as_a_playlist_source()
+    {
+        // Sharing from within a playlist gives a watch URL with list= on it.
+        $this->fakeYouTubeData(playlistMetadata: new PlaylistMetadata(
+            id: 'PLabc123',
+            title: 'Select Lectures',
+            channel: new ChannelMetadata(id: 'UCowner', name: 'Lecture Channel'),
+        ));
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $metadata = $youtube->getSourceMetadata('https://youtube.com/watch?v=abc&list=PLabc123');
+
+        $this->assertEquals(AudioSourceKind::Playlist, $metadata->kind);
+        $this->assertEquals('https://youtube.com/playlist?list=PLabc123', $metadata->canonicalUrl);
     }
 
     #[Test]

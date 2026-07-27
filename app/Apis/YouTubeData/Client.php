@@ -127,6 +127,9 @@ readonly class Client implements Contracts\Client
             id: $channel['id'],
             name: $channel['brandingSettings']['channel']['title'],
             uploadsPlaylistId: $channel['contentDetails']['relatedPlaylists']['uploads'] ?? null,
+            videoCount: isset($channel['statistics']['videoCount'])
+                ? (int) $channel['statistics']['videoCount']
+                : null,
         );
     }
 
@@ -134,7 +137,7 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('channels', [
             'forHandle' => $channelHandle,
-            'part' => 'id,brandingSettings,contentDetails',
+            'part' => 'id,brandingSettings,contentDetails,statistics',
         ]);
 
         return $this->getChannelMetadataFromResponse($response);
@@ -144,7 +147,7 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('channels', [
             'id' => $channelId,
-            'part' => 'id,brandingSettings,contentDetails,contentOwnerDetails,status,snippet',
+            'part' => 'id,brandingSettings,contentDetails,contentOwnerDetails,status,snippet,statistics',
         ]);
 
         return $this->getChannelMetadataFromResponse($response);

@@ -48,6 +48,9 @@ class ShowMetadataTest extends TestCase
                 'source' => [
                     'name' => $sourceName,
                     'canonicalUrl' => $sourceUrl,
+                    'kind' => ['name' => 'Channel', 'value' => 'channel'],
+                    'authorName' => null,
+                    'clipCount' => null,
                 ],
                 'estimatedDownloadTime' => $estimatedDownloadTime,
             ],

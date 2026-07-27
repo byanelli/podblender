@@ -12,6 +12,12 @@ readonly class ChannelMetadata
          * published. Only present when the response asked for contentDetails.
          */
         public ?string $uploadsPlaylistId = null,
+        /**
+         * How many videos the channel has published, when the response asked
+         * for statistics. Lets a subscriber be warned what they're taking on
+         * before a full backfill.
+         */
+        public ?int $videoCount = null,
     ) {}
 
     /**

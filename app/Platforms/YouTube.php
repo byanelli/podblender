@@ -4,10 +4,12 @@ namespace App\Platforms;
 
 use App\Apis\YouTubeData\ChannelMetadata;
 use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClient;
+use App\Apis\YouTubeData\PlaylistMetadata;
 use App\Apis\YouTubeData\VideoMetadata;
 use App\Apis\YtDlp\Client as YtDlpClient;
 use App\Apis\YtDlp\MembersOnlyContentException;
 use App\Concerns\FixesUrls;
+use App\Enums\AudioSourceKind;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
@@ -192,17 +194,41 @@ readonly class YouTube implements SubscribablePlatform
         return new SourceMetadata(
             name: $channel->name,
             canonicalUrl: "https://youtube.com/channel/{$channel->id}",
+            kind: AudioSourceKind::Channel,
+            clipCount: $channel->videoCount,
         );
     }
 
     public function getSourceMetadata(string $sourceUrl): SourceMetadata
     {
+        if ($playlistId = $this->getPlaylistIdFromUrl($sourceUrl)) {
+            return $this->convertPlaylistMetadataToSourceMetadata(
+                $this->youTubeData->getPlaylistMetadata($playlistId)
+            );
+        }
+
         $channelIdOrHandle = $this->getLastPathPiece($sourceUrl);
 
         return $this->convertChannelMetadataToSourceMetadata(
             $this->sourceUrlHasChannelId($sourceUrl)
                 ? $this->youTubeData->getChannelMetadataForId($channelIdOrHandle)
                 : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle)
+        );
+    }
+
+    /**
+     * A playlist is its own source, but not its own author: it's named for what
+     * it collects ("Select Lectures"), so the channel that owns it is what gets
+     * credited in the feed.
+     */
+    private function convertPlaylistMetadataToSourceMetadata(PlaylistMetadata $playlist): SourceMetadata
+    {
+        return new SourceMetadata(
+            name: $playlist->title,
+            canonicalUrl: "https://youtube.com/playlist?list={$playlist->id}",
+            kind: AudioSourceKind::Playlist,
+            authorName: $playlist->channel->name,
+            clipCount: $playlist->itemCount,
         );
     }
 
