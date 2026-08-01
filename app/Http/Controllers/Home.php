@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Views;
+use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
@@ -19,7 +20,13 @@ readonly class Home
     ): Response {
         $user->load([
             User::REL_FEEDS => function (HasMany $feeds) {
-                return $feeds->withCount(Feed::REL_AUDIO_CLIPS);
+                return $feeds->withCount(
+                    Feed::REL_AUDIO_CLIPS
+                )->with(
+                    Feed::REL_SUBSCRIPTION
+                    .':'.AudioSource::COL_ID
+                    .','.AudioSource::COL_PLATFORM_URL
+                );
             },
         ]);
 

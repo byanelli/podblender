@@ -37,6 +37,7 @@ class AudioSource extends Model
     const string COL_PLATFORM_URL = 'platform_url';
     const string COL_TYPE = 'type';
     const string COL_AUTHOR_NAME = 'author_name';
+    const string COL_ID = 'id';
     const string REL_SUBSCRIBERS = 'subscribers';
 
     /**

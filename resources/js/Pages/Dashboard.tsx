@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import axios from "axios";
-import { ListMusic, Rss, Trash2 } from "lucide-react";
+import { ExternalLink, ListMusic, Rss, Trash2 } from "lucide-react";
 import RadioWaves from "@/Components/RadioWaves";
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -30,6 +30,7 @@ type Feed = {
     name: string;
     description: string;
     subscription_id: number | null;
+    subscription: { platform_url: string } | null;
     audio_clips_count: number;
 };
 
@@ -147,6 +148,27 @@ export default function Dashboard({ user }: { user: User }) {
                                                 <CopyRssButton
                                                     url={routes.rss(feed.uuid)}
                                                 />
+
+                                                {feed.subscription != null && (
+                                                    <Button
+                                                        asChild
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        <a
+                                                            href={
+                                                                feed.subscription
+                                                                    .platform_url
+                                                            }
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            aria-label={`Open source for ${feed.name}`}
+                                                        >
+                                                            <ExternalLink />
+                                                        </a>
+                                                    </Button>
+                                                )}
 
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
