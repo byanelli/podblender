@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
-import { ExternalLink, ListMusic, Trash2 } from 'lucide-react';
+import { ExternalLink, ListMusic, Pause, Play, Trash2 } from 'lucide-react';
 import RadioWaves from '@/Components/RadioWaves';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -70,8 +70,14 @@ function formatDate(value: string): string {
 export default function Feed({ feed }: { feed: FeedType }) {
     const [errorMessage, setErrorMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [playingId, setPlayingId] = useState<number | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const reloadFeed = () => router.reload({ only: ['feed'] });
+
+    useEffect(() => {
+        return () => audioRef.current?.pause();
+    }, []);
 
     useEffect(() => {
         const channel = events.finishedProcessingClip(feed.id);
@@ -79,6 +85,23 @@ export default function Feed({ feed }: { feed: FeedType }) {
 
         return () => channel.leave();
     }, [feed.id]);
+
+    const togglePlayback = (clip: AudioClip) => {
+        if (playingId === clip.id) {
+            audioRef.current?.pause();
+            setPlayingId(null);
+            return;
+        }
+
+        if (!audioRef.current) {
+            audioRef.current = new Audio();
+            audioRef.current.addEventListener('ended', () => setPlayingId(null));
+        }
+
+        audioRef.current.src = clip.audio_url as string;
+        void audioRef.current.play();
+        setPlayingId(clip.id);
+    };
 
     const deleteClip = (clip: AudioClip) => {
         setErrorMessage('');
@@ -190,6 +213,30 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                         </div>
 
                                         <div className="flex flex-none items-center gap-1">
+                                            {clip.audio_url && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className={
+                                                        playingId === clip.id
+                                                            ? 'text-primary hover:text-primary'
+                                                            : 'text-muted-foreground hover:text-foreground'
+                                                    }
+                                                    aria-label={
+                                                        playingId === clip.id
+                                                            ? `Pause ${clip.title}`
+                                                            : `Preview ${clip.title}`
+                                                    }
+                                                    onClick={() => togglePlayback(clip)}
+                                                >
+                                                    {playingId === clip.id ? (
+                                                        <Pause />
+                                                    ) : (
+                                                        <Play />
+                                                    )}
+                                                </Button>
+                                            )}
+
                                             <Button
                                                 asChild
                                                 variant="ghost"
@@ -246,15 +293,6 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                             </AlertDialog>
                                         </div>
                                     </div>
-
-                                    {clip.audio_url && (
-                                        <audio
-                                            controls
-                                            preload="none"
-                                            src={clip.audio_url}
-                                            className="w-full border-t border-border bg-muted/30 px-4 py-3"
-                                        />
-                                    )}
                                 </Card>
                             </li>
                         ))}
