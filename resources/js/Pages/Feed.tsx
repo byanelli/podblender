@@ -246,6 +246,15 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                             </AlertDialog>
                                         </div>
                                     </div>
+
+                                    {clip.audio_url && (
+                                        <audio
+                                            controls
+                                            preload="none"
+                                            src={clip.audio_url}
+                                            className="w-full border-t border-border bg-muted/30 px-4 py-3"
+                                        />
+                                    )}
                                 </Card>
                             </li>
                         ))}

@@ -5,6 +5,7 @@ namespace Tests\Models;
 use App\Enums\PlatformType;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
+use Illuminate\Support\Facades\Config;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -45,5 +46,33 @@ class AudioClipTest extends TestCase
 
         $this->assertStringContainsString('/storage/some/path.mp3', $clip->audio_url);
         $this->assertStringStartsWith('http', $clip->audio_url);
+    }
+
+    #[Test]
+    public function its_audio_url_is_null_when_preview_is_disabled()
+    {
+        Config::set('audio-preview.enabled', false);
+
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_STORAGE_PATH => 'some/path.mp3',
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+        ]);
+
+        $this->assertNull($clip->audio_url);
+    }
+
+    #[Test]
+    public function its_audio_url_is_null_when_the_default_disk_is_not_local()
+    {
+        Config::set('audio-preview.enabled', true);
+        Config::set('filesystems.default', 's3');
+        Config::set('filesystems.disks.s3.driver', 's3');
+
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_STORAGE_PATH => 'some/path.mp3',
+            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+        ]);
+
+        $this->assertNull($clip->audio_url);
     }
 }

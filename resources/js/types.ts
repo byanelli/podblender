@@ -29,6 +29,7 @@ export type AudioClip = {
     processing_state: ClipProcessingState,
     audio_source: AudioSource,
     platform_url: string,
+    audio_url: string | null,
     created_at: string,
     published_at: string,
 

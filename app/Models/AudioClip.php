@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
+use App\Support\AudioPreview;
 use Carbon\CarbonImmutable;
 use Database\Factories\AudioClipFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -32,7 +33,7 @@ use Illuminate\Support\Traits\Tappable;
  * @property CarbonImmutable $updated_at
  * @property AudioSource $audioSource
  * @property Collection<int, Feed> $feeds
- * @property string $audio_url {@see self::audioUrl()}
+ * @property string|null $audio_url {@see self::audioUrl()}
  * @property string $formatted_time {@see self::formattedTime()}
  * @property PlatformType $platform_type {@see self::platformType()}
  */
@@ -54,6 +55,10 @@ class AudioClip extends Model
 
     protected $with = [
         self::REL_AUDIO_SOURCE,
+    ];
+
+    protected $appends = [
+        'audio_url',
     ];
 
     const string COL_AUDIO_SOURCE_ID = 'audio_source_id';
@@ -101,11 +106,15 @@ class AudioClip extends Model
     }
 
     /**
-     * @return Attribute<string, never>
+     * @return Attribute<string|null, never>
      */
-    public function audioUrl(): Attribute
+    protected function audioUrl(): Attribute
     {
-        return Attribute::make(fn () => url(Storage::url($this->storage_path)));
+        return Attribute::make(
+            fn () => AudioPreview::available()
+                ? url(Storage::url($this->storage_path))
+                : null
+        );
     }
 
     /**

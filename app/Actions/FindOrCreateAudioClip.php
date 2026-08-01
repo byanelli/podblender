@@ -8,6 +8,7 @@ use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Platforms\Contracts\ClipMetadata;
+use App\Support\AudioClipStoragePath;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
@@ -26,8 +27,6 @@ readonly class FindOrCreateAudioClip
             return $existing;
         }
 
-        $storagePath = Uuid::uuid4()->toString();
-
         // Find an existing audio source in the database or create one from the metadata.
         /** @var AudioSource $source */
         $source = AudioSource::query()->firstOrCreate(
@@ -41,6 +40,8 @@ readonly class FindOrCreateAudioClip
                 AudioSource::COL_NAME => $metadata->source->name,
             ]
         );
+
+        $storagePath = AudioClipStoragePath::for($source->name, $metadata->title);
 
         // Create the audio clip from the metadata with processing=true. While this column is true, the clip will not
         // show up in RSS feeds. A queued job will be dispatched to download the audio and set processing=false.
