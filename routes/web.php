@@ -26,3 +26,14 @@ Route::middleware(Authenticate::class)->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Serve Vite's dev-server modules through this same app, so they stay
+// same-origin and work through a tunnel like ngrok (public/hot only exists
+// while "npm run dev" is running — the same gate @vite uses). The prefixes
+// cover both Vite-internal modules (@vite, node_modules) and project source
+// (resources/), including Ziggy, which is imported straight from vendor/.
+if (is_file(public_path('hot'))) {
+    Route::get('/{asset}', Controllers\ViteDevProxy::class)
+        ->where('asset', '(?:resources/.*|vendor/.*|node_modules/.*|@vite/.*|@fs/.*|@react-refresh)')
+        ->name('vite.dev.asset');
+}
