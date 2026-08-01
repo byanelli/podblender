@@ -33,7 +33,8 @@ class AddClipToFeedTest extends TestCase
                 publishedAt: $publishedAt = now()->subDay()->roundSeconds(),
                 source: new SourceMetadata(
                     name: $sourceName = 'Some channel',
-                    canonicalUrl: $sourceUrl = 'https://youtube.com/channel/lwiejlwiejf'
+                    canonicalUrl: $sourceUrl = 'https://youtube.com/channel/lwiejlwiejf',
+                    authorName: $sourceName,
                 ),
             ),
         );
@@ -72,7 +73,8 @@ class AddClipToFeedTest extends TestCase
                 publishedAt: now()->subDay()->roundSeconds(),
                 source: new SourceMetadata(
                     name: 'Some channel',
-                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf'
+                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf',
+                    authorName: 'Some channel',
                 ),
             ),
         );
@@ -108,7 +110,8 @@ class AddClipToFeedTest extends TestCase
                 publishedAt: $publishedAt,
                 source: new SourceMetadata(
                     name: 'Some channel',
-                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf'
+                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf',
+                    authorName: 'Some channel',
                 ),
             ),
         );
@@ -142,7 +145,8 @@ class AddClipToFeedTest extends TestCase
                 publishedAt: now()->subDay()->roundSeconds(),
                 source: new SourceMetadata(
                     name: 'Some channel',
-                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf'
+                    canonicalUrl: 'https://youtube.com/channel/lwiejlwiejf',
+                    authorName: 'Some channel',
                 ),
             ),
         );

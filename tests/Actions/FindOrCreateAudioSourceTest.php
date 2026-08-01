@@ -3,7 +3,7 @@
 namespace Tests\Actions;
 
 use App\Actions\FindOrCreateAudioSource;
-use App\Enums\AudioSourceKind;
+use App\Enums\AudioSourceType;
 use App\Enums\PlatformType;
 use App\Models\AudioSource;
 use App\Platforms\Contracts\SourceMetadata;
@@ -23,6 +23,7 @@ class FindOrCreateAudioSourceTest extends TestCase
         $metadata = new SourceMetadata(
             name: $name = 'Some channel',
             canonicalUrl: $url = 'https://youtube.com/@zzz',
+            authorName: $name,
         );
 
         $source = ($this->action())(PlatformType::YouTube, $metadata);
@@ -39,17 +40,17 @@ class FindOrCreateAudioSourceTest extends TestCase
         $metadata = new SourceMetadata(
             name: 'Select Lectures',
             canonicalUrl: 'https://youtube.com/playlist?list=PLabc',
-            kind: AudioSourceKind::Playlist,
+            type: AudioSourceType::Playlist,
             authorName: 'Lecture Channel',
         );
 
         $source = ($this->action())(PlatformType::YouTube, $metadata);
 
-        $this->assertEquals(AudioSourceKind::Playlist, $source->kind);
+        $this->assertEquals(AudioSourceType::Playlist, $source->type);
 
         // A playlist isn't its own author, so the feed is credited to the
         // channel that owns it rather than to "Select Lectures".
-        $this->assertEquals('Lecture Channel', $source->authorName());
+        $this->assertEquals('Lecture Channel', $source->author_name);
     }
 
     #[Test]
@@ -58,12 +59,13 @@ class FindOrCreateAudioSourceTest extends TestCase
         $metadata = new SourceMetadata(
             name: 'Some channel',
             canonicalUrl: 'https://youtube.com/@zzz',
+            authorName: 'Some channel',
         );
 
         $source = ($this->action())(PlatformType::YouTube, $metadata);
 
-        $this->assertEquals(AudioSourceKind::Channel, $source->kind);
-        $this->assertEquals('Some channel', $source->authorName());
+        $this->assertEquals(AudioSourceType::Channel, $source->type);
+        $this->assertEquals('Some channel', $source->author_name);
     }
 
     #[Test]
@@ -79,6 +81,7 @@ class FindOrCreateAudioSourceTest extends TestCase
         $metadata = new SourceMetadata(
             name: 'A different name',
             canonicalUrl: $url,
+            authorName: 'A different name',
         );
 
         $source = ($this->action())(PlatformType::YouTube, $metadata);

@@ -30,7 +30,8 @@ class FindOrCreateAudioClipTest extends TestCase
             publishedAt: $publishedAt = now()->subDay()->roundSeconds(),
             source: new SourceMetadata(
                 name: $sourceName = 'bar',
-                canonicalUrl: $sourceUrl = 'https://youtube.com/channel/9340e9tjh490e5'
+                canonicalUrl: $sourceUrl = 'https://youtube.com/channel/9340e9tjh490e5',
+                authorName: $sourceName,
             ),
         );
 
@@ -71,7 +72,8 @@ class FindOrCreateAudioClipTest extends TestCase
             publishedAt: now()->subDay()->roundSeconds(),
             source: new SourceMetadata(
                 name: 'bar',
-                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5'
+                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
+                authorName: 'bar',
             ),
         );
 
@@ -98,7 +100,8 @@ class FindOrCreateAudioClipTest extends TestCase
             publishedAt: now()->subDay()->roundSeconds(),
             source: new SourceMetadata(
                 name: 'bar',
-                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5'
+                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
+                authorName: 'bar',
             ),
         );
 
@@ -128,7 +131,8 @@ class FindOrCreateAudioClipTest extends TestCase
             publishedAt: now()->subDay()->roundSeconds(),
             source: new SourceMetadata(
                 name: 'bar',
-                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5'
+                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
+                authorName: 'bar',
             ),
         );
 

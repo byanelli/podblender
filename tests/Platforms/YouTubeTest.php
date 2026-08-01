@@ -5,7 +5,7 @@ namespace Tests\Platforms;
 use App\Apis\YouTubeData\ChannelMetadata;
 use App\Apis\YouTubeData\PlaylistMetadata;
 use App\Apis\YouTubeData\VideoMetadata;
-use App\Enums\AudioSourceKind;
+use App\Enums\AudioSourceType;
 use App\Platforms\YouTube;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
@@ -117,7 +117,7 @@ class YouTubeTest extends TestCase
 
         $this->assertEquals('Select Lectures', $metadata->name);
         $this->assertEquals('https://youtube.com/playlist?list=PLabc123', $metadata->canonicalUrl);
-        $this->assertEquals(AudioSourceKind::Playlist, $metadata->kind);
+        $this->assertEquals(AudioSourceType::Playlist, $metadata->type);
         $this->assertEquals(42, $metadata->clipCount);
 
         // The playlist is named for what it collects, so the channel that owns
@@ -140,11 +140,12 @@ class YouTubeTest extends TestCase
         $metadata = $youtube->getSourceMetadata('https://youtube.com/channel/UCabc123');
 
         $this->assertEquals('Some Channel', $metadata->name);
-        $this->assertEquals(AudioSourceKind::Channel, $metadata->kind);
+        $this->assertEquals(AudioSourceType::Channel, $metadata->type);
         $this->assertEquals(864, $metadata->clipCount);
 
-        // A channel is its own author, so there's nothing separate to record.
-        $this->assertNull($metadata->authorName);
+        // A channel is its own author, so authorName repeats its name rather
+        // than being left empty for a caller to work around.
+        $this->assertEquals('Some Channel', $metadata->authorName);
     }
 
     #[Test]
@@ -162,7 +163,7 @@ class YouTubeTest extends TestCase
 
         $metadata = $youtube->getSourceMetadata('https://youtube.com/watch?v=abc&list=PLabc123');
 
-        $this->assertEquals(AudioSourceKind::Playlist, $metadata->kind);
+        $this->assertEquals(AudioSourceType::Playlist, $metadata->type);
         $this->assertEquals('https://youtube.com/playlist?list=PLabc123', $metadata->canonicalUrl);
     }
 

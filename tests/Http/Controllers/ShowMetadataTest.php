@@ -28,6 +28,7 @@ class ShowMetadataTest extends TestCase
                 source: new SourceMetadata(
                     name: $sourceName = 'Some channel',
                     canonicalUrl: $sourceUrl = 'https://youtube.com/channel/lwefjiritlrth',
+                    authorName: $sourceName,
                 ),
                 estimatedDownloadTime: $estimatedDownloadTime = 1234,
             ),
@@ -48,8 +49,8 @@ class ShowMetadataTest extends TestCase
                 'source' => [
                     'name' => $sourceName,
                     'canonicalUrl' => $sourceUrl,
-                    'kind' => ['name' => 'Channel', 'value' => 'channel'],
-                    'authorName' => null,
+                    'type' => ['name' => 'Channel', 'value' => 'channel'],
+                    'authorName' => $sourceName,
                     'clipCount' => null,
                 ],
                 'estimatedDownloadTime' => $estimatedDownloadTime,

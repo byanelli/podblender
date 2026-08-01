@@ -10,7 +10,6 @@ use App\Models\Feed;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Exceptions\PlatformNotSubscribableException;
 use App\Platforms\Platforms;
-use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -69,25 +68,37 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
         }
 
         /** @var Collection<int, Feed> $subscribers */
-        $subscribers = ! is_null($this->subscriber)
+        $subscribers = (! is_null($this->subscriber)
             ? collect([$this->subscriber])
-            : $this->subscription->subscribers()->get();
+            : $this->subscription->subscribers()->get())
+            // Only update the subscribers that continue to request updates. Subscribers *must be filtered early* to
+            // avoid redundant fetching from the platform.
+            ->filter(fn (Feed $subscriber) => $subscriber->needsUpdating())
+            ->values();
 
-        $latestClipPublishedAt = $this->fetchCursorFor($subscribers);
+        // Nothing left for anyone: don't spend a platform request working that
+        // out clip by clip.
+        if ($subscribers->isEmpty()) {
+            return;
+        }
+
+        // If we're backfilling, fetch all clips since the backfill time; otherwise fetch since the earliest time
+        // specified by one of our subscribers.
+        $earliestPublicationTime = $this->backfillSince ?: $this->earliestPublicationTimeForAll($subscribers);
 
         $platform = $platforms->subscribableFor($this->subscription->platform_type);
 
         // Download metadata for all new clips.
         $newClipMetadata = $platform->getMetadataForAllClipsPublishedSince(
             $this->subscription->platform_url,
-            $latestClipPublishedAt,
+            $earliestPublicationTime,
         );
 
         // Either find existing AudioClip records based on the metadata or create new ones. FindOrCreateAudioClip
         // will dispatch jobs to download audio clips.
         /** @var Collection<int, AudioClip> $newClips */
         $newClips = collect($newClipMetadata)
-            ->filter(fn (ClipMetadata $clipMetadata) => $clipMetadata->publishedAt >= $latestClipPublishedAt)
+            ->filter(fn (ClipMetadata $clipMetadata) => $clipMetadata->publishedAt >= $earliestPublicationTime)
             ->map(fn (ClipMetadata $metadata) => $findOrCreateAudioClip->__invoke($this->subscription->platform_type, $metadata));
 
         $this->subscription->load(AudioSource::REL_SUBSCRIBERS);
@@ -112,54 +123,28 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
                     ->all()
             );
 
-            $this->markFilledIfOneShot($subscriber);
+            // If a subscriber doesn't want new episodes, mark it as filled.
+            if (! $subscriber->tracks_new_episodes) {
+                $subscriber->markFilled();
+            }
         }
     }
 
     /**
-     * A subscriber that doesn't want future episodes gets exactly one fill: it
-     * captures the source as it stands now. Recording that it's had it is what
-     * takes it out of the sweep — and out of the fetch cursor, which would
-     * otherwise be dragged back to this feed's backfill date forever.
-     */
-    private function markFilledIfOneShot(Feed $subscriber): void
-    {
-        if ($subscriber->tracks_new_episodes || ! is_null($subscriber->subscription_filled_at)) {
-            return;
-        }
-
-        $subscriber->subscription_filled_at = CarbonImmutable::now();
-        $subscriber->save();
-    }
-
-    /**
-     * How far back to fetch clips from the source. Everything published after this cursor is potentially new and gets
+     * How far back to fetch clips from the source. Everything published after this time is potentially new and gets
      * fetched, created (upserted), and offered to each subscriber; the per-subscriber filter in handle() then decides
      * which of them actually belong in each feed.
      *
-     * The cursor is the OLDEST point any subscriber still needs covered: the minimum, over every subscriber, of the
-     * publication date of that subscriber's newest attached clip (or, if it has none, the moment it subscribed). Take
-     * the earliest subscriber's newest clip alone — as this used to — and a subscriber that subscribed later or whose
-     * initial fill failed sits below that line forever: the fetch never reaches back to it, so it permanently misses
-     * every clip published between when it subscribed and the earliest subscriber's latest clip. A backfill request
-     * overrides all of this: it's an explicit ask to reach back to a fixed date regardless of who has what.
+     * The cursor is the OLDEST point any subscriber still needs covered: the minimum, over the subscribers with work
+     * outstanding, of the publication date of that subscriber's newest attached clip (or, if it has none, the backfill
+     * it asked for).
      *
      * @param  Collection<int, Feed>  $subscribers
      */
-    private function fetchCursorFor(Collection $subscribers): \DateTimeInterface
+    private function earliestPublicationTimeForAll(Collection $subscribers): \DateTimeInterface
     {
-        if ($this->backfillSince) {
-            return $this->backfillSince;
-        }
-
-        /** @var \DateTimeInterface $cursor */
-        $cursor = $subscribers
-            // A subscriber that has had its one fill is done, and its backfill
-            // date is history. Leaving it in would peg the cursor at that date
-            // forever — a single "everything since 2014" one-shot would make
-            // every future sweep of this source re-fetch a decade of clips. An
-            // unfilled one still counts: its fill hasn't happened yet.
-            ->filter(fn (Feed $subscriber) => $subscriber->needsUpdating())
+        /** @var \DateTimeInterface $earliest */
+        $earliest = $subscribers
             ->map(function (Feed $subscriber) {
                 $subscriber->loadMissing(Feed::REL_AUDIO_CLIPS);
 
@@ -167,12 +152,9 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
                     ? $subscriber->audioClips->max(fn (AudioClip $clip) => $clip->published_at)
                     : $subscriber->earliestWantedPublicationTime();
             })
-            ->min()
-            // Every subscriber is a filled one-shot: there's nothing new anyone
-            // wants, so fetch nothing rather than the whole back catalogue.
-            ?? CarbonImmutable::now();
+            ->min();
 
-        return $cursor;
+        return $earliest;
     }
 
     /**

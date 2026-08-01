@@ -2,7 +2,7 @@
 
 namespace App\Platforms\Contracts;
 
-use App\Enums\AudioSourceKind;
+use App\Enums\AudioSourceType;
 use BYanelli\Roma\Response\IsArrayable;
 use Illuminate\Contracts\Support\Arrayable;
 
@@ -17,18 +17,22 @@ readonly class SourceMetadata implements Arrayable
         public string $name,
         public string $canonicalUrl,
         /**
-         * What sort of thing this is on its platform. Defaults to a channel,
-         * which is what every source was before playlists.
+         * Who publishes the source. For anything that is its own author — a
+         * channel, a website, an RSS feed — this repeats the name, which is
+         * worth the redundancy: whoever asks who published something gets an
+         * answer without having to know what type of source it came from, and
+         * nothing downstream has to keep a rule about which types author
+         * themselves. A playlist is named for what it collects, so it names the
+         * channel that owns it instead.
          */
-        public AudioSourceKind $kind = AudioSourceKind::Channel,
+        public string $authorName,
         /**
-         * Who publishes it, when that isn't its own name. A playlist is named
-         * for its contents, so it carries the channel that owns it.
+         * What type of source this is on its platform. Defaults to a channel.
          */
-        public ?string $authorName = null,
+        public AudioSourceType $type = AudioSourceType::Channel,
         /**
-         * How many clips the source holds, when the platform can say cheaply.
-         * Used to warn before committing to a large backfill.
+         * How many clips are in the source, when we can fetch this info easily
+         * from the platform. Used to warn before committing to a large backfill.
          */
         public ?int $clipCount = null,
     ) {}

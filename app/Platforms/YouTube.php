@@ -9,7 +9,7 @@ use App\Apis\YouTubeData\VideoMetadata;
 use App\Apis\YtDlp\Client as YtDlpClient;
 use App\Apis\YtDlp\MembersOnlyContentException;
 use App\Concerns\FixesUrls;
-use App\Enums\AudioSourceKind;
+use App\Enums\AudioSourceType;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
@@ -194,7 +194,8 @@ readonly class YouTube implements SubscribablePlatform
         return new SourceMetadata(
             name: $channel->name,
             canonicalUrl: "https://youtube.com/channel/{$channel->id}",
-            kind: AudioSourceKind::Channel,
+            authorName: $channel->name,
+            type: AudioSourceType::Channel,
             clipCount: $channel->videoCount,
         );
     }
@@ -226,7 +227,7 @@ readonly class YouTube implements SubscribablePlatform
         return new SourceMetadata(
             name: $playlist->title,
             canonicalUrl: "https://youtube.com/playlist?list={$playlist->id}",
-            kind: AudioSourceKind::Playlist,
+            type: AudioSourceType::Playlist,
             authorName: $playlist->channel->name,
             clipCount: $playlist->itemCount,
         );

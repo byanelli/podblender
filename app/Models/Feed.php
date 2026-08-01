@@ -162,7 +162,15 @@ class Feed extends Model
     public function authorName(): Attribute
     {
         return Attribute::make(
-            fn (): string => $this->subscription?->authorName() ?? $this->user->name,
+            fn (): string => is_null($this->subscription)
+                ? $this->user->name
+                : $this->subscription->author_name,
         );
+    }
+
+    public function markFilled(): void
+    {
+        $this->subscription_filled_at = CarbonImmutable::now();
+        $this->save();
     }
 }

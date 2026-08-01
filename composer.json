@@ -76,7 +76,12 @@
         "pint": [
             "./vendor/bin/pint"
         ],
-        "analyse": "./vendor/bin/phpstan analyse --memory-limit=1G"
+        "analyse": "./vendor/bin/phpstan analyse --memory-limit=1G",
+        "quality": [
+            "@composer run test",
+            "@composer run analyse",
+            "@composer run pint"
+        ]
     },
     "extra": {
         "laravel": {

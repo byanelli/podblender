@@ -25,6 +25,7 @@ class UpdateSubscriptionTest extends TestCase
         return new SourceMetadata(
             name: $subscription->name,
             canonicalUrl: $subscription->platform_url,
+            authorName: $subscription->name,
         );
     }
 
@@ -41,6 +42,7 @@ class UpdateSubscriptionTest extends TestCase
         $sourceMetadata = new SourceMetadata(
             name: $subscription->name,
             canonicalUrl: $subscription->platform_url,
+            authorName: $subscription->name,
         );
 
         Bus::fake();
@@ -115,6 +117,7 @@ class UpdateSubscriptionTest extends TestCase
                 source: new SourceMetadata(
                     name: $subscription->name,
                     canonicalUrl: $subscription->platform_url,
+                    authorName: $subscription->name,
                 ),
             ),
         ]);
@@ -151,6 +154,7 @@ class UpdateSubscriptionTest extends TestCase
                 source: new SourceMetadata(
                     name: $subscription->name,
                     canonicalUrl: $subscription->platform_url,
+                    authorName: $subscription->name,
                 ),
             ),
         ]);

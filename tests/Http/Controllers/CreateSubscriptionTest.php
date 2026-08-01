@@ -31,6 +31,7 @@ class CreateSubscriptionTest extends TestCase
             sourceMetadata: new SourceMetadata(
                 name: $sourceName = 'Test channel',
                 canonicalUrl: $sourceUrl,
+                authorName: $sourceName,
             )
         );
 
@@ -69,6 +70,7 @@ class CreateSubscriptionTest extends TestCase
             sourceMetadata: new SourceMetadata(
                 name: 'Test channel',
                 canonicalUrl: $sourceUrl = 'https://youtube.com/@zzz',
+                authorName: 'Test channel',
             )
         );
 
@@ -97,6 +99,7 @@ class CreateSubscriptionTest extends TestCase
         $this->fakePlatform(sourceMetadata: new SourceMetadata(
             name: 'Test channel',
             canonicalUrl: $sourceUrl = 'https://youtube.com/@zzz',
+            authorName: 'Test channel',
         ));
 
         Bus::fake();
@@ -123,6 +126,7 @@ class CreateSubscriptionTest extends TestCase
         $this->fakePlatform(sourceMetadata: new SourceMetadata(
             name: 'Test channel',
             canonicalUrl: $sourceUrl = 'https://youtube.com/@zzz',
+            authorName: 'Test channel',
         ));
 
         Bus::fake();

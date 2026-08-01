@@ -97,9 +97,12 @@ readonly class Rss extends Web implements SubscribablePlatform
 
     private function sourceMetadataFor(ParsedFeed $feed, string $feedUrl): SourceMetadata
     {
+        $name = $feed->title ?? (Uri::new($feedUrl)->getHost() ?? $feedUrl);
+
         return new SourceMetadata(
-            name: $feed->title ?? (Uri::new($feedUrl)->getHost() ?? $feedUrl),
+            name: $name,
             canonicalUrl: $feedUrl,
+            authorName: $name,
         );
     }
 

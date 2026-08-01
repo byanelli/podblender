@@ -2,7 +2,7 @@
 
 namespace Tests\Http\Controllers;
 
-use App\Enums\AudioSourceKind;
+use App\Enums\AudioSourceType;
 use App\Enums\ClipProcessingState;
 use App\Models\AudioClip;
 use App\Models\AudioClipFeed;
@@ -92,7 +92,7 @@ class ShowRssTest extends TestCase
         /** @var AudioSource $channel */
         $channel = AudioSource::factory()->create([
             AudioSource::COL_NAME => 'Lecture Channel',
-            AudioSource::COL_KIND => AudioSourceKind::Channel,
+            AudioSource::COL_TYPE => AudioSourceType::Channel,
         ]);
 
         $feed = $this->subscribedFeed($channel);
@@ -111,7 +111,7 @@ class ShowRssTest extends TestCase
         /** @var AudioSource $playlist */
         $playlist = AudioSource::factory()->create([
             AudioSource::COL_NAME => 'Select Lectures',
-            AudioSource::COL_KIND => AudioSourceKind::Playlist,
+            AudioSource::COL_TYPE => AudioSourceType::Playlist,
             AudioSource::COL_AUTHOR_NAME => 'Lecture Channel',
         ]);
 
@@ -128,7 +128,7 @@ class ShowRssTest extends TestCase
         /** @var AudioSource $playlist */
         $playlist = AudioSource::factory()->create([
             AudioSource::COL_NAME => 'Select Lectures',
-            AudioSource::COL_KIND => AudioSourceKind::Playlist,
+            AudioSource::COL_TYPE => AudioSourceType::Playlist,
             AudioSource::COL_AUTHOR_NAME => 'Lecture Channel',
         ]);
 

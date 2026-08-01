@@ -11,7 +11,7 @@ namespace App\Enums;
  * nonsense in a podcast app's author field, so a playlist is credited to the
  * channel that owns it instead.
  */
-enum AudioSourceKind: string
+enum AudioSourceType: string
 {
     case Channel = 'channel';
     case Playlist = 'playlist';

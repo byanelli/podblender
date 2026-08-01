@@ -18,10 +18,8 @@ class UpdateAllSubscriptions implements ShouldQueue
     public function handle(Dispatcher $dispatcher): void
     {
         AudioSource::query()
-            // Only sources somebody still wants updates from. A source whose
-            // subscribers have all had their one fill is finished: checking it
-            // every couple of hours would spend platform quota forever on feeds
-            // that asked to be left alone.
+            // Only update sources with at least one subscription that wants
+            // to be updated.
             ->whereHas(AudioSource::REL_SUBSCRIBERS, Feed::scopeNeedingUpdates(...))
             ->each(function (AudioSource $subscription) use ($dispatcher) {
                 $dispatcher->dispatch(new UpdateSubscription($subscription));

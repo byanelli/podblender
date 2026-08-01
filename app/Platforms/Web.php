@@ -64,7 +64,8 @@ readonly class Web implements Platform
                 publishedAt: $article->publicationDate,
                 source: new SourceMetadata(
                     name: $article->publisher,
-                    canonicalUrl: 'https://'.Uri::new($clipUrl)->getHost()
+                    canonicalUrl: 'https://'.Uri::new($clipUrl)->getHost(),
+                    authorName: $article->publisher,
                 ),
                 estimatedDownloadTime: $this->estimateDownloadTime($article),
             );
@@ -84,6 +85,7 @@ readonly class Web implements Platform
         return new SourceMetadata(
             name: $name,
             canonicalUrl: $sourceUrl,
+            authorName: $name,
         );
     }
 

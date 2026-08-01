@@ -21,7 +21,7 @@ readonly class FindOrCreateAudioSource
                 AudioSource::COL_PLATFORM_TYPE => $platformType,
                 AudioSource::COL_PLATFORM_URL => $metadata->canonicalUrl,
                 AudioSource::COL_NAME => $metadata->name,
-                AudioSource::COL_KIND => $metadata->kind,
+                AudioSource::COL_TYPE => $metadata->type,
                 AudioSource::COL_AUTHOR_NAME => $metadata->authorName,
             ]
         );
