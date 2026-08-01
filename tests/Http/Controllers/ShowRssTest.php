@@ -59,6 +59,41 @@ class ShowRssTest extends TestCase
         $this->assertStringContainsString("<guid isPermaLink=\"false\">$clip->guid</guid>", $response);
     }
 
+    #[Test]
+    public function its_xml_is_parseable()
+    {
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id])
+            ->load(Feed::REL_USER);
+
+        /** @var AudioSource $source */
+        $source = AudioSource::factory()->create();
+
+        /** @var AudioClip $clip */
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
+            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+        ]);
+
+        $feed->audioClips()->attach($clip, [
+            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::parse('2025-03-04 05:06:07'),
+        ]);
+
+        $body = $this->get("rss/{$feed->uuid}")->content();
+
+        // A podcast app has to be able to parse the feed, so it must be valid
+        // XML — a feed that's not (e.g. a literal "\n" corrupting the prolog)
+        // is rejected by every subscription client.
+        $previous = libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($body);
+        $errors = libxml_get_errors();
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $this->assertNotFalse($xml, "Feed XML is not parseable:\n{$body}");
+        $this->assertSame([], $errors, 'Feed XML has parse errors.');
+    }
+
     /**
      * A feed subscribed to $source, holding one processed clip published by
      * $clipSource (which for a playlist need not be the source subscribed to).
