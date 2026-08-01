@@ -117,11 +117,28 @@ readonly class Client implements Contracts\Client
     }
 
     /**
+     * The single item a by-id lookup asked for.
+     *
+     * YouTube reports "no such thing" as a 200 with an empty items list rather
+     * than as an error, so reading items[0] on a wrong, private, or deleted id
+     * fails somewhere further along with a message about arrays. Turn it into
+     * the error it is, naming what wasn't found.
+     *
+     * @param  array<string, mixed>  $response
+     * @return array<string, mixed>
+     */
+    private function firstItem(array $response, string $resource, string $id): array
+    {
+        return $response['items'][0]
+            ?? throw ResourceNotFoundException::for($resource, $id);
+    }
+
+    /**
      * @param  array<string, mixed>  $response
      */
-    private function getChannelMetadataFromResponse(array $response): ChannelMetadata
+    private function getChannelMetadataFromResponse(array $response, string $channelIdOrHandle): ChannelMetadata
     {
-        $channel = $response['items'][0];
+        $channel = $this->firstItem($response, 'channel', $channelIdOrHandle);
 
         return new ChannelMetadata(
             id: $channel['id'],
@@ -140,7 +157,7 @@ readonly class Client implements Contracts\Client
             'part' => 'id,brandingSettings,contentDetails,statistics',
         ]);
 
-        return $this->getChannelMetadataFromResponse($response);
+        return $this->getChannelMetadataFromResponse($response, $channelHandle);
     }
 
     public function getChannelMetadataForId(string $channelId): ChannelMetadata
@@ -150,7 +167,7 @@ readonly class Client implements Contracts\Client
             'part' => 'id,brandingSettings,contentDetails,contentOwnerDetails,status,snippet,statistics',
         ]);
 
-        return $this->getChannelMetadataFromResponse($response);
+        return $this->getChannelMetadataFromResponse($response, $channelId);
     }
 
     public function getVideoMetadata(string $videoId): VideoMetadata
@@ -160,7 +177,7 @@ readonly class Client implements Contracts\Client
             'part' => 'id,snippet,status,contentDetails',
         ]);
 
-        return $this->getVideoMetadataFromResponseObject($response['items'][0]);
+        return $this->getVideoMetadataFromResponseObject($this->firstItem($response, 'video', $videoId));
     }
 
     public function getAllVideoMetadataForChannel(
@@ -190,7 +207,7 @@ readonly class Client implements Contracts\Client
             'part' => 'id,snippet,contentDetails',
         ]);
 
-        $playlist = $response['items'][0];
+        $playlist = $this->firstItem($response, 'playlist', $playlistId);
 
         return new PlaylistMetadata(
             id: $playlist['id'],

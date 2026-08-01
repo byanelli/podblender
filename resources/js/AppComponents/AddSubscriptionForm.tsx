@@ -1,16 +1,36 @@
 import { FormEventHandler, useState } from 'react';
-import axios from 'axios';
-import { Link2, ListMusic, Loader2, TriangleAlert } from 'lucide-react';
+import axios, { AxiosResponse } from 'axios';
+import {
+    ArrowLeft,
+    Link2,
+    ListMusic,
+    Loader2,
+    TriangleAlert,
+} from 'lucide-react';
 import RadioWaves from '@/Components/RadioWaves';
 
 import routes from '@/routes';
+import { SourceMetadataResponseBody } from '@/roma';
 import { Alert, AlertDescription, AlertTitle } from '@/Components/ui/alert';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { cn } from '@/lib/utils';
+import SubscriptionOptions, {
+    BackfillChoice,
+    backfillSinceFor,
+    episodesImplied,
+} from '@/AppComponents/SubscriptionOptions';
 
 type NewFeedType = 'custom' | 'subscription';
+
+/**
+ * A subscription is created in two steps: look up what's at the URL, then
+ * confirm. The look-up is what makes the choice of how much history to pull an
+ * informed one — a channel's whole back catalogue can be hundreds of episodes,
+ * and each one is a download.
+ */
+type Display = 'form' | 'confirm';
 
 export default function AddSubscriptionForm({
     onCreated,
@@ -18,8 +38,13 @@ export default function AddSubscriptionForm({
     onCreated: () => void;
 }) {
     const [newFeedType, setNewFeedType] = useState<NewFeedType>('custom');
+    const [display, setDisplay] = useState<Display>('form');
     const [name, setName] = useState('');
     const [url, setUrl] = useState('');
+    const [source, setSource] = useState<SourceMetadataResponseBody | null>(null);
+    const [backfill, setBackfill] = useState<BackfillChoice>('default');
+    const [since, setSince] = useState('');
+    const [tracksNewEpisodes, setTracksNewEpisodes] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [hasError, setHasError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
@@ -27,6 +52,11 @@ export default function AddSubscriptionForm({
     const resetForm = () => {
         setName('');
         setUrl('');
+        setSource(null);
+        setBackfill('default');
+        setSince('');
+        setTracksNewEpisodes(true);
+        setDisplay('form');
     };
 
     const onSuccess = () => {
@@ -38,41 +68,158 @@ export default function AddSubscriptionForm({
     const onFailure = (error: any) => {
         setIsLoading(false);
         setHasError(true);
-        setErrorMessage(error.response?.data?.message ?? error.response?.data?.error);
+        setErrorMessage(
+            error.response?.data?.message ?? error.response?.data?.error,
+        );
     };
 
+    /**
+     * Step one for a subscription: find out what's at the URL. A custom feed has
+     * no source to look up, so it's created outright.
+     */
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
         setIsLoading(true);
         setHasError(false);
 
-        if (newFeedType === 'subscription') {
-            axios
-                .post(routes.api.createSubscription, { name, url })
-                .then(onSuccess)
-                .catch(onFailure);
-        } else {
+        if (newFeedType === 'custom') {
             axios
                 .post(routes.api.createCustomFeed, { name })
                 .then(onSuccess)
                 .catch(onFailure);
+
+            return;
         }
+
+        axios
+            .post(routes.api.fetchSourceMetadata, { url })
+            .then((response: AxiosResponse<SourceMetadataResponseBody>) => {
+                setIsLoading(false);
+                setSource(response.data);
+                setDisplay('confirm');
+            })
+            .catch(onFailure);
+    };
+
+    const createSubscription: FormEventHandler = (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setHasError(false);
+
+        axios
+            .post(routes.api.createSubscription, {
+                name,
+                url,
+                backfillSince: backfillSinceFor(backfill, since),
+                tracksNewEpisodes,
+            })
+            .then(onSuccess)
+            .catch(onFailure);
     };
 
     const options: { value: NewFeedType; label: string; hint: string }[] = [
         { value: 'custom', label: 'Custom', hint: 'Add clips by hand' },
-        { value: 'subscription', label: 'Subscription', hint: 'Auto-pull a channel or feed' },
+        {
+            value: 'subscription',
+            label: 'Subscription',
+            hint: 'Auto-pull a channel or feed',
+        },
     ];
+
+    const errorPanel = hasError && (
+        <Alert variant="destructive">
+            <TriangleAlert />
+            <AlertTitle>Couldn't create that feed</AlertTitle>
+            <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+    );
+
+    if (display === 'confirm' && source) {
+        const episodes = episodesImplied(backfill, source.metadata.clipCount);
+
+        return (
+            <div className="space-y-5">
+                {errorPanel}
+
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setDisplay('form')}
+                        className="text-muted-foreground transition-colors hover:text-foreground"
+                        aria-label="Back"
+                    >
+                        <ArrowLeft className="size-4" />
+                    </button>
+                    <h3 className="font-display text-base font-bold">
+                        Confirm this subscription
+                    </h3>
+                </div>
+
+                <dl className="divide-y divide-border rounded-xl border-2 border-ink">
+                    {[
+                        {
+                            key: source.metadata.type.name,
+                            value: source.metadata.name,
+                        },
+                        { key: 'By', value: source.metadata.authorName },
+                        {
+                            key: 'Episodes',
+                            value:
+                                source.metadata.clipCount === null
+                                    ? 'Unknown'
+                                    : source.metadata.clipCount.toLocaleString(),
+                        },
+                    ].map((row) => (
+                        <div
+                            key={row.key}
+                            className="grid gap-1 px-4 py-3 sm:grid-cols-3 sm:gap-4"
+                        >
+                            <dt className="text-xs font-bold tracking-console text-muted-foreground uppercase">
+                                {row.key}
+                            </dt>
+                            <dd className="text-sm break-words sm:col-span-2">
+                                {row.value}
+                            </dd>
+                        </div>
+                    ))}
+                </dl>
+
+                <SubscriptionOptions
+                    backfill={backfill}
+                    onBackfillChange={setBackfill}
+                    since={since}
+                    onSinceChange={setSince}
+                    tracksNewEpisodes={tracksNewEpisodes}
+                    onTracksNewEpisodesChange={setTracksNewEpisodes}
+                />
+
+                {episodes !== null && episodes > LARGE_BACKFILL && (
+                    <Alert>
+                        <TriangleAlert />
+                        <AlertTitle>
+                            That's {episodes.toLocaleString()} episodes
+                        </AlertTitle>
+                        <AlertDescription>
+                            They're downloaded one at a time, so a back catalogue
+                            this size will take a while to fill in. Episodes
+                            appear in the feed as they finish.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                <form onSubmit={createSubscription}>
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading && <Loader2 className="animate-spin" />}
+                        Confirm & subscribe
+                    </Button>
+                </form>
+            </div>
+        );
+    }
 
     return (
         <form onSubmit={submit} className="space-y-5">
-            {hasError && (
-                <Alert variant="destructive">
-                    <TriangleAlert />
-                    <AlertTitle>Couldn't create that feed</AlertTitle>
-                    <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-            )}
+            {errorPanel}
 
             <div className="grid grid-cols-2 gap-2">
                 {options.map((option) => {
@@ -84,9 +231,7 @@ export default function AddSubscriptionForm({
                             onClick={() => setNewFeedType(option.value)}
                             className={cn(
                                 'group flex cursor-pointer flex-col items-start gap-1 rounded-xl border-2 border-ink p-3 text-left transition-colors',
-                                active
-                                    ? 'bg-accent'
-                                    : 'bg-card hover:bg-accent',
+                                active ? 'bg-accent' : 'bg-card hover:bg-accent',
                             )}
                         >
                             <span className="flex items-center gap-2">
@@ -94,21 +239,27 @@ export default function AddSubscriptionForm({
                                     <ListMusic
                                         className={cn(
                                             'size-4',
-                                            active ? 'text-primary' : 'text-muted-foreground',
+                                            active
+                                                ? 'text-primary'
+                                                : 'text-muted-foreground',
                                         )}
                                     />
                                 ) : (
                                     <RadioWaves
                                         className={cn(
                                             'size-4',
-                                            active ? 'text-primary' : 'text-muted-foreground',
+                                            active
+                                                ? 'text-primary'
+                                                : 'text-muted-foreground',
                                         )}
                                     />
                                 )}
                                 <span
                                     className={cn(
                                         'text-sm font-bold',
-                                        active ? 'text-foreground' : 'text-muted-foreground',
+                                        active
+                                            ? 'text-foreground'
+                                            : 'text-muted-foreground',
                                     )}
                                 >
                                     {option.label}
@@ -136,7 +287,9 @@ export default function AddSubscriptionForm({
 
             {newFeedType === 'subscription' && (
                 <div className="space-y-2">
-                    <Label htmlFor="feed-url">Channel or RSS feed URL</Label>
+                    <Label htmlFor="feed-url">
+                        Channel, playlist, or RSS feed URL
+                    </Label>
                     <div className="relative">
                         <Link2 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -154,8 +307,15 @@ export default function AddSubscriptionForm({
 
             <Button type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="animate-spin" />}
-                Create feed
+                {newFeedType === 'subscription' ? 'Continue' : 'Create feed'}
             </Button>
         </form>
     );
 }
+
+/**
+ * Above this many episodes, a full backfill is worth warning about: every one is
+ * a download, and they're deliberately serialised so the platform doesn't start
+ * refusing them.
+ */
+const LARGE_BACKFILL = 50;

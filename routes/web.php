@@ -20,6 +20,7 @@ Route::middleware(Authenticate::class)->group(function () {
     Route::prefix('api')->group(function () {
         // todo next
         Route::post('/fetch-metadata', Controllers\FetchMetadata::class)->name('fetchMetadata');
+        Route::post('/fetch-source-metadata', Controllers\FetchSourceMetadata::class)->name('fetchSourceMetadata');
         Route::post('/feeds/{feed}/add', Controllers\AddClipToFeed::class)->name('addClipToFeed');
     });
 });

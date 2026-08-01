@@ -202,19 +202,23 @@ readonly class YouTube implements SubscribablePlatform
 
     public function getSourceMetadata(string $sourceUrl): SourceMetadata
     {
-        if ($playlistId = $this->getPlaylistIdFromUrl($sourceUrl)) {
-            return $this->convertPlaylistMetadataToSourceMetadata(
-                $this->youTubeData->getPlaylistMetadata($playlistId)
+        try {
+            if ($playlistId = $this->getPlaylistIdFromUrl($sourceUrl)) {
+                return $this->convertPlaylistMetadataToSourceMetadata(
+                    $this->youTubeData->getPlaylistMetadata($playlistId)
+                );
+            }
+
+            $channelIdOrHandle = $this->getLastPathPiece($sourceUrl);
+
+            return $this->convertChannelMetadataToSourceMetadata(
+                $this->sourceUrlHasChannelId($sourceUrl)
+                    ? $this->youTubeData->getChannelMetadataForId($channelIdOrHandle)
+                    : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle)
             );
+        } catch (\Exception $e) {
+            throw new PlatformException(PlatformType::YouTube, PlatformOperation::Metadata, $e);
         }
-
-        $channelIdOrHandle = $this->getLastPathPiece($sourceUrl);
-
-        return $this->convertChannelMetadataToSourceMetadata(
-            $this->sourceUrlHasChannelId($sourceUrl)
-                ? $this->youTubeData->getChannelMetadataForId($channelIdOrHandle)
-                : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle)
-        );
     }
 
     /**

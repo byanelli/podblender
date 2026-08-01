@@ -6,8 +6,10 @@ use App\Apis\YouTubeData\ChannelMetadata;
 use App\Apis\YouTubeData\PlaylistMetadata;
 use App\Apis\YouTubeData\VideoMetadata;
 use App\Enums\AudioSourceType;
+use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\YouTube;
 use Illuminate\Process\PendingProcess;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
@@ -165,6 +167,33 @@ class YouTubeTest extends TestCase
 
         $this->assertEquals(AudioSourceType::Playlist, $metadata->type);
         $this->assertEquals('https://youtube.com/playlist?list=PLabc123', $metadata->canonicalUrl);
+    }
+
+    #[Test]
+    public function it_says_so_when_a_playlist_does_not_exist()
+    {
+        // YouTube answers a wrong, private, or deleted id with an empty list and
+        // a 200, so without handling this the user is told about an undefined
+        // array key rather than about their link.
+        Http::fake(['*' => Http::response(['items' => []])]);
+
+        $this->expectException(PlatformException::class);
+        $this->expectExceptionMessage('No playlist found on YouTube');
+
+        $this->app->make(YouTube::class)
+            ->getSourceMetadata('https://youtube.com/playlist?list=PLnope');
+    }
+
+    #[Test]
+    public function it_says_so_when_a_channel_does_not_exist()
+    {
+        Http::fake(['*' => Http::response(['items' => []])]);
+
+        $this->expectException(PlatformException::class);
+        $this->expectExceptionMessage('No channel found on YouTube');
+
+        $this->app->make(YouTube::class)
+            ->getSourceMetadata('https://youtube.com/@nobody');
     }
 
     #[Test]

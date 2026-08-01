@@ -6,6 +6,7 @@ export default {
 
     api: {
         fetchMetadata: route('fetchMetadata'),
+        fetchSourceMetadata: route('fetchSourceMetadata'),
         addClipToFeed: (feedId: number) => route('addClipToFeed', {feed: feedId}),
         createSubscription: route('createSubscription'),
         createCustomFeed: route('createCustomFeed'),

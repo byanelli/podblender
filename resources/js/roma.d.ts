@@ -1,5 +1,12 @@
 // This file is auto-generated. Do not edit by hand.
 
+export const AudioSourceType = {
+  Channel: { name: 'Channel', value: 'channel' },
+  Playlist: { name: 'Playlist', value: 'playlist' },
+} as const;
+
+export type AudioSourceType = typeof AudioSourceType[keyof typeof AudioSourceType];
+
 export const PlatformTypeEnum = {
   YouTube: { name: 'YouTube', value: 1 },
   Web: { name: 'Web', value: 2 },
@@ -18,6 +25,7 @@ export interface ClipMetadata {
   canonicalUrl: string;
   publishedAt: string;
   source: SourceMetadata;
+  estimatedDownloadTime: number | null;
 }
 
 export interface CreateCustomFeedRequestBody {
@@ -27,6 +35,8 @@ export interface CreateCustomFeedRequestBody {
 export interface CreateSubscriptionRequestBody {
   url: string;
   name: string;
+  backfillSince?: string | null;
+  tracksNewEpisodes?: boolean;
 }
 
 export interface MetadataResponseBody {
@@ -37,4 +47,12 @@ export interface MetadataResponseBody {
 export interface SourceMetadata {
   name: string;
   canonicalUrl: string;
+  authorName: string;
+  type: AudioSourceType;
+  clipCount: number | null;
+}
+
+export interface SourceMetadataResponseBody {
+  metadata: SourceMetadata;
+  platformType: PlatformTypeEnum;
 }
