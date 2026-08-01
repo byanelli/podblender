@@ -39,7 +39,12 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            // Relative so Storage::url() (used for enclosure/audio URLs) is
+            // rooted per-request: absolutize with url(). An absolute APP_URL
+            // here would pin enclosures to the machine the app was configured
+            // for (e.g. localhost) instead of wherever the feed is requested
+            // from (e.g. the ngrok tunnel).
+            'url' => '/storage',
             'visibility' => 'public',
             'throw' => true,
         ],

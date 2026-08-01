@@ -11,6 +11,7 @@ use App\Models\Feed;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
+use Illuminate\Http\Request;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -92,6 +93,44 @@ class ShowRssTest extends TestCase
 
         $this->assertNotFalse($xml, "Feed XML is not parseable:\n{$body}");
         $this->assertSame([], $errors, 'Feed XML has parse errors.');
+    }
+
+    #[Test]
+    public function enclosure_urls_follow_the_request_host_not_app_url()
+    {
+        // A feed requested through the ngrok tunnel must point its episode
+        // audio at the tunnel host, not at APP_URL (the local machine).
+        // Enclosure URLs are rooted per-request by the public disk's relative
+        // url + url().
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id])
+            ->load(Feed::REL_USER);
+
+        /** @var AudioSource $source */
+        $source = AudioSource::factory()->create();
+
+        /** @var AudioClip $clip */
+        $clip = AudioClip::factory()->create([
+            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
+            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+        ]);
+
+        $feed->audioClips()->attach($clip);
+        $feed->load(Feed::REL_AUDIO_CLIPS_FINISHED_PROCESSING);
+
+        // Render as if the request came in through a public tunnel, so the
+        // request root (which url() absolutizes against) is the tunnel host.
+        $request = Request::create("https://tunnel.example.test/rss/{$feed->uuid}", 'GET', [], [], [], [
+            'HTTPS' => 'on',
+            'HTTP_HOST' => 'tunnel.example.test',
+        ]);
+        $this->app->instance('request', $request);
+        $this->app['url']->setRequest($request);
+
+        $body = view('rss', compact('feed'))->render();
+
+        $this->assertStringContainsString('<enclosure url="https://tunnel.example.test/storage/', $body);
+        $this->assertStringNotContainsString('localhost', $body);
     }
 
     /**
