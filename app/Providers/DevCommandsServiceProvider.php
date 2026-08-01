@@ -14,18 +14,16 @@ class DevCommandsServiceProvider extends ServiceProvider
     {
         DevCommands::artisan('reverb:start');
 
-        // Pin the dev server to a known port so the ngrok tunnel can target it:
-        // without an explicit --port, "serve" silently bumps the port upward
-        // when 8000 is taken, and ngrok would point at the wrong socket.
-        // SERVER_PORT (falling back to 8000) is shared with scripts/dev-ngrok.sh.
+        // Pin the dev server to a known IPv4 port so the ngrok tunnel (from the
+        // byanelli/ngrok-integration package) can target it. This has to live in
+        // the app rather than the package: Laravel gives app-registered dev
+        // commands priority over vendor ones, and without an explicit --host the
+        // built-in server binds "localhost" to the IPv6 ::1 loopback on macOS,
+        // which ngrok never reaches.
         //
-        // --host must be 127.0.0.1, not localhost: PHP's built-in server binds
-        // "localhost" to the IPv6 ::1 loopback on macOS, which ngrok never
-        // reaches (it connects to 127.0.0.1), so the tunnel would return a
-        // connection-refused "bad gateway" page.
+        // SERVER_PORT (falling back to 8000) is shared with the package's
+        // tunnel, which reads the same env var.
         DevCommands::artisan('serve --host=127.0.0.1 --port=${SERVER_PORT:-8000}', 'server');
-
-        DevCommands::register(base_path('scripts/dev-ngrok.sh'), 'ngrok');
     }
 
     /**

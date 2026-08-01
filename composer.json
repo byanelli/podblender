@@ -8,6 +8,7 @@
         "php": "^8.5",
         "ext-zip": "*",
         "byanelli/roma": "@dev",
+        "byanelli/ngrok-integration": "@dev",
         "fivefilters/readability.php": "^3.3",
         "guzzlehttp/guzzle": "^7.2",
         "inertiajs/inertia-laravel": "^3.0",
@@ -103,6 +104,13 @@
         "name": "roma",
         "type": "path",
         "url": "../simple-request",
+        "options": {
+            "symlink": true
+        }
+    }, {
+        "name": "ngrok-integration",
+        "type": "path",
+        "url": "../ngrok-integration",
         "options": {
             "symlink": true
         }

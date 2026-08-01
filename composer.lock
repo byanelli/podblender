@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "474abed53871e7e4c42e4497ff61ecec",
+    "content-hash": "1111422b4774e8c6c5925cbcb2bd067c",
     "packages": [
         {
             "name": "brick/math",
@@ -66,12 +66,99 @@
             "time": "2026-06-14T18:21:03+00:00"
         },
         {
+            "name": "byanelli/ngrok-integration",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "../ngrok-integration",
+                "reference": "f51960ba1db012e689bdd870f3d48b5a72dc8247"
+            },
+            "require": {
+                "laravel/framework": "^13.0",
+                "php": "^8.5",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.14",
+                "nunomaduro/collision": "^8.6",
+                "orchestra/testbench": "^11.0",
+                "pestphp/pest": "^3.0",
+                "pestphp/pest-plugin-laravel": "^3.0",
+                "phpstan/extension-installer": "^1.4",
+                "phpstan/phpstan": "^2.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "BYanelli\\NgrokIntegration\\NgrokIntegrationServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "BYanelli\\NgrokIntegration\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "BYanelli\\NgrokIntegration\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "post-autoload-dump": [
+                    "@composer run prepare"
+                ],
+                "prepare": [
+                    "@php vendor/bin/testbench package:discover --ansi"
+                ],
+                "analyse": [
+                    "vendor/bin/phpstan analyse --memory-limit=1G"
+                ],
+                "test": [
+                    "vendor/bin/pest"
+                ],
+                "format": [
+                    "vendor/bin/pint"
+                ],
+                "quality": [
+                    "@composer run test",
+                    "@composer run analyse",
+                    "@composer run format"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bill Yanelli",
+                    "email": "bill.yanelli@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Seamless ngrok dev tunnel for Laravel: same-origin Vite assets and HTTPS trust behind a single public URL",
+            "homepage": "https://github.com/byanelli/ngrok-integration",
+            "keywords": [
+                "development",
+                "laravel",
+                "ngrok",
+                "tunnel",
+                "vite"
+            ],
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
             "name": "byanelli/roma",
             "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "../simple-request",
-                "reference": "bafde48ce40a2594f7bdc1b79d243f753861f291"
+                "reference": "e546d28cc4e9443a3af9ba8fcd7aafbb9aa9808d"
             },
             "require": {
                 "illuminate/contracts": "^13.15",
@@ -11312,6 +11399,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
+        "byanelli/ngrok-integration": 20,
         "byanelli/roma": 20
     },
     "prefer-stable": true,
