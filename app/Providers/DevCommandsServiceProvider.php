@@ -23,7 +23,14 @@ class DevCommandsServiceProvider extends ServiceProvider
         //
         // SERVER_PORT (falling back to 8000) is shared with the package's
         // tunnel, which reads the same env var.
-        DevCommands::artisan('serve --host=127.0.0.1 --port=${SERVER_PORT:-8000}', 'server');
+        //
+        // A custom router (server.php) replaces plain "php artisan serve" so
+        // /storage/* audio answers HTTP Range requests — podcast apps can't
+        // stream episodes without them (they download the file instead).
+        DevCommands::register(
+            'php -S 127.0.0.1:${SERVER_PORT:-8000} -t public server.php',
+            'server',
+        );
     }
 
     /**
