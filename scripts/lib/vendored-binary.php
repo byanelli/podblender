@@ -27,14 +27,14 @@ final class VendoredBinary
     {
         $os = match (true) {
             str_contains($uname = php_uname('s'), 'Darwin') => 'macos',
-            str_contains($uname, 'Linux') => 'linux',
-            default => throw new RuntimeException("Unsupported operating system: $uname"),
+            str_contains($uname, 'Linux')                   => 'linux',
+            default                                         => throw new RuntimeException("Unsupported operating system: $uname"),
         };
 
         $arch = match ($machine = php_uname('m')) {
-            'x86_64', 'amd64' => 'x86_64',
+            'x86_64', 'amd64'  => 'x86_64',
             'arm64', 'aarch64' => 'aarch64',
-            default => throw new RuntimeException("Unsupported architecture: $machine"),
+            default            => throw new RuntimeException("Unsupported architecture: $machine"),
         };
 
         return "$os-$arch";

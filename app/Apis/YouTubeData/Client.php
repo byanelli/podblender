@@ -103,11 +103,11 @@ readonly class Client implements Contracts\Client
 
         $pages = $this->apiGetAllPages('search', $limit, [
             // "maxResults" means results per page; if limit <= 50 we only get one page.
-            'maxResults' => min($limit, 50),
-            'type' => 'video',
-            'part' => 'snippet',
-            'order' => 'date',
-            'channelId' => $channelId,
+            'maxResults'     => min($limit, 50),
+            'type'           => 'video',
+            'part'           => 'snippet',
+            'order'          => 'date',
+            'channelId'      => $channelId,
             'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
         ]);
 
@@ -154,7 +154,7 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('channels', [
             'forHandle' => $channelHandle,
-            'part' => 'id,brandingSettings,contentDetails,statistics',
+            'part'      => 'id,brandingSettings,contentDetails,statistics',
         ]);
 
         return $this->getChannelMetadataFromResponse($response, $channelHandle);
@@ -163,7 +163,7 @@ readonly class Client implements Contracts\Client
     public function getChannelMetadataForId(string $channelId): ChannelMetadata
     {
         $response = $this->apiGet('channels', [
-            'id' => $channelId,
+            'id'   => $channelId,
             'part' => 'id,brandingSettings,contentDetails,contentOwnerDetails,status,snippet,statistics',
         ]);
 
@@ -173,7 +173,7 @@ readonly class Client implements Contracts\Client
     public function getVideoMetadata(string $videoId): VideoMetadata
     {
         $response = $this->apiGet('videos', [
-            'id' => $videoId,
+            'id'   => $videoId,
             'part' => 'id,snippet,status,contentDetails',
         ]);
 
@@ -187,12 +187,12 @@ readonly class Client implements Contracts\Client
         $publishedAfter ??= CarbonImmutable::parse(0);
 
         $videos = $this->apiGetAllPagesItems('search', PHP_INT_MAX, [
-            'maxResults' => 50,
-            'type' => 'video',
-            'order' => 'date',
-            'channelId' => $channelId,
+            'maxResults'     => 50,
+            'type'           => 'video',
+            'order'          => 'date',
+            'channelId'      => $channelId,
             'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
-            'part' => 'id,snippet',
+            'part'           => 'id,snippet',
         ]);
 
         return collect($videos)
@@ -203,7 +203,7 @@ readonly class Client implements Contracts\Client
     public function getPlaylistMetadata(string $playlistId): PlaylistMetadata
     {
         $response = $this->apiGet('playlists', [
-            'id' => $playlistId,
+            'id'   => $playlistId,
             'part' => 'id,snippet,contentDetails',
         ]);
 
@@ -239,8 +239,8 @@ readonly class Client implements Contracts\Client
             $page = $this->apiGet('playlistItems', array_filter([
                 'playlistId' => $playlistId,
                 'maxResults' => 50,
-                'part' => 'snippet,contentDetails,status',
-                'pageToken' => $nextPageToken,
+                'part'       => 'snippet,contentDetails,status',
+                'pageToken'  => $nextPageToken,
             ], fn ($value) => ! is_null($value)));
 
             foreach ($page['items'] as $item) {

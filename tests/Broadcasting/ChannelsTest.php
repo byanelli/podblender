@@ -12,7 +12,7 @@ class ChannelsTest extends TestCase
     private function authorize(User $user, Feed $feed)
     {
         return $this->actingAs($user)->postJson('/broadcasting/auth', [
-            'socket_id' => '1234.5678',
+            'socket_id'    => '1234.5678',
             'channel_name' => "private-feeds.{$feed->id}",
         ]);
     }

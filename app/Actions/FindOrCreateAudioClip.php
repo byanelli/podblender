@@ -32,12 +32,12 @@ readonly class FindOrCreateAudioClip
         $source = AudioSource::query()->firstOrCreate(
             [
                 'platform_type' => $platformType,
-                'platform_url' => $metadata->source->canonicalUrl,
+                'platform_url'  => $metadata->source->canonicalUrl,
             ],
             [
                 'platform_type' => $platformType,
-                'platform_url' => $metadata->source->canonicalUrl,
-                'name' => $metadata->source->name,
+                'platform_url'  => $metadata->source->canonicalUrl,
+                'name'          => $metadata->source->name,
             ]
         );
 
@@ -48,17 +48,17 @@ readonly class FindOrCreateAudioClip
         try {
             /** @var AudioClip $clip */
             $clip = AudioClip::query()->create([
-                'platform_url' => $metadata->canonicalUrl,
-                'audio_source_id' => $source->id,
-                'title' => Str::limit($metadata->title, 500 - 3),
-                'description' => Str::limit($metadata->description, 1000 - 3),
-                'published_at' => $metadata->publishedAt,
-                'duration' => 0,
+                'platform_url'            => $metadata->canonicalUrl,
+                'audio_source_id'         => $source->id,
+                'title'                   => Str::limit($metadata->title, 500 - 3),
+                'description'             => Str::limit($metadata->description, 1000 - 3),
+                'published_at'            => $metadata->publishedAt,
+                'duration'                => 0,
                 'estimated_download_time' => $metadata->estimatedDownloadTime,
-                'storage_path' => $storagePath,
-                'guid' => Uuid::uuid4()->toString(),
-                'processing_state' => ClipProcessingState::Processing,
-                'size' => 0,
+                'storage_path'            => $storagePath,
+                'guid'                    => Uuid::uuid4()->toString(),
+                'processing_state'        => ClipProcessingState::Processing,
+                'size'                    => 0,
             ]);
         } catch (UniqueConstraintViolationException $e) {
             // The existence check above and this insert aren't atomic, and platform_url is unique. Two concurrent

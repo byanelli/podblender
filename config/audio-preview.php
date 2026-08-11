@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'enabled' => (bool) env('AUDIO_PREVIEW_ENABLED', true),
+    'enabled'       => (bool) env('AUDIO_PREVIEW_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------

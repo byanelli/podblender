@@ -35,10 +35,10 @@ class ReaderTest extends TestCase
     {
         return Http::response([
             'result' => [
-                'content' => $content,
-                'url' => 'https://archive.is/final',
+                'content'     => $content,
+                'url'         => 'https://archive.is/final',
                 'status_code' => 200,
-                'success' => true,
+                'success'     => true,
             ],
         ]);
     }
@@ -79,9 +79,9 @@ class ReaderTest extends TestCase
                     ? Http::response(['archived_snapshots' => []])
                     : Http::response(['archived_snapshots' => ['closest' => [
                         'available' => true,
-                        'url' => 'http://web.archive.org/web/20260115184700/x',
+                        'url'       => 'http://web.archive.org/web/20260115184700/x',
                         'timestamp' => '20260115184700',
-                        'status' => '200',
+                        'status'    => '200',
                     ]]]);
             }
 

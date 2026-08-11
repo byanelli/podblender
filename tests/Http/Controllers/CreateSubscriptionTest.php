@@ -23,7 +23,7 @@ class CreateSubscriptionTest extends TestCase
         $this->actingAs($user);
 
         $requestPayload = [
-            'url' => $sourceUrl,
+            'url'  => $sourceUrl,
             'name' => $feedName,
         ];
 
@@ -44,14 +44,14 @@ class CreateSubscriptionTest extends TestCase
 
         $this->assertDatabaseHas('audio_sources', [
             'platform_url' => $sourceUrl,
-            'name' => $sourceName,
+            'name'         => $sourceName,
         ]);
 
         $this->assertDatabaseCount('feeds', 1);
 
         $this->assertDatabaseHas('feeds', [
-            'name' => $feedName,
-            'user_id' => $user->id,
+            'name'            => $feedName,
+            'user_id'         => $user->id,
             'subscription_id' => AudioSource::first()->id,
         ]);
     }
@@ -105,8 +105,8 @@ class CreateSubscriptionTest extends TestCase
         Bus::fake();
 
         $this->postJson('/feeds/subscription', [
-            'url' => $sourceUrl,
-            'name' => 'Test Feed',
+            'url'           => $sourceUrl,
+            'name'          => 'Test Feed',
             // The epoch is how "everything ever published" is expressed.
             'backfillSince' => '1970-01-01T00:00:00+00:00',
         ])->assertOk();
@@ -132,8 +132,8 @@ class CreateSubscriptionTest extends TestCase
         Bus::fake();
 
         $this->postJson('/feeds/subscription', [
-            'url' => $sourceUrl,
-            'name' => 'Test Feed',
+            'url'               => $sourceUrl,
+            'name'              => 'Test Feed',
             'tracksNewEpisodes' => false,
         ])->assertOk();
 

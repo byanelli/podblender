@@ -39,24 +39,24 @@ class ShowMetadataTest extends TestCase
         $response = $this->actingAs($user)->post('api/fetch-metadata', ['url' => $url]);
 
         $response->assertJsonFragment([
-            'metadata' => [
-                'title' => $title,
-                'description' => $description,
-                'canonicalUrl' => $url,
+            'metadata'     => [
+                'title'                 => $title,
+                'description'           => $description,
+                'canonicalUrl'          => $url,
                 // roma serializes DateTimeInterface with the ATOM format by default (see IsArrayable::normalizeValue),
                 // e.g. 2026-07-16T12:34:56+00:00.
-                'publishedAt' => $publishedAt->format(DateTimeInterface::ATOM),
-                'source' => [
-                    'name' => $sourceName,
+                'publishedAt'           => $publishedAt->format(DateTimeInterface::ATOM),
+                'source'                => [
+                    'name'         => $sourceName,
                     'canonicalUrl' => $sourceUrl,
-                    'type' => ['name' => 'Channel', 'value' => 'channel'],
-                    'authorName' => $sourceName,
-                    'clipCount' => null,
+                    'type'         => ['name' => 'Channel', 'value' => 'channel'],
+                    'authorName'   => $sourceName,
+                    'clipCount'    => null,
                 ],
                 'estimatedDownloadTime' => $estimatedDownloadTime,
             ],
             'platformType' => [
-                'name' => 'YouTube',
+                'name'  => 'YouTube',
                 'value' => 1,
             ],
         ]);

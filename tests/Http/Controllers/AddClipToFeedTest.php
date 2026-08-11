@@ -82,7 +82,7 @@ class AddClipToFeedTest extends TestCase
         $user = User::factory()->create();
         $feed = Feed::factory()->create(['user_id' => $user->id]);
         $clip = AudioClip::factory()->create([
-            'platform_url' => $url,
+            'platform_url'    => $url,
             'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
@@ -156,8 +156,8 @@ class AddClipToFeedTest extends TestCase
         $user = User::factory()->create();
         $feed = Feed::factory()->create(['user_id' => $user->id]);
         $clip = AudioClip::factory()->create([
-            'platform_url' => $url,
-            'audio_source_id' => AudioSource::factory()->create()->id,
+            'platform_url'     => $url,
+            'audio_source_id'  => AudioSource::factory()->create()->id,
             'processing_state' => ClipProcessingState::Processed,
         ]);
 

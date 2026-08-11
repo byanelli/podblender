@@ -134,7 +134,7 @@ readonly class JsonLd
             return match (strtolower($value)) {
                 'false', 'no', '0' => false,
                 'true', 'yes', '1' => true,
-                default => null,
+                default            => null,
             };
         }
 

@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'hard_paywall_domains' => [
+    'hard_paywall_domains'        => [
         'nytimes.com',
         'economist.com',
         'wsj.com',
@@ -41,7 +41,7 @@ return [
     |
     */
 
-    'paywall_markers' => [
+    'paywall_markers'             => [
         'Subscribe to continue',
         'Already a subscriber',
         'Subscribe to read',
@@ -61,7 +61,7 @@ return [
     |
     */
 
-    'paywall_selectors' => [
+    'paywall_selectors'           => [
         'paywall',
         'piano-inline',
         'gateway-content',
@@ -79,7 +79,7 @@ return [
     |
     */
 
-    'min_body_length' => (int) env('ARTICLES_MIN_BODY_LENGTH', 500),
+    'min_body_length'             => (int) env('ARTICLES_MIN_BODY_LENGTH', 500),
 
     /*
     |--------------------------------------------------------------------------
@@ -92,7 +92,7 @@ return [
     |
     */
 
-    'archive_base_url' => env('ARTICLES_ARCHIVE_BASE_URL', 'https://archive.ph'),
+    'archive_base_url'            => env('ARTICLES_ARCHIVE_BASE_URL', 'https://archive.ph'),
 
     /*
     |--------------------------------------------------------------------------
@@ -113,7 +113,7 @@ return [
     |
     */
 
-    'wayback_base_url' => env('ARTICLES_WAYBACK_BASE_URL', 'https://archive.org'),
+    'wayback_base_url'            => env('ARTICLES_WAYBACK_BASE_URL', 'https://archive.org'),
 
     /*
     |--------------------------------------------------------------------------
@@ -134,11 +134,11 @@ return [
     |
     */
 
-    'scrapfly_country' => env('ARTICLES_SCRAPFLY_COUNTRY', 'us'),
+    'scrapfly_country'            => env('ARTICLES_SCRAPFLY_COUNTRY', 'us'),
 
-    'scrapfly_timeout' => (int) env('ARTICLES_SCRAPFLY_TIMEOUT', 180),
+    'scrapfly_timeout'            => (int) env('ARTICLES_SCRAPFLY_TIMEOUT', 180),
 
-    'scrapfly_listing_render_js' => (bool) env('ARTICLES_SCRAPFLY_LISTING_RENDER_JS', false),
+    'scrapfly_listing_render_js'  => (bool) env('ARTICLES_SCRAPFLY_LISTING_RENDER_JS', false),
 
     'scrapfly_snapshot_render_js' => (bool) env('ARTICLES_SCRAPFLY_SNAPSHOT_RENDER_JS', true),
 
@@ -153,7 +153,7 @@ return [
     |
     */
 
-    'user_agent' => env(
+    'user_agent'                  => env(
         'ARTICLES_USER_AGENT',
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
     ),
@@ -170,6 +170,6 @@ return [
     |
     */
 
-    'cache_ttl_hours' => (int) env('ARTICLES_CACHE_TTL_HOURS', 168),
+    'cache_ttl_hours'             => (int) env('ARTICLES_CACHE_TTL_HOURS', 168),
 
 ];

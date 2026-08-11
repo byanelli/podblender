@@ -19,8 +19,8 @@ class PasswordControllerTest extends TestCase
             ->actingAs($user)
             ->from('/profile')
             ->put('/password', [
-                'current_password' => 'password',
-                'password' => 'new-password',
+                'current_password'      => 'password',
+                'password'              => 'new-password',
                 'password_confirmation' => 'new-password',
             ]);
 
@@ -41,8 +41,8 @@ class PasswordControllerTest extends TestCase
             ->actingAs($user)
             ->from('/profile')
             ->put('/password', [
-                'current_password' => 'wrong-password',
-                'password' => 'new-password',
+                'current_password'      => 'wrong-password',
+                'password'              => 'new-password',
                 'password_confirmation' => 'new-password',
             ]);
 

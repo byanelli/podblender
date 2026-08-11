@@ -22,7 +22,7 @@ class ProfileBaseController
     {
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
-            'status' => session('status'),
+            'status'          => session('status'),
         ]);
     }
 
@@ -35,7 +35,7 @@ class ProfileBaseController
         $user = $request->user();
 
         $user->fill([
-            'name' => $data->name,
+            'name'  => $data->name,
             'email' => $data->email,
         ]);
 

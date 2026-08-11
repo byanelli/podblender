@@ -20,8 +20,8 @@ class DatabaseSeeder extends Seeder
         User::factory()
             ->has(Feed::factory()->state(['name' => 'Main']))
             ->create([
-                'name' => 'Bill Yanelli',
-                'email' => 'bill.yanelli@gmail.com',
+                'name'     => 'Bill Yanelli',
+                'email'    => 'bill.yanelli@gmail.com',
                 'password' => Hash::make('password'),
             ]);
     }

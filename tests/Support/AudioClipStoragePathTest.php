@@ -15,12 +15,12 @@ class AudioClipStoragePathTest extends TestCase
     public function it_combines_author_and_title_into_a_slug_with_mp3_extension()
     {
         $source = AudioSource::factory()->create([
-            'name' => 'The Baker\'s Dozen Podcast',
+            'name'          => 'The Baker\'s Dozen Podcast',
             'platform_type' => PlatformType::Web,
         ]);
         $clip = AudioClip::factory()->create([
             'audio_source_id' => $source->id,
-            'title' => 'COOKING | Part 1 | Making Grandma\'s "Sourdough"',
+            'title'           => 'COOKING | Part 1 | Making Grandma\'s "Sourdough"',
         ]);
 
         $path = AudioClipStoragePath::for($clip->audioSource->name, $clip->title);
@@ -46,8 +46,8 @@ class AudioClipStoragePathTest extends TestCase
         $source = AudioSource::factory()->create(['platform_type' => PlatformType::Web]);
         $existing = AudioClip::factory()->create([
             'audio_source_id' => $source->id,
-            'title' => 'Same title',
-            'storage_path' => 'some-slug-abc123.mp3',
+            'title'           => 'Same title',
+            'storage_path'    => 'some-slug-abc123.mp3',
         ]);
 
         $path = AudioClipStoragePath::for($source->name, 'Same title');

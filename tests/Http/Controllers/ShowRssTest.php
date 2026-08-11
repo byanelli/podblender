@@ -28,7 +28,7 @@ class ShowRssTest extends TestCase
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            'audio_source_id' => $source->id,
+            'audio_source_id'  => $source->id,
             'processing_state' => ClipProcessingState::Processed,
         ])
             ->load('audioSource');
@@ -72,7 +72,7 @@ class ShowRssTest extends TestCase
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            'audio_source_id' => $source->id,
+            'audio_source_id'  => $source->id,
             'processing_state' => ClipProcessingState::Processed,
         ]);
 
@@ -111,7 +111,7 @@ class ShowRssTest extends TestCase
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            'audio_source_id' => $source->id,
+            'audio_source_id'  => $source->id,
             'processing_state' => ClipProcessingState::Processed,
         ]);
 
@@ -121,7 +121,7 @@ class ShowRssTest extends TestCase
         // Render as if the request came in through a public tunnel, so the
         // request root (which url() absolutizes against) is the tunnel host.
         $request = Request::create("https://tunnel.example.test/rss/{$feed->uuid}", 'GET', [], [], [], [
-            'HTTPS' => 'on',
+            'HTTPS'     => 'on',
             'HTTP_HOST' => 'tunnel.example.test',
         ]);
         $this->app->instance('request', $request);
@@ -141,13 +141,13 @@ class ShowRssTest extends TestCase
     {
         /** @var Feed $feed */
         $feed = Feed::factory()->create([
-            'user_id' => User::factory()->create()->id,
+            'user_id'         => User::factory()->create()->id,
             'subscription_id' => $source->id,
         ]);
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            'audio_source_id' => ($clipSource ?? $source)->id,
+            'audio_source_id'  => ($clipSource ?? $source)->id,
             'processing_state' => ClipProcessingState::Processed,
         ]);
 
@@ -184,8 +184,8 @@ class ShowRssTest extends TestCase
         // "Select Lectures" as the author would read as nonsense.
         /** @var AudioSource $playlist */
         $playlist = AudioSource::factory()->create([
-            'name' => 'Select Lectures',
-            'type' => AudioSourceType::Playlist,
+            'name'        => 'Select Lectures',
+            'type'        => AudioSourceType::Playlist,
             'author_name' => 'Lecture Channel',
         ]);
 
@@ -201,8 +201,8 @@ class ShowRssTest extends TestCase
     {
         /** @var AudioSource $playlist */
         $playlist = AudioSource::factory()->create([
-            'name' => 'Select Lectures',
-            'type' => AudioSourceType::Playlist,
+            'name'        => 'Select Lectures',
+            'type'        => AudioSourceType::Playlist,
             'author_name' => 'Lecture Channel',
         ]);
 
@@ -232,15 +232,15 @@ class ShowRssTest extends TestCase
         // (the bug) would fail this test.
         /** @var AudioClip $older */
         $older = AudioClip::factory()->create([
-            'audio_source_id' => $source->id,
-            'title' => $olderTitle = 'The older episode',
+            'audio_source_id'  => $source->id,
+            'title'            => $olderTitle = 'The older episode',
             'processing_state' => ClipProcessingState::Processed,
         ]);
 
         /** @var AudioClip $newer */
         $newer = AudioClip::factory()->create([
-            'audio_source_id' => $source->id,
-            'title' => $newerTitle = 'The newer episode',
+            'audio_source_id'  => $source->id,
+            'title'            => $newerTitle = 'The newer episode',
             'processing_state' => ClipProcessingState::Processed,
         ]);
 

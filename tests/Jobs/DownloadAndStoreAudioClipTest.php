@@ -42,7 +42,7 @@ class DownloadAndStoreAudioClipTest extends TestCase
     public function it_floors_the_timeout_at_the_legacy_fixed_value_without_an_estimate(): void
     {
         $clip = AudioClip::factory()->create([
-            'audio_source_id' => AudioSource::factory()->create()->id,
+            'audio_source_id'         => AudioSource::factory()->create()->id,
             'estimated_download_time' => null,
         ]);
 
@@ -53,7 +53,7 @@ class DownloadAndStoreAudioClipTest extends TestCase
     public function it_scales_the_timeout_with_the_estimate_buffer_and_expected_attempts(): void
     {
         $clip = AudioClip::factory()->create([
-            'audio_source_id' => AudioSource::factory()->create()->id,
+            'audio_source_id'         => AudioSource::factory()->create()->id,
             'estimated_download_time' => 2400, // e.g. a long article
         ]);
 
@@ -65,7 +65,7 @@ class DownloadAndStoreAudioClipTest extends TestCase
     public function it_keeps_the_floor_when_the_scaled_timeout_would_be_smaller(): void
     {
         $clip = AudioClip::factory()->create([
-            'audio_source_id' => AudioSource::factory()->create()->id,
+            'audio_source_id'         => AudioSource::factory()->create()->id,
             'estimated_download_time' => 100, // short clip: (100+300)*3 = 1200
         ]);
 

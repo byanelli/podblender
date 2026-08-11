@@ -37,7 +37,7 @@ class SchemaTest extends TestCase
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
             'audio_source_id' => AudioSource::factory()->create()->id,
-            'title' => $title,
+            'title'           => $title,
         ]);
 
         // The column was string(255); FindOrCreateAudioClip writes titles up to 497 characters. A 400-character title

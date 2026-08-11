@@ -386,7 +386,7 @@ readonly class Extractor
     private function readability(string $url, string $html): ?Readability
     {
         $readability = new Readability(new Configuration([
-            'originalURL' => $url,
+            'originalURL'     => $url,
             'fixRelativeURLs' => true,
         ]));
 

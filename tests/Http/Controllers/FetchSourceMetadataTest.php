@@ -31,11 +31,11 @@ class FetchSourceMetadataTest extends TestCase
 
         $response->assertOk()->assertJsonFragment([
             'metadata' => [
-                'name' => 'Select Lectures',
+                'name'         => 'Select Lectures',
                 'canonicalUrl' => 'https://youtube.com/playlist?list=PLabc',
-                'authorName' => 'Lecture Channel',
-                'type' => ['name' => 'Playlist', 'value' => 'playlist'],
-                'clipCount' => 42,
+                'authorName'   => 'Lecture Channel',
+                'type'         => ['name' => 'Playlist', 'value' => 'playlist'],
+                'clipCount'    => 42,
             ],
         ]);
     }

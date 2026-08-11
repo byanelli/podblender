@@ -56,11 +56,11 @@ class FetcherTest extends TestCase
     {
         return Http::response([
             'result' => [
-                'content' => $content,
-                'url' => 'https://archive.is/final',
+                'content'     => $content,
+                'url'         => 'https://archive.is/final',
                 'status_code' => $statusCode,
-                'success' => $success,
-                'cost' => ['total' => 30, 'details' => []],
+                'success'     => $success,
+                'cost'        => ['total' => 30, 'details' => []],
             ],
         ]);
     }
@@ -119,9 +119,9 @@ class FetcherTest extends TestCase
             'archived_snapshots' => [
                 'closest' => [
                     'available' => true,
-                    'url' => "http://web.archive.org/web/$timestamp/https://www.example.com/x",
+                    'url'       => "http://web.archive.org/web/$timestamp/https://www.example.com/x",
                     'timestamp' => $timestamp,
-                    'status' => '200',
+                    'status'    => '200',
                 ],
             ],
         ]);

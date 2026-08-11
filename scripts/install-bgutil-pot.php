@@ -23,11 +23,11 @@ $version = '0.8.1';
 $baseUrl = "https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/download/v$version";
 
 [$asset, $sha256] = match ($platform = VendoredBinary::platform()) {
-    'linux-x86_64' => ['bgutil-pot-linux-x86_64', 'e7c264a574fa2705b6e5dc62283a8a4e80130f27b9d7e9df44e6b09aa6151a87'],
+    'linux-x86_64'  => ['bgutil-pot-linux-x86_64', 'e7c264a574fa2705b6e5dc62283a8a4e80130f27b9d7e9df44e6b09aa6151a87'],
     'linux-aarch64' => ['bgutil-pot-linux-aarch64', '4f4a1f681dba45e695e1c14d314517da180a1fd374afd09d634fd80ef6d0284b'],
-    'macos-x86_64' => ['bgutil-pot-macos-x86_64', '0391175fa938c7fabbb8b40a40bd43182ef75af97e1dd3fab56eb23b4ac3e113'],
+    'macos-x86_64'  => ['bgutil-pot-macos-x86_64', '0391175fa938c7fabbb8b40a40bd43182ef75af97e1dd3fab56eb23b4ac3e113'],
     'macos-aarch64' => ['bgutil-pot-macos-aarch64', '34b83baf0a557fecaa6d67a8177e53e169c2ccf987182883a4bae289a7176883'],
-    default => throw new RuntimeException("No bgutil-pot build available for $platform"),
+    default         => throw new RuntimeException("No bgutil-pot build available for $platform"),
 };
 
 VendoredBinary::install(
@@ -45,7 +45,7 @@ $pluginUrl = "$baseUrl/bgutil-ytdlp-pot-provider-rs.zip";
  * on, a connection to a server on localhost that we deliberately don't run, logging a warning each time.
  */
 foreach ([
-    'getpot_bgutil.py' => '54d0fc3a6bed8fa2c5012db3bfb9c80e19e7d1d7a7e05efb422f348f2bcbb0b2',
+    'getpot_bgutil.py'     => '54d0fc3a6bed8fa2c5012db3bfb9c80e19e7d1d7a7e05efb422f348f2bcbb0b2',
     'getpot_bgutil_cli.py' => '3e6d1835eb58d66d481e7e49620f97d575bd11ded7db8035c1719cffe74c2448',
 ] as $file => $fileSha256) {
     VendoredBinary::installFromZip(

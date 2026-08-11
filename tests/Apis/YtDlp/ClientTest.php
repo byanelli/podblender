@@ -94,7 +94,7 @@ class ClientTest extends TestCase
         $file = '';
 
         Process::fake([
-            self::DIRECT_DOWNLOAD => Process::result(exitCode: 1, errorOutput: 'Sign in to confirm you’re not a bot'),
+            self::DIRECT_DOWNLOAD  => Process::result(exitCode: 1, errorOutput: 'Sign in to confirm you’re not a bot'),
 
             self::PROXIED_DOWNLOAD => function (PendingProcess $process) use (&$file) {
                 $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));

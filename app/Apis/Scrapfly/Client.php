@@ -62,12 +62,12 @@ readonly class Client implements ClientContract
             ->timeout((int) $this->config->get('articles.scrapfly_timeout', 180))
             ->connectTimeout(self::CONNECT_TIMEOUT)
             ->get(self::ENDPOINT, [
-                'key' => (string) $this->config->get('services.scrapfly.key'),
-                'url' => $url,
+                'key'       => (string) $this->config->get('services.scrapfly.key'),
+                'url'       => $url,
                 // ASP clears Cloudflare/CAPTCHA. This is what costs the credits.
-                'asp' => 'true',
+                'asp'       => 'true',
                 'render_js' => $renderJs ? 'true' : 'false',
-                'country' => (string) $this->config->get('articles.scrapfly_country', 'us'),
+                'country'   => (string) $this->config->get('articles.scrapfly_country', 'us'),
             ]);
     }
 

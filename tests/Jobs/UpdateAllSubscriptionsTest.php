@@ -45,8 +45,8 @@ class UpdateAllSubscriptionsTest extends TestCase
         // would spend platform quota forever on a feed nobody wants updated.
         $finished = AudioSource::factory()->create();
         Feed::factory()->create([
-            'subscription_id' => $finished->id,
-            'tracks_new_episodes' => false,
+            'subscription_id'        => $finished->id,
+            'tracks_new_episodes'    => false,
             'subscription_filled_at' => now()->subDay(),
         ]);
 
@@ -64,8 +64,8 @@ class UpdateAllSubscriptionsTest extends TestCase
         // that sweep is what populates the feed in the first place.
         $pending = AudioSource::factory()->create();
         Feed::factory()->create([
-            'subscription_id' => $pending->id,
-            'tracks_new_episodes' => false,
+            'subscription_id'        => $pending->id,
+            'tracks_new_episodes'    => false,
             'subscription_filled_at' => null,
         ]);
 
@@ -84,13 +84,13 @@ class UpdateAllSubscriptionsTest extends TestCase
         $source = AudioSource::factory()->create();
 
         Feed::factory()->create([
-            'subscription_id' => $source->id,
-            'tracks_new_episodes' => false,
+            'subscription_id'        => $source->id,
+            'tracks_new_episodes'    => false,
             'subscription_filled_at' => now()->subDay(),
         ]);
 
         Feed::factory()->create([
-            'subscription_id' => $source->id,
+            'subscription_id'     => $source->id,
             'tracks_new_episodes' => true,
         ]);
 

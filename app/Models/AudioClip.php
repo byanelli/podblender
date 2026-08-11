@@ -50,7 +50,7 @@ class AudioClip extends Model
         // Without this, published_at is a string, and comparing it against a date — which is the whole point of the
         // column — silently evaluates to false rather than failing. Note that the @property annotation above has
         // always claimed this is a CarbonImmutable; now it is one.
-        'published_at' => 'datetime',
+        'published_at'     => 'datetime',
     ];
 
     protected $with = [

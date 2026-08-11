@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('BROADCAST_CONNECTION', 'reverb'),
+    'default'     => env('BROADCAST_CONNECTION', 'reverb'),
 
     /*
     |--------------------------------------------------------------------------
@@ -31,16 +31,16 @@ return [
     'connections' => [
 
         'reverb' => [
-            'driver' => 'reverb',
-            'key' => env('REVERB_APP_KEY'),
-            'secret' => env('REVERB_APP_SECRET'),
-            'app_id' => env('REVERB_APP_ID'),
-            'options' => [
+            'driver'         => 'reverb',
+            'key'            => env('REVERB_APP_KEY'),
+            'secret'         => env('REVERB_APP_SECRET'),
+            'app_id'         => env('REVERB_APP_ID'),
+            'options'        => [
                 // REVERB_SERVER_HOST is the address Reverb *binds* to, which is 0.0.0.0: every interface. That's not
                 // an address anything can connect *to*, so it doesn't belong here. This is the app talking to Reverb
                 // as a client, so it wants REVERB_HOST, the same address the browser uses.
-                'host' => env('REVERB_HOST'),
-                'port' => env('REVERB_PORT', 443),
+                'host'   => env('REVERB_HOST'),
+                'port'   => env('REVERB_PORT', 443),
                 'scheme' => env('REVERB_SCHEME', 'https'),
                 'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
             ],
@@ -50,33 +50,33 @@ return [
         ],
 
         'pusher' => [
-            'driver' => 'pusher',
-            'key' => env('PUSHER_APP_KEY'),
-            'secret' => env('PUSHER_APP_SECRET'),
-            'app_id' => env('PUSHER_APP_ID'),
-            'options' => [
-                'cluster' => env('PUSHER_APP_CLUSTER'),
-                'host' => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
-                'port' => env('PUSHER_PORT', 443),
-                'scheme' => env('PUSHER_SCHEME', 'https'),
+            'driver'         => 'pusher',
+            'key'            => env('PUSHER_APP_KEY'),
+            'secret'         => env('PUSHER_APP_SECRET'),
+            'app_id'         => env('PUSHER_APP_ID'),
+            'options'        => [
+                'cluster'   => env('PUSHER_APP_CLUSTER'),
+                'host'      => env('PUSHER_HOST') ?: 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
+                'port'      => env('PUSHER_PORT', 443),
+                'scheme'    => env('PUSHER_SCHEME', 'https'),
                 'encrypted' => true,
-                'useTLS' => env('PUSHER_SCHEME', 'https') === 'https',
+                'useTLS'    => env('PUSHER_SCHEME', 'https') === 'https',
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
             ],
         ],
 
-        'ably' => [
+        'ably'   => [
             'driver' => 'ably',
-            'key' => env('ABLY_KEY'),
+            'key'    => env('ABLY_KEY'),
         ],
 
-        'log' => [
+        'log'    => [
             'driver' => 'log',
         ],
 
-        'null' => [
+        'null'   => [
             'driver' => 'null',
         ],
 

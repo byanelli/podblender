@@ -14,24 +14,24 @@ return [
     |
     */
 
-    'postmark' => [
+    'postmark'         => [
         'token' => env('POSTMARK_TOKEN'),
     ],
 
-    'ses' => [
-        'key' => env('AWS_ACCESS_KEY_ID'),
+    'ses'              => [
+        'key'    => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'resend' => [
+    'resend'           => [
         'key' => env('RESEND_KEY'),
     ],
 
-    'slack' => [
+    'slack'            => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
-            'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+            'channel'              => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
 
@@ -39,30 +39,30 @@ return [
         'key' => env('YOUTUBE_DATA_API_KEY'),
     ],
 
-    'gemini' => [
+    'gemini'           => [
         // Generative Language API key (aistudio.google.com/apikey). Used for
         // text-to-speech via App\Apis\Tts\GeminiClient.
         'api_key' => env('GEMINI_API_KEY'),
-        'tts' => [
+        'tts'     => [
             'model' => env('GEMINI_TTS_MODEL', 'gemini-3.1-flash-tts-preview'),
             'voice' => env('GEMINI_TTS_VOICE', 'Aoede'),
         ],
     ],
 
-    'scrapfly' => [
+    'scrapfly'         => [
         // Anti-Scraping-Protection scrape API, used to clear archive.is's
         // Cloudflare CAPTCHA for gated articles. Every scrape spends credits.
         'key' => env('SCRAPFLY_API_KEY'),
     ],
 
-    'oxylabs' => [
+    'oxylabs'          => [
         'residential' => [
-            'user' => env('OXYLABS_USERNAME'),
+            'user'     => env('OXYLABS_USERNAME'),
             'password' => env('OXYLABS_PASSWORD'),
 
             // The country to take an exit address in. YouTube serves some countries poorly or not at all, and an
             // address near the content is faster.
-            'country' => env('OXYLABS_COUNTRY', 'US'),
+            'country'  => env('OXYLABS_COUNTRY', 'US'),
         ],
     ],
 ];

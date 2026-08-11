@@ -32,8 +32,8 @@ final class Platforms
      */
     private const array PLATFORMS = [
         PlatformType::YouTube->value => YouTube::class,
-        PlatformType::Web->value => Web::class,
-        PlatformType::Rss->value => Rss::class,
+        PlatformType::Web->value     => Web::class,
+        PlatformType::Rss->value     => Rss::class,
     ];
 
     public function __construct(private readonly Container $container) {}

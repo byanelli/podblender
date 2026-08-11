@@ -40,7 +40,7 @@ class AudioClipTest extends TestCase
     public function its_audio_url_is_the_public_url_for_its_storage_path()
     {
         $clip = AudioClip::factory()->create([
-            'storage_path' => 'some/path.mp3',
+            'storage_path'    => 'some/path.mp3',
             'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
@@ -54,7 +54,7 @@ class AudioClipTest extends TestCase
         Config::set('audio-preview.enabled', false);
 
         $clip = AudioClip::factory()->create([
-            'storage_path' => 'some/path.mp3',
+            'storage_path'    => 'some/path.mp3',
             'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
@@ -69,7 +69,7 @@ class AudioClipTest extends TestCase
         Config::set('filesystems.disks.s3.driver', 's3');
 
         $clip = AudioClip::factory()->create([
-            'storage_path' => 'some/path.mp3',
+            'storage_path'    => 'some/path.mp3',
             'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 

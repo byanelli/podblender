@@ -23,8 +23,8 @@ class CreateCustomFeedTest extends TestCase
         $this->assertDatabaseCount('feeds', 1);
 
         $this->assertDatabaseHas('feeds', [
-            'name' => $feedName,
-            'user_id' => $user->id,
+            'name'            => $feedName,
+            'user_id'         => $user->id,
             'subscription_id' => null,
         ]);
     }

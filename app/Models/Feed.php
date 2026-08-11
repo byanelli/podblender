@@ -42,10 +42,10 @@ class Feed extends Model
     use HasUuid;
 
     protected $casts = [
-        'subscribed_at' => 'datetime',
-        'backfill_since' => 'datetime',
+        'subscribed_at'          => 'datetime',
+        'backfill_since'         => 'datetime',
         'subscription_filled_at' => 'datetime',
-        'tracks_new_episodes' => 'boolean',
+        'tracks_new_episodes'    => 'boolean',
     ];
 
     /**

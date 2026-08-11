@@ -40,11 +40,11 @@ class OxylabsResidentialProxyConfig implements ResidentialProxyConfig
             'customer' => $this->config->get('services.oxylabs.residential.user'),
 
             // Downloads are refused outright from some countries, and an address near the content is faster.
-            'cc' => $this->config->get('services.oxylabs.residential.country'),
+            'cc'       => $this->config->get('services.oxylabs.residential.country'),
 
             // A fresh session per call, which is per download attempt: one address for this download, a different one
             // for the next.
-            'sessid' => Str::random(16),
+            'sessid'   => Str::random(16),
 
             'sesstime' => self::SESSION_MINUTES,
         ])

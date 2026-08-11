@@ -21,11 +21,11 @@ class GeminiClientTest extends TestCase
         $delta = json_encode([
             'index' => 0,
             'delta' => [
-                'type' => 'audio',
-                'mime_type' => 'audio/l16',
+                'type'        => 'audio',
+                'mime_type'   => 'audio/l16',
                 'sample_rate' => $sampleRate,
-                'channels' => 1,
-                'data' => base64_encode($pcm),
+                'channels'    => 1,
+                'data'        => base64_encode($pcm),
             ],
         ]);
 

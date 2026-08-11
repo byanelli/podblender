@@ -33,13 +33,13 @@ class ClientTest extends TestCase
     private function successJson(array $overrides = []): array
     {
         return array_replace_recursive([
-            'result' => [
-                'content' => '<html>scraped</html>',
-                'url' => 'https://archive.is/CLBwm',
+            'result'  => [
+                'content'     => '<html>scraped</html>',
+                'url'         => 'https://archive.is/CLBwm',
                 'status_code' => 200,
-                'success' => true,
+                'success'     => true,
                 // Cost is an OBJECT, not a scalar — the client must not choke on it.
-                'cost' => ['total' => 30, 'details' => [['amount' => 30]]],
+                'cost'        => ['total' => 30, 'details' => [['amount' => 30]]],
             ],
             'context' => ['cost' => ['total' => 30]],
         ], $overrides);

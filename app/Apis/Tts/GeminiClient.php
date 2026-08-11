@@ -198,15 +198,15 @@ readonly class GeminiClient implements ClientContract
     private function audioRequestBody(string $segment): array
     {
         return [
-            'model' => (string) $this->config->get('services.gemini.tts.model'),
-            'input' => $segment,
-            'response_format' => ['type' => 'audio'],
+            'model'             => (string) $this->config->get('services.gemini.tts.model'),
+            'input'             => $segment,
+            'response_format'   => ['type' => 'audio'],
             'generation_config' => [
                 'speech_config' => [
                     ['voice' => (string) $this->config->get('services.gemini.tts.voice')],
                 ],
             ],
-            'stream' => true,
+            'stream'            => true,
         ];
     }
 

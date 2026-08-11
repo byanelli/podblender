@@ -18,13 +18,13 @@ class ClientTest extends TestCase
         Http::fake(['*' => Http::response([
             'items' => [
                 [
-                    'id' => $clipId = 'leirjieljrg',
-                    'snippet' => [
-                        'title' => $title = 'some video',
-                        'description' => $description = 'foo bar',
-                        'channelId' => $sourceId = 'eiorjg90ej',
+                    'id'             => $clipId = 'leirjieljrg',
+                    'snippet'        => [
+                        'title'        => $title = 'some video',
+                        'description'  => $description = 'foo bar',
+                        'channelId'    => $sourceId = 'eiorjg90ej',
                         'channelTitle' => $sourceName = 'some channel',
-                        'publishedAt' => ($publishedAt = now()->subDay()->roundSeconds())->format(DateTimeInterface::RFC3339),
+                        'publishedAt'  => ($publishedAt = now()->subDay()->roundSeconds())->format(DateTimeInterface::RFC3339),
                     ],
                     'contentDetails' => [
                         'duration' => 'PT4M13S',
@@ -53,13 +53,13 @@ class ClientTest extends TestCase
         Http::fake(['*' => Http::response([
             'items' => [
                 [
-                    'id' => 'leirjieljrg',
-                    'snippet' => [
-                        'title' => 'some video',
-                        'description' => 'foo bar',
-                        'channelId' => 'eiorjg90ej',
+                    'id'             => 'leirjieljrg',
+                    'snippet'        => [
+                        'title'        => 'some video',
+                        'description'  => 'foo bar',
+                        'channelId'    => 'eiorjg90ej',
                         'channelTitle' => 'some channel',
-                        'publishedAt' => now()->format(DateTimeInterface::RFC3339),
+                        'publishedAt'  => now()->format(DateTimeInterface::RFC3339),
                     ],
                     'contentDetails' => [
                         'duration' => 'PT1H2M3S',
@@ -80,13 +80,13 @@ class ClientTest extends TestCase
         Http::fake(['*' => Http::response([
             'items' => [
                 [
-                    'id' => 'leirjieljrg',
+                    'id'      => 'leirjieljrg',
                     'snippet' => [
-                        'title' => 'some video',
-                        'description' => 'foo bar',
-                        'channelId' => 'eiorjg90ej',
+                        'title'        => 'some video',
+                        'description'  => 'foo bar',
+                        'channelId'    => 'eiorjg90ej',
                         'channelTitle' => 'some channel',
-                        'publishedAt' => now()->format(DateTimeInterface::RFC3339),
+                        'publishedAt'  => now()->format(DateTimeInterface::RFC3339),
                     ],
                 ],
             ],
@@ -104,13 +104,13 @@ class ClientTest extends TestCase
         Http::fake(['*' => Http::response([
             'items' => [
                 [
-                    'id' => 'leirjieljrg',
-                    'snippet' => [
-                        'title' => 'some video',
-                        'description' => 'foo bar',
-                        'channelId' => 'eiorjg90ej',
+                    'id'             => 'leirjieljrg',
+                    'snippet'        => [
+                        'title'        => 'some video',
+                        'description'  => 'foo bar',
+                        'channelId'    => 'eiorjg90ej',
                         'channelTitle' => 'some channel',
-                        'publishedAt' => now()->format(DateTimeInterface::RFC3339),
+                        'publishedAt'  => now()->format(DateTimeInterface::RFC3339),
                     ],
                     'contentDetails' => [
                         'duration' => 'garbage',
@@ -137,18 +137,18 @@ class ClientTest extends TestCase
     private function playlistItemsPage(array $videos, ?string $nextPageToken = null): array
     {
         return array_filter([
-            'items' => collect($videos)->map(fn (array $video) => [
-                'snippet' => [
-                    'title' => $video['title'],
-                    'description' => 'about '.$video['title'],
-                    'publishedAt' => $video['addedAt'] ?? $video['videoPublishedAt'],
-                    'channelId' => 'UCplaylistowner',
-                    'channelTitle' => 'Playlist Owner',
-                    'videoOwnerChannelId' => $video['ownerId'] ?? 'UCuploader',
+            'items'         => collect($videos)->map(fn (array $video) => [
+                'snippet'        => [
+                    'title'                  => $video['title'],
+                    'description'            => 'about '.$video['title'],
+                    'publishedAt'            => $video['addedAt'] ?? $video['videoPublishedAt'],
+                    'channelId'              => 'UCplaylistowner',
+                    'channelTitle'           => 'Playlist Owner',
+                    'videoOwnerChannelId'    => $video['ownerId'] ?? 'UCuploader',
                     'videoOwnerChannelTitle' => $video['ownerTitle'] ?? 'The Uploader',
                 ],
                 'contentDetails' => [
-                    'videoId' => $video['id'],
+                    'videoId'          => $video['id'],
                     'videoPublishedAt' => $video['videoPublishedAt'],
                 ],
             ])->all(),
@@ -161,12 +161,12 @@ class ClientTest extends TestCase
     {
         Http::fake(['*' => Http::response($this->playlistItemsPage([
             [
-                'id' => 'v1',
-                'title' => 'An old talk',
+                'id'               => 'v1',
+                'title'            => 'An old talk',
                 'videoPublishedAt' => '2019-03-04T10:00:00Z',
                 // Added to the playlist years later. Dating the clip by this
                 // would push an old video to the top of a podcast app.
-                'addedAt' => '2026-01-01T00:00:00Z',
+                'addedAt'          => '2026-01-01T00:00:00Z',
             ],
         ]))]);
 
@@ -184,11 +184,11 @@ class ClientTest extends TestCase
     {
         Http::fake(['*' => Http::response($this->playlistItemsPage([
             [
-                'id' => 'v1',
-                'title' => 'A guest talk',
+                'id'               => 'v1',
+                'title'            => 'A guest talk',
                 'videoPublishedAt' => '2024-05-05T10:00:00Z',
-                'ownerId' => 'UCguest',
-                'ownerTitle' => 'The Guest',
+                'ownerId'          => 'UCguest',
+                'ownerTitle'       => 'The Guest',
             ],
         ]))]);
 
@@ -238,27 +238,27 @@ class ClientTest extends TestCase
         Http::fake(['*' => Http::response([
             'items' => [
                 [
-                    'snippet' => [
-                        'title' => 'Private video',
-                        'description' => '',
-                        'publishedAt' => '2026-01-01T00:00:00Z',
-                        'channelId' => 'UCowner',
+                    'snippet'        => [
+                        'title'        => 'Private video',
+                        'description'  => '',
+                        'publishedAt'  => '2026-01-01T00:00:00Z',
+                        'channelId'    => 'UCowner',
                         'channelTitle' => 'Owner',
                     ],
                     'contentDetails' => ['videoId' => 'gone'],
                 ],
                 [
-                    'snippet' => [
-                        'title' => 'A real video',
-                        'description' => '',
-                        'publishedAt' => '2026-01-02T00:00:00Z',
-                        'channelId' => 'UCowner',
-                        'channelTitle' => 'Owner',
-                        'videoOwnerChannelId' => 'UCowner',
+                    'snippet'        => [
+                        'title'                  => 'A real video',
+                        'description'            => '',
+                        'publishedAt'            => '2026-01-02T00:00:00Z',
+                        'channelId'              => 'UCowner',
+                        'channelTitle'           => 'Owner',
+                        'videoOwnerChannelId'    => 'UCowner',
                         'videoOwnerChannelTitle' => 'Owner',
                     ],
                     'contentDetails' => [
-                        'videoId' => 'v1',
+                        'videoId'          => 'v1',
                         'videoPublishedAt' => '2026-01-02T00:00:00Z',
                     ],
                 ],
@@ -280,9 +280,9 @@ class ClientTest extends TestCase
         Http::fake(['*' => Http::response([
             'items' => [
                 [
-                    'id' => 'UCabc123',
+                    'id'               => 'UCabc123',
                     'brandingSettings' => ['channel' => ['title' => 'Some Channel']],
-                    'contentDetails' => ['relatedPlaylists' => ['uploads' => 'UUabc123']],
+                    'contentDetails'   => ['relatedPlaylists' => ['uploads' => 'UUabc123']],
                 ],
             ],
         ])]);
@@ -307,10 +307,10 @@ class ClientTest extends TestCase
         Http::fake(['*' => Http::response([
             'items' => [
                 [
-                    'id' => 'PLabc',
-                    'snippet' => [
-                        'title' => 'Select Lectures',
-                        'channelId' => 'UCowner',
+                    'id'             => 'PLabc',
+                    'snippet'        => [
+                        'title'        => 'Select Lectures',
+                        'channelId'    => 'UCowner',
                         'channelTitle' => 'Lecture Channel',
                     ],
                     'contentDetails' => ['itemCount' => 42],
@@ -336,7 +336,7 @@ class ClientTest extends TestCase
         Http::fake(['*' => Http::response([
             'items' => [
                 [
-                    'id' => $id = 'leirjieljrg',
+                    'id'               => $id = 'leirjieljrg',
                     'brandingSettings' => [
                         'channel' => [
                             'title' => $name = 'some channel',
@@ -366,29 +366,29 @@ class ClientTest extends TestCase
         [$videoId1, $videoId2, $videoId3] = ['eilrijgegr', 'orjtriojtb', 'wtertntrnt'];
 
         $apiUrl1 = 'https://www.googleapis.com/youtube/v3/search?'.http_build_query([
-            'maxResults' => 50,
-            'type' => 'video',
-            'part' => 'snippet',
-            'order' => 'date',
-            'channelId' => $channelId = 'wlifjlwjf',
+            'maxResults'     => 50,
+            'type'           => 'video',
+            'part'           => 'snippet',
+            'order'          => 'date',
+            'channelId'      => $channelId = 'wlifjlwjf',
             'publishedAfter' => ($publishedAfter = now()->subDay())->format(DateTimeInterface::RFC3339),
-            'key' => config('services.youtube_data_api.key'),
+            'key'            => config('services.youtube_data_api.key'),
         ]);
 
         $apiUrl2 = 'https://www.googleapis.com/youtube/v3/search?'.http_build_query([
-            'maxResults' => 50,
-            'type' => 'video',
-            'part' => 'snippet',
-            'order' => 'date',
-            'channelId' => $channelId,
+            'maxResults'     => 50,
+            'type'           => 'video',
+            'part'           => 'snippet',
+            'order'          => 'date',
+            'channelId'      => $channelId,
             'publishedAfter' => $publishedAfter->format(DateTimeInterface::RFC3339),
-            'pageToken' => $nextPageToken = 'liwfljwifljw',
-            'key' => config('services.youtube_data_api.key'),
+            'pageToken'      => $nextPageToken = 'liwfljwifljw',
+            'key'            => config('services.youtube_data_api.key'),
         ]);
 
         Http::fake([
             $apiUrl1 => Http::response([
-                'items' => [
+                'items'         => [
                     [
                         'id' => ['videoId' => $videoId1],
                     ],
@@ -399,7 +399,7 @@ class ClientTest extends TestCase
                 'nextPageToken' => $nextPageToken,
             ]),
             $apiUrl2 => Http::response([
-                'items' => [
+                'items'         => [
                     [
                         'id' => ['videoId' => $videoId3],
                     ],

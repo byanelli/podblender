@@ -32,7 +32,7 @@ return new class extends Migration
             ->whereNotNull('subscribed_at')
             ->update([
                 'backfill_since' => DB::raw('subscribed_at'),
-                'subscribed_at' => DB::raw('created_at'),
+                'subscribed_at'  => DB::raw('created_at'),
             ]);
     }
 

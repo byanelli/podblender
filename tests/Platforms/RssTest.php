@@ -38,7 +38,7 @@ class RssTest extends TestCase
     public function it_discovers_the_feed_advertised_by_an_html_page()
     {
         Http::fake([
-            'https://riversidegazette.com' => Http::response($this->fixture('page-with-feed-link.html')),
+            'https://riversidegazette.com'          => Http::response($this->fixture('page-with-feed-link.html')),
             'https://riversidegazette.com/feed.xml' => Http::response($this->fixture('feed-rss2.xml')),
         ]);
 

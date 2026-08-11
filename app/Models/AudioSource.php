@@ -29,7 +29,7 @@ class AudioSource extends Model
 
     protected $casts = [
         'platform_type' => PlatformType::class,
-        'type' => AudioSourceType::class,
+        'type'          => AudioSourceType::class,
     ];
 
     /**

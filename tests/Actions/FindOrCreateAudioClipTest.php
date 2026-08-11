@@ -61,7 +61,7 @@ class FindOrCreateAudioClipTest extends TestCase
     public function it_returns_an_existing_clip_without_queuing_another_download()
     {
         $existing = AudioClip::factory()->create([
-            'platform_url' => $url = 'https://youtube.com/watch?v=already',
+            'platform_url'    => $url = 'https://youtube.com/watch?v=already',
             'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
@@ -148,18 +148,18 @@ class FindOrCreateAudioClipTest extends TestCase
             $raced = true;
 
             DB::table('audio_clips')->insert([
-                'platform_url' => $clipUrl,
-                'audio_source_id' => $clip->audio_source_id,
-                'title' => 'the winner',
-                'description' => 'the winner',
-                'published_at' => now(),
-                'duration' => 0,
-                'storage_path' => Uuid::uuid4()->toString(),
-                'guid' => Uuid::uuid4()->toString(),
+                'platform_url'     => $clipUrl,
+                'audio_source_id'  => $clip->audio_source_id,
+                'title'            => 'the winner',
+                'description'      => 'the winner',
+                'published_at'     => now(),
+                'duration'         => 0,
+                'storage_path'     => Uuid::uuid4()->toString(),
+                'guid'             => Uuid::uuid4()->toString(),
                 'processing_state' => ClipProcessingState::Processed->value,
-                'size' => 0,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'size'             => 0,
+                'created_at'       => now(),
+                'updated_at'       => now(),
             ]);
         });
 

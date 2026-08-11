@@ -19,15 +19,15 @@ class FeedTest extends TestCase
         $feed = Feed::factory()->create();
 
         $older = AudioClip::factory()->create([
-            'audio_source_id' => $source->id,
+            'audio_source_id'  => $source->id,
             'processing_state' => ClipProcessingState::Processed,
         ]);
         $newer = AudioClip::factory()->create([
-            'audio_source_id' => $source->id,
+            'audio_source_id'  => $source->id,
             'processing_state' => ClipProcessingState::Processed,
         ]);
         $processing = AudioClip::factory()->create([
-            'audio_source_id' => $source->id,
+            'audio_source_id'  => $source->id,
             'processing_state' => ClipProcessingState::Processing,
         ]);
 

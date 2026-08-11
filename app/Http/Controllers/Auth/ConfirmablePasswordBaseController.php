@@ -29,7 +29,7 @@ class ConfirmablePasswordBaseController
         $user = $request->user();
 
         if (! Auth::guard('web')->validate([
-            'email' => $user->email,
+            'email'    => $user->email,
             'password' => $request->password,
         ])) {
             throw ValidationException::withMessages([
