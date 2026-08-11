@@ -50,32 +50,16 @@ class AudioClip extends Model
         // Without this, published_at is a string, and comparing it against a date — which is the whole point of the
         // column — silently evaluates to false rather than failing. Note that the @property annotation above has
         // always claimed this is a CarbonImmutable; now it is one.
-        self::COL_PUBLISHED_AT => 'datetime',
+        'published_at' => 'datetime',
     ];
 
     protected $with = [
-        self::REL_AUDIO_SOURCE,
+        'audioSource',
     ];
 
     protected $appends = [
         'audio_url',
     ];
-
-    const string COL_AUDIO_SOURCE_ID = 'audio_source_id';
-    const string COL_CREATED_AT = 'created_at';
-    const string COL_DESCRIPTION = 'description';
-    const string COL_PUBLISHED_AT = 'published_at';
-    const string COL_DURATION = 'duration';
-    const string COL_ESTIMATED_DOWNLOAD_TIME = 'estimated_download_time';
-    const string COL_GUID = 'guid';
-    const string COL_ID = 'id';
-    const string COL_PLATFORM_URL = 'platform_url';
-    const string COL_PROCESSING_STATE = 'processing_state';
-    const string COL_SIZE = 'size';
-    const string COL_STORAGE_PATH = 'storage_path';
-    const string COL_TITLE = 'title';
-    const string REL_AUDIO_SOURCE = 'audioSource';
-    const string REL_FEEDS = 'feeds';
 
     /**
      * @return BelongsTo<AudioSource, $this>

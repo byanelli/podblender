@@ -18,12 +18,12 @@ class ShowFeedTest extends TestCase
     {
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
-        $clip = AudioClip::factory()->create([AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
+        $clip = AudioClip::factory()->create(['audio_source_id' => AudioSource::factory()->create()->id]);
 
         $feed->audioClips()->attach($clip);
 
-        $clip->load(AudioClip::REL_AUDIO_SOURCE);
+        $clip->load('audioSource');
 
         $this->actingAs($user);
 
@@ -48,7 +48,7 @@ class ShowFeedTest extends TestCase
         $this->expectException(AuthorizationException::class);
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id + 1]);
+        $feed = Feed::factory()->create(['user_id' => $user->id + 1]);
 
         $this->actingAs($user);
 

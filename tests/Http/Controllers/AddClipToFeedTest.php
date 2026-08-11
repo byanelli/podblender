@@ -43,7 +43,7 @@ class AddClipToFeedTest extends TestCase
         Bus::fake();
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
 
         $this->assertTrue($feed->audioClips()->doesntExist());
 
@@ -80,10 +80,10 @@ class AddClipToFeedTest extends TestCase
         );
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_PLATFORM_URL => $url,
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            'platform_url' => $url,
+            'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
         $this->assertTrue($feed->audioClips()->doesntExist());
@@ -119,7 +119,7 @@ class AddClipToFeedTest extends TestCase
         Bus::fake();
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $url]);
 
@@ -154,11 +154,11 @@ class AddClipToFeedTest extends TestCase
         Bus::fake();
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_PLATFORM_URL => $url,
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+            'platform_url' => $url,
+            'audio_source_id' => AudioSource::factory()->create()->id,
+            'processing_state' => ClipProcessingState::Processed,
         ]);
 
         // Add the same clip to the same feed twice, as an impatient user double-submitting the form would.
@@ -180,9 +180,9 @@ class AddClipToFeedTest extends TestCase
         $this->expectException(AuthorizationException::class);
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id + 1]);
+        $feed = Feed::factory()->create(['user_id' => $user->id + 1]);
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
         $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $clip->platform_url]);

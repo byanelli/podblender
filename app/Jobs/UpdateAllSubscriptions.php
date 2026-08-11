@@ -20,7 +20,7 @@ class UpdateAllSubscriptions implements ShouldQueue
         AudioSource::query()
             // Only update sources with at least one subscription that wants
             // to be updated.
-            ->whereHas(AudioSource::REL_SUBSCRIBERS, Feed::scopeNeedingUpdates(...))
+            ->whereHas('subscribers', Feed::scopeNeedingUpdates(...))
             ->each(function (AudioSource $subscription) use ($dispatcher) {
                 $dispatcher->dispatch(new UpdateSubscription($subscription));
             });

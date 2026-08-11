@@ -20,8 +20,8 @@ class UpdateAllSubscriptionsTest extends TestCase
         $subscribedA = AudioSource::factory()->create();
         $subscribedB = AudioSource::factory()->create();
 
-        Feed::factory()->create([Feed::COL_SUBSCRIPTION_ID => $subscribedA->id]);
-        Feed::factory()->create([Feed::COL_SUBSCRIPTION_ID => $subscribedB->id]);
+        Feed::factory()->create(['subscription_id' => $subscribedA->id]);
+        Feed::factory()->create(['subscription_id' => $subscribedB->id]);
 
         $this->app->call([new UpdateAllSubscriptions, 'handle']);
 
@@ -45,9 +45,9 @@ class UpdateAllSubscriptionsTest extends TestCase
         // would spend platform quota forever on a feed nobody wants updated.
         $finished = AudioSource::factory()->create();
         Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $finished->id,
-            Feed::COL_TRACKS_NEW_EPISODES => false,
-            Feed::COL_SUBSCRIPTION_FILLED_AT => now()->subDay(),
+            'subscription_id' => $finished->id,
+            'tracks_new_episodes' => false,
+            'subscription_filled_at' => now()->subDay(),
         ]);
 
         $this->app->call([new UpdateAllSubscriptions, 'handle']);
@@ -64,9 +64,9 @@ class UpdateAllSubscriptionsTest extends TestCase
         // that sweep is what populates the feed in the first place.
         $pending = AudioSource::factory()->create();
         Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $pending->id,
-            Feed::COL_TRACKS_NEW_EPISODES => false,
-            Feed::COL_SUBSCRIPTION_FILLED_AT => null,
+            'subscription_id' => $pending->id,
+            'tracks_new_episodes' => false,
+            'subscription_filled_at' => null,
         ]);
 
         $this->app->call([new UpdateAllSubscriptions, 'handle']);
@@ -84,14 +84,14 @@ class UpdateAllSubscriptionsTest extends TestCase
         $source = AudioSource::factory()->create();
 
         Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $source->id,
-            Feed::COL_TRACKS_NEW_EPISODES => false,
-            Feed::COL_SUBSCRIPTION_FILLED_AT => now()->subDay(),
+            'subscription_id' => $source->id,
+            'tracks_new_episodes' => false,
+            'subscription_filled_at' => now()->subDay(),
         ]);
 
         Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $source->id,
-            Feed::COL_TRACKS_NEW_EPISODES => true,
+            'subscription_id' => $source->id,
+            'tracks_new_episodes' => true,
         ]);
 
         $this->app->call([new UpdateAllSubscriptions, 'handle']);
@@ -106,7 +106,7 @@ class UpdateAllSubscriptionsTest extends TestCase
 
         // A source with a subscriber, and one without.
         $subscribed = AudioSource::factory()->create();
-        Feed::factory()->create([Feed::COL_SUBSCRIPTION_ID => $subscribed->id]);
+        Feed::factory()->create(['subscription_id' => $subscribed->id]);
 
         $unsubscribed = AudioSource::factory()->create();
 

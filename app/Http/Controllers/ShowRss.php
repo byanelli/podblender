@@ -14,7 +14,7 @@ readonly class ShowRss
         Request $request,
         Feed $feed
     ): View {
-        $feed->load(Feed::REL_USER, Feed::REL_AUDIO_CLIPS_FINISHED_PROCESSING);
+        $feed->load('user', 'audioClipsFinishedProcessing');
 
         return $views->rss($feed);
     }

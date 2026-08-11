@@ -23,7 +23,7 @@ readonly class FindOrCreateAudioClip
         // If a clip already exists for this URL, return it instead of creating a new one. NOTE: A platform will
         // typically have many URL formats pointing to the same content. Here we use the canonical form of the URL,
         // retrieved during the metadata request, to avoid duplication.
-        if ($existing = AudioClip::query()->where(AudioClip::COL_PLATFORM_URL, $metadata->canonicalUrl)->first()) {
+        if ($existing = AudioClip::query()->where('platform_url', $metadata->canonicalUrl)->first()) {
             return $existing;
         }
 
@@ -31,13 +31,13 @@ readonly class FindOrCreateAudioClip
         /** @var AudioSource $source */
         $source = AudioSource::query()->firstOrCreate(
             [
-                AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_URL => $metadata->source->canonicalUrl,
+                'platform_type' => $platformType,
+                'platform_url' => $metadata->source->canonicalUrl,
             ],
             [
-                AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_URL => $metadata->source->canonicalUrl,
-                AudioSource::COL_NAME => $metadata->source->name,
+                'platform_type' => $platformType,
+                'platform_url' => $metadata->source->canonicalUrl,
+                'name' => $metadata->source->name,
             ]
         );
 
@@ -48,24 +48,24 @@ readonly class FindOrCreateAudioClip
         try {
             /** @var AudioClip $clip */
             $clip = AudioClip::query()->create([
-                AudioClip::COL_PLATFORM_URL => $metadata->canonicalUrl,
-                AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-                AudioClip::COL_TITLE => Str::limit($metadata->title, 500 - 3),
-                AudioClip::COL_DESCRIPTION => Str::limit($metadata->description, 1000 - 3),
-                AudioClip::COL_PUBLISHED_AT => $metadata->publishedAt,
-                AudioClip::COL_DURATION => 0,
-                AudioClip::COL_ESTIMATED_DOWNLOAD_TIME => $metadata->estimatedDownloadTime,
-                AudioClip::COL_STORAGE_PATH => $storagePath,
-                AudioClip::COL_GUID => Uuid::uuid4()->toString(),
-                AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,
-                AudioClip::COL_SIZE => 0,
+                'platform_url' => $metadata->canonicalUrl,
+                'audio_source_id' => $source->id,
+                'title' => Str::limit($metadata->title, 500 - 3),
+                'description' => Str::limit($metadata->description, 1000 - 3),
+                'published_at' => $metadata->publishedAt,
+                'duration' => 0,
+                'estimated_download_time' => $metadata->estimatedDownloadTime,
+                'storage_path' => $storagePath,
+                'guid' => Uuid::uuid4()->toString(),
+                'processing_state' => ClipProcessingState::Processing,
+                'size' => 0,
             ]);
         } catch (UniqueConstraintViolationException $e) {
             // The existence check above and this insert aren't atomic, and platform_url is unique. Two concurrent
             // updates of the same subscription can both pass the check and race to create the same clip; whichever
             // insert loses lands here. The other job already created the clip and dispatched its download, so return
             // the winner rather than failing the whole update.
-            return AudioClip::query()->where(AudioClip::COL_PLATFORM_URL, $metadata->canonicalUrl)->firstOrFail();
+            return AudioClip::query()->where('platform_url', $metadata->canonicalUrl)->firstOrFail();
         }
 
         // Queue a job to download the clip.

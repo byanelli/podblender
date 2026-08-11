@@ -19,7 +19,7 @@ class BackfillAudioClipStoragePaths extends Command
         $recordOnly = 0;
 
         AudioClip::query()
-            ->orderBy(AudioClip::COL_ID)
+            ->orderBy('id')
             ->each(function (AudioClip $clip) use ($storage, &$renamed, &$recordOnly) {
                 $newPath = AudioClipStoragePath::for($clip->audioSource->name, $clip->title);
 
@@ -38,7 +38,7 @@ class BackfillAudioClipStoragePaths extends Command
                     $recordOnly++;
                 }
 
-                $clip->forceFill([AudioClip::COL_STORAGE_PATH => $newPath])->save();
+                $clip->forceFill(['storage_path' => $newPath])->save();
             });
 
         $this->info("Renamed $renamed file(s) and updated $recordOnly record(s) without a file on disk.");

@@ -35,15 +35,15 @@ readonly class CreateSubscription
 
             /** @var Feed $feed */
             $feed = $user->feeds()->create([
-                Feed::COL_NAME => $request->name,
-                Feed::COL_SUBSCRIPTION_ID => $source->id,
+                'name' => $request->name,
+                'subscription_id' => $source->id,
                 // When they actually subscribed, which is not the same thing as how far back they asked us to reach.
-                Feed::COL_SUBSCRIBED_AT => now(),
+                'subscribed_at' => now(),
                 // A new subscription reaches back over a configurable window (one month by default) so the platform's
                 // recent back catalogue shows up straight away rather than only clips published from now on.
-                Feed::COL_BACKFILL_SINCE => $request->backfillSince
+                'backfill_since' => $request->backfillSince
                     ?? now()->subMonths(config('subscriptions.backfill_months')),
-                Feed::COL_TRACKS_NEW_EPISODES => $request->tracksNewEpisodes,
+                'tracks_new_episodes' => $request->tracksNewEpisodes,
             ]);
 
             $dispatcher->dispatch(new UpdateSubscription($source, $feed));

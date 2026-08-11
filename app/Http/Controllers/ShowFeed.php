@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Auth\Access\Gate;
 use App\Http\Views;
-use App\Models\AudioClipFeed;
 use App\Models\Feed;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -25,11 +24,11 @@ readonly class ShowFeed
         $gate->authorizeView($feed);
 
         $feed->load([
-            Feed::REL_SUBSCRIPTION,
+            'subscription',
             // Newest episode first, in the order the feed itself presents them, so that this page and the podcast app
             // reading the RSS agree about what's at the top.
-            Feed::REL_AUDIO_CLIPS => function (BelongsToMany $q) {
-                return $q->orderByPivot(AudioClipFeed::COL_PUBLISHED_AT, 'desc');
+            'audioClips' => function (BelongsToMany $q) {
+                return $q->orderByPivot('published_at', 'desc');
             },
         ]);
 

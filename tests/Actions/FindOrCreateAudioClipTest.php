@@ -42,7 +42,7 @@ class FindOrCreateAudioClipTest extends TestCase
         $createAudioClip = $this->app->make(FindOrCreateAudioClip::class);
 
         $clip = $createAudioClip->__invoke(PlatformType::YouTube, $metadata)
-            ->load(AudioClip::REL_AUDIO_SOURCE);
+            ->load('audioSource');
 
         $this->assertEquals($clipUrl, $clip->platform_url);
         $this->assertEquals($title, $clip->title);
@@ -61,8 +61,8 @@ class FindOrCreateAudioClipTest extends TestCase
     public function it_returns_an_existing_clip_without_queuing_another_download()
     {
         $existing = AudioClip::factory()->create([
-            AudioClip::COL_PLATFORM_URL => $url = 'https://youtube.com/watch?v=already',
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            'platform_url' => $url = 'https://youtube.com/watch?v=already',
+            'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
         $metadata = new ClipMetadata(
@@ -148,17 +148,17 @@ class FindOrCreateAudioClipTest extends TestCase
             $raced = true;
 
             DB::table('audio_clips')->insert([
-                AudioClip::COL_PLATFORM_URL => $clipUrl,
-                AudioClip::COL_AUDIO_SOURCE_ID => $clip->audio_source_id,
-                AudioClip::COL_TITLE => 'the winner',
-                AudioClip::COL_DESCRIPTION => 'the winner',
-                AudioClip::COL_PUBLISHED_AT => now(),
-                AudioClip::COL_DURATION => 0,
-                AudioClip::COL_STORAGE_PATH => Uuid::uuid4()->toString(),
-                AudioClip::COL_GUID => Uuid::uuid4()->toString(),
-                AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed->value,
-                AudioClip::COL_SIZE => 0,
-                AudioClip::COL_CREATED_AT => now(),
+                'platform_url' => $clipUrl,
+                'audio_source_id' => $clip->audio_source_id,
+                'title' => 'the winner',
+                'description' => 'the winner',
+                'published_at' => now(),
+                'duration' => 0,
+                'storage_path' => Uuid::uuid4()->toString(),
+                'guid' => Uuid::uuid4()->toString(),
+                'processing_state' => ClipProcessingState::Processed->value,
+                'size' => 0,
+                'created_at' => now(),
                 'updated_at' => now(),
             ]);
         });

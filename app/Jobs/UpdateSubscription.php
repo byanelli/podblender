@@ -4,7 +4,6 @@ namespace App\Jobs;
 
 use App\Actions\FindOrCreateAudioClip;
 use App\Models\AudioClip;
-use App\Models\AudioClipFeed;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Platforms\Contracts\ClipMetadata;
@@ -101,13 +100,13 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
             ->filter(fn (ClipMetadata $clipMetadata) => $clipMetadata->publishedAt >= $earliestPublicationTime)
             ->map(fn (ClipMetadata $metadata) => $findOrCreateAudioClip->__invoke($this->subscription->platform_type, $metadata));
 
-        $this->subscription->load(AudioSource::REL_SUBSCRIBERS);
+        $this->subscription->load('subscribers');
 
         // For each feed subscribed to this audio source...
         foreach ($subscribers as $subscriber) {
             // Find all clips that should be attached to this feed.
             $clipsToAttach = $newClips->where(
-                AudioClip::COL_PUBLISHED_AT,
+                'published_at',
                 '>=',
                 $this->earliestPublicationTimeFor($subscriber),
             );
@@ -118,7 +117,7 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
             $subscriber->audioClips()->syncWithoutDetaching(
                 $clipsToAttach
                     ->mapWithKeys(fn (AudioClip $clip) => [
-                        $clip->id => [AudioClipFeed::COL_PUBLISHED_AT => $clip->published_at],
+                        $clip->id => ['published_at' => $clip->published_at],
                     ])
                     ->all()
             );
@@ -146,7 +145,7 @@ class UpdateSubscription implements ShouldBeUnique, ShouldQueue
         /** @var \DateTimeInterface $earliest */
         $earliest = $subscribers
             ->map(function (Feed $subscriber) {
-                $subscriber->loadMissing(Feed::REL_AUDIO_CLIPS);
+                $subscriber->loadMissing('audioClips');
 
                 return $subscriber->audioClips->isNotEmpty()
                     ? $subscriber->audioClips->max(fn (AudioClip $clip) => $clip->published_at)

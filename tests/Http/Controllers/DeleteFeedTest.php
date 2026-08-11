@@ -15,7 +15,7 @@ class DeleteFeedTest extends TestCase
     public function it_deletes_the_owners_feed()
     {
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user)->delete("/feeds/{$feed->id}");
 
@@ -28,7 +28,7 @@ class DeleteFeedTest extends TestCase
         $this->expectException(AuthorizationException::class);
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id + 1]);
+        $feed = Feed::factory()->create(['user_id' => $user->id + 1]);
 
         $this->actingAs($user)->delete("/feeds/{$feed->id}");
     }

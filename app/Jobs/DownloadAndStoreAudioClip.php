@@ -131,7 +131,7 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
         try {
             // Load related feeds (we'll need these later to dispatch events).
-            $this->clip->load(AudioClip::REL_FEEDS, AudioClip::REL_AUDIO_SOURCE);
+            $this->clip->load('feeds', 'audioSource');
 
             $platform = $platforms->for($this->clip->platform_type);
 
@@ -202,7 +202,7 @@ class DownloadAndStoreAudioClip implements ShouldQueue
      */
     private function broadcastFinishedProcessing(Dispatcher $events): void
     {
-        $this->clip->loadMissing(AudioClip::REL_FEEDS);
+        $this->clip->loadMissing('feeds');
 
         foreach ($this->clip->feeds as $feed) {
             $events->dispatch(new FinishedProcessingClip($feed));

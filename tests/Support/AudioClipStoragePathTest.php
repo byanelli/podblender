@@ -15,12 +15,12 @@ class AudioClipStoragePathTest extends TestCase
     public function it_combines_author_and_title_into_a_slug_with_mp3_extension()
     {
         $source = AudioSource::factory()->create([
-            AudioSource::COL_NAME => 'The Baker\'s Dozen Podcast',
-            AudioSource::COL_PLATFORM_TYPE => PlatformType::Web,
+            'name' => 'The Baker\'s Dozen Podcast',
+            'platform_type' => PlatformType::Web,
         ]);
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-            AudioClip::COL_TITLE => 'COOKING | Part 1 | Making Grandma\'s "Sourdough"',
+            'audio_source_id' => $source->id,
+            'title' => 'COOKING | Part 1 | Making Grandma\'s "Sourdough"',
         ]);
 
         $path = AudioClipStoragePath::for($clip->audioSource->name, $clip->title);
@@ -43,18 +43,18 @@ class AudioClipStoragePathTest extends TestCase
     #[Test]
     public function it_never_returns_a_path_already_in_use()
     {
-        $source = AudioSource::factory()->create([AudioSource::COL_PLATFORM_TYPE => PlatformType::Web]);
+        $source = AudioSource::factory()->create(['platform_type' => PlatformType::Web]);
         $existing = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-            AudioClip::COL_TITLE => 'Same title',
-            AudioClip::COL_STORAGE_PATH => 'some-slug-abc123.mp3',
+            'audio_source_id' => $source->id,
+            'title' => 'Same title',
+            'storage_path' => 'some-slug-abc123.mp3',
         ]);
 
         $path = AudioClipStoragePath::for($source->name, 'Same title');
 
         $this->assertNotSame($existing->storage_path, $path);
         $this->assertFalse(
-            AudioClip::query()->where(AudioClip::COL_STORAGE_PATH, $path)->exists()
+            AudioClip::query()->where('storage_path', $path)->exists()
         );
     }
 }

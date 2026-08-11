@@ -17,7 +17,7 @@ class DeleteClipTest extends TestCase
     private function clip(): AudioClip
     {
         return AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
     }
 
@@ -25,7 +25,7 @@ class DeleteClipTest extends TestCase
     public function it_detaches_a_clip_from_the_owners_feed()
     {
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
         $clip = $this->clip();
         $feed->audioClips()->attach($clip);
 
@@ -42,7 +42,7 @@ class DeleteClipTest extends TestCase
     public function it_rejects_deleting_a_clip_that_is_not_on_the_feed()
     {
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
         $clip = $this->clip();
 
         $this->expectException(HttpException::class);
@@ -56,7 +56,7 @@ class DeleteClipTest extends TestCase
         $this->expectException(AuthorizationException::class);
 
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id + 1]);
+        $feed = Feed::factory()->create(['user_id' => $user->id + 1]);
         $clip = $this->clip();
         $feed->audioClips()->attach($clip);
 

@@ -30,15 +30,9 @@ class User extends Authenticatable implements MustVerifyEmail
     /** @use HasFactory<UserFactory> */
     use HasFactory;
 
-    const string COL_EMAIL_VERIFIED_AT = 'email_verified_at';
-    const string COL_NAME = 'name';
-    const string COL_PASSWORD = 'password';
-    const string COL_REMEMBER_TOKEN = 'remember_token';
-    const string REL_FEEDS = 'feeds';
-
     protected $casts = [
         // Without this, email_verified_at is a string rather than the date the @property annotation above promises.
-        self::COL_EMAIL_VERIFIED_AT => 'datetime',
+        'email_verified_at' => 'datetime',
     ];
 
     /**
@@ -47,8 +41,8 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var list<string>
      */
     protected $hidden = [
-        self::COL_PASSWORD,
-        self::COL_REMEMBER_TOKEN,
+        'password',
+        'remember_token',
     ];
 
     /**

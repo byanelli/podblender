@@ -4,7 +4,6 @@ namespace Tests\Jobs;
 
 use App\Jobs\UpdateSubscription;
 use App\Models\AudioClip;
-use App\Models\AudioClipFeed;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Platforms\Contracts\ClipMetadata;
@@ -102,8 +101,8 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioSource $subscription */
         $subscription = AudioSource::factory()->create();
         $subscriber = Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subYears(2),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subYears(2),
         ]);
 
         Bus::fake();
@@ -138,8 +137,8 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioSource $subscription */
         $subscription = AudioSource::factory()->create();
         $subscriber = Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDay(),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subDay(),
         ]);
 
         Bus::fake();
@@ -177,9 +176,9 @@ class UpdateSubscriptionTest extends TestCase
         // window and the subscription date are different things: reading the
         // latter would leave this feed with nothing in it.
         $subscriber = Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now(),
-            Feed::COL_BACKFILL_SINCE => CarbonImmutable::now()->subYear(),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now(),
+            'backfill_since' => CarbonImmutable::now()->subYear(),
         ]);
 
         Bus::fake();
@@ -206,10 +205,10 @@ class UpdateSubscriptionTest extends TestCase
         $subscription = AudioSource::factory()->create();
 
         $subscriber = Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now(),
-            Feed::COL_BACKFILL_SINCE => CarbonImmutable::now()->subYear(),
-            Feed::COL_TRACKS_NEW_EPISODES => false,
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now(),
+            'backfill_since' => CarbonImmutable::now()->subYear(),
+            'tracks_new_episodes' => false,
         ]);
 
         Bus::fake();
@@ -242,9 +241,9 @@ class UpdateSubscriptionTest extends TestCase
         $subscription = AudioSource::factory()->create();
 
         $subscriber = Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDay(),
-            Feed::COL_TRACKS_NEW_EPISODES => true,
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subDay(),
+            'tracks_new_episodes' => true,
         ]);
 
         Bus::fake();
@@ -267,18 +266,18 @@ class UpdateSubscriptionTest extends TestCase
         // it stayed in the cursor calculation, every future sweep of this
         // source would re-fetch a decade of clips forever.
         Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDays(2),
-            Feed::COL_BACKFILL_SINCE => CarbonImmutable::parse('2014-01-01'),
-            Feed::COL_TRACKS_NEW_EPISODES => false,
-            Feed::COL_SUBSCRIPTION_FILLED_AT => CarbonImmutable::now()->subDay(),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subDays(2),
+            'backfill_since' => CarbonImmutable::parse('2014-01-01'),
+            'tracks_new_episodes' => false,
+            'subscription_filled_at' => CarbonImmutable::now()->subDay(),
         ]);
 
         // An ordinary subscriber that joined yesterday.
         Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => $subscribedAt = CarbonImmutable::now()->subDay(),
-            Feed::COL_BACKFILL_SINCE => $subscribedAt,
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => $subscribedAt = CarbonImmutable::now()->subDay(),
+            'backfill_since' => $subscribedAt,
         ]);
 
         Bus::fake();
@@ -302,23 +301,23 @@ class UpdateSubscriptionTest extends TestCase
 
         // The subscriber that's been here longest and is fully caught up: it has a clip from just yesterday.
         $caughtUp = Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDays(30),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subDays(30),
         ]);
         /** @var AudioClip $recentClip */
         $recentClip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $subscription->id,
-            AudioClip::COL_PUBLISHED_AT => CarbonImmutable::now()->subDay()->roundSeconds(),
+            'audio_source_id' => $subscription->id,
+            'published_at' => CarbonImmutable::now()->subDay()->roundSeconds(),
         ]);
         $caughtUp->audioClips()->attach($recentClip, [
-            AudioClipFeed::COL_PUBLISHED_AT => $recentClip->published_at,
+            'published_at' => $recentClip->published_at,
         ]);
 
         // A subscriber that joined more recently and has no clips yet — its initial fill failed, say. Taking only the
         // earliest subscriber's newest clip as the cursor would leave this feed stranded forever.
         $lagging = Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subDays(10),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subDays(10),
         ]);
 
         Bus::fake();
@@ -349,18 +348,18 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioSource $subscription */
         $subscription = AudioSource::factory()->create();
         $subscriber = Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subYear(),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subYear(),
         ]);
 
         // The subscriber already has a clip from ten days ago; that's where the incremental cursor should start.
         /** @var AudioClip $existing */
         $existing = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $subscription->id,
-            AudioClip::COL_PUBLISHED_AT => CarbonImmutable::now()->subDays(10)->roundSeconds(),
+            'audio_source_id' => $subscription->id,
+            'published_at' => CarbonImmutable::now()->subDays(10)->roundSeconds(),
         ]);
         $subscriber->audioClips()->attach($existing, [
-            AudioClipFeed::COL_PUBLISHED_AT => $existing->published_at,
+            'published_at' => $existing->published_at,
         ]);
 
         Bus::fake();
@@ -385,8 +384,8 @@ class UpdateSubscriptionTest extends TestCase
         $this->app->call([new UpdateSubscription($subscription), 'handle']);
 
         // The clip published before the existing one is left alone; only the newer one is created.
-        $this->assertDatabaseMissing('audio_clips', [AudioClip::COL_PLATFORM_URL => $olderUrl]);
-        $this->assertDatabaseHas('audio_clips', [AudioClip::COL_PLATFORM_URL => $newerUrl]);
+        $this->assertDatabaseMissing('audio_clips', ['platform_url' => $olderUrl]);
+        $this->assertDatabaseHas('audio_clips', ['platform_url' => $newerUrl]);
         $this->assertEquals(2, $subscriber->audioClips()->count());
     }
 
@@ -397,8 +396,8 @@ class UpdateSubscriptionTest extends TestCase
         $subscription = AudioSource::factory()->create();
 
         $subscribers = Feed::factory()->count(2)->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subYear(),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subYear(),
         ]);
 
         Bus::fake();
@@ -457,8 +456,8 @@ class UpdateSubscriptionTest extends TestCase
 
         // A real subscriber, so the source isn't empty and we reach the per-subscriber check.
         Feed::factory()->create([
-            Feed::COL_SUBSCRIPTION_ID => $subscription->id,
-            Feed::COL_SUBSCRIBED_AT => CarbonImmutable::now()->subYear(),
+            'subscription_id' => $subscription->id,
+            'subscribed_at' => CarbonImmutable::now()->subYear(),
         ]);
 
         // A feed that is not subscribed to this source at all.

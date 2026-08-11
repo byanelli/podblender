@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateCustomFeedRequest;
-use App\Models\Feed;
 use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
 
@@ -14,7 +13,7 @@ class CreateCustomFeed
         CreateCustomFeedRequest $request,
     ): void {
         $user->feeds()->create([
-            Feed::COL_NAME => $request->name,
+            'name' => $request->name,
         ]);
     }
 }

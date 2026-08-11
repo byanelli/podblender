@@ -19,9 +19,9 @@ class AudioSourceFactory extends Factory
     public function definition(): array
     {
         return [
-            AudioSource::COL_NAME => $this->faker->name,
-            AudioSource::COL_PLATFORM_URL => $this->faker->uuid,
-            AudioSource::COL_PLATFORM_TYPE => PlatformType::YouTube,
+            'name' => $this->faker->name,
+            'platform_url' => $this->faker->uuid,
+            'platform_type' => PlatformType::YouTube,
         ];
     }
 }

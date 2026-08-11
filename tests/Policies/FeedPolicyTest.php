@@ -15,7 +15,7 @@ class FeedPolicyTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $owner->id]);
+        $feed = Feed::factory()->create(['user_id' => $owner->id]);
 
         $policy = new FeedPolicy;
 

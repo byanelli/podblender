@@ -14,7 +14,7 @@ class AudioClipTest extends TestCase
     #[Test]
     public function it_formats_a_time_of_at_least_an_hour_with_hours()
     {
-        $clip = AudioClip::factory()->make([AudioClip::COL_DURATION => 3661]);
+        $clip = AudioClip::factory()->make(['duration' => 3661]);
 
         $this->assertEquals('1:01:01', $clip->formatted_time);
     }
@@ -22,7 +22,7 @@ class AudioClipTest extends TestCase
     #[Test]
     public function it_formats_a_time_under_an_hour_without_hours()
     {
-        $clip = AudioClip::factory()->make([AudioClip::COL_DURATION => 125]);
+        $clip = AudioClip::factory()->make(['duration' => 125]);
 
         $this->assertEquals('2:05', $clip->formatted_time);
     }
@@ -30,8 +30,8 @@ class AudioClipTest extends TestCase
     #[Test]
     public function its_platform_type_comes_from_its_audio_source()
     {
-        $source = AudioSource::factory()->create([AudioSource::COL_PLATFORM_TYPE => PlatformType::Web]);
-        $clip = AudioClip::factory()->create([AudioClip::COL_AUDIO_SOURCE_ID => $source->id]);
+        $source = AudioSource::factory()->create(['platform_type' => PlatformType::Web]);
+        $clip = AudioClip::factory()->create(['audio_source_id' => $source->id]);
 
         $this->assertEquals(PlatformType::Web, $clip->platform_type);
     }
@@ -40,8 +40,8 @@ class AudioClipTest extends TestCase
     public function its_audio_url_is_the_public_url_for_its_storage_path()
     {
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_STORAGE_PATH => 'some/path.mp3',
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            'storage_path' => 'some/path.mp3',
+            'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
         $this->assertStringContainsString('/storage/some/path.mp3', $clip->audio_url);
@@ -54,8 +54,8 @@ class AudioClipTest extends TestCase
         Config::set('audio-preview.enabled', false);
 
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_STORAGE_PATH => 'some/path.mp3',
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            'storage_path' => 'some/path.mp3',
+            'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
         $this->assertNull($clip->audio_url);
@@ -69,8 +69,8 @@ class AudioClipTest extends TestCase
         Config::set('filesystems.disks.s3.driver', 's3');
 
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_STORAGE_PATH => 'some/path.mp3',
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            'storage_path' => 'some/path.mp3',
+            'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
         $this->assertNull($clip->audio_url);

@@ -16,8 +16,8 @@ class AudioSourceTest extends TestCase
         $source = AudioSource::factory()->create();
         $otherSource = AudioSource::factory()->create();
 
-        $ours = AudioClip::factory()->count(2)->create([AudioClip::COL_AUDIO_SOURCE_ID => $source->id]);
-        AudioClip::factory()->create([AudioClip::COL_AUDIO_SOURCE_ID => $otherSource->id]);
+        $ours = AudioClip::factory()->count(2)->create(['audio_source_id' => $source->id]);
+        AudioClip::factory()->create(['audio_source_id' => $otherSource->id]);
 
         $this->assertEqualsCanonicalizing(
             $ours->pluck('id')->all(),
@@ -31,11 +31,11 @@ class AudioSourceTest extends TestCase
         $source = AudioSource::factory()->create();
         $otherSource = AudioSource::factory()->create();
 
-        $subscriberA = Feed::factory()->create([Feed::COL_SUBSCRIPTION_ID => $source->id]);
-        $subscriberB = Feed::factory()->create([Feed::COL_SUBSCRIPTION_ID => $source->id]);
+        $subscriberA = Feed::factory()->create(['subscription_id' => $source->id]);
+        $subscriberB = Feed::factory()->create(['subscription_id' => $source->id]);
 
         // A feed subscribed to a different source, and a feed subscribed to nothing, must not appear.
-        Feed::factory()->create([Feed::COL_SUBSCRIPTION_ID => $otherSource->id]);
+        Feed::factory()->create(['subscription_id' => $otherSource->id]);
         Feed::factory()->create();
 
         $this->assertEqualsCanonicalizing(

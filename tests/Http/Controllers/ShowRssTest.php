@@ -5,7 +5,6 @@ namespace Tests\Http\Controllers;
 use App\Enums\AudioSourceType;
 use App\Enums\ClipProcessingState;
 use App\Models\AudioClip;
-use App\Models\AudioClipFeed;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
@@ -21,23 +20,23 @@ class ShowRssTest extends TestCase
     public function it_shows_the_feed()
     {
         /** @var Feed $feed */
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id])
-            ->load(Feed::REL_USER);
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id])
+            ->load('user');
 
         /** @var AudioSource $source */
         $source = AudioSource::factory()->create();
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+            'audio_source_id' => $source->id,
+            'processing_state' => ClipProcessingState::Processed,
         ])
-            ->load(AudioClip::REL_AUDIO_SOURCE);
+            ->load('audioSource');
 
         // The date a feed presents a clip at lives on the pivot, and is deliberately not the clip's own publication
         // date here: the two differ for any clip added to a feed by hand, and this feed should report its own.
         $feed->audioClips()->attach($clip, [
-            AudioClipFeed::COL_PUBLISHED_AT => $publishedAt = CarbonImmutable::parse('2025-03-04 05:06:07'),
+            'published_at' => $publishedAt = CarbonImmutable::parse('2025-03-04 05:06:07'),
         ]);
 
         $response = $this->get("rss/{$feed->uuid}")->content();
@@ -64,20 +63,21 @@ class ShowRssTest extends TestCase
     public function its_xml_is_parseable()
     {
         /** @var Feed $feed */
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id])
-            ->load(Feed::REL_USER);
+        $feed = Feed::factory()
+            ->create(['user_id' => User::factory()->create()->id])
+            ->load('user');
 
         /** @var AudioSource $source */
         $source = AudioSource::factory()->create();
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+            'audio_source_id' => $source->id,
+            'processing_state' => ClipProcessingState::Processed,
         ]);
 
         $feed->audioClips()->attach($clip, [
-            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::parse('2025-03-04 05:06:07'),
+            'published_at' => CarbonImmutable::parse('2025-03-04 05:06:07'),
         ]);
 
         $body = $this->get("rss/{$feed->uuid}")->content();
@@ -103,20 +103,20 @@ class ShowRssTest extends TestCase
         // Enclosure URLs are rooted per-request by the public disk's relative
         // url + url().
         /** @var Feed $feed */
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id])
-            ->load(Feed::REL_USER);
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id])
+            ->load('user');
 
         /** @var AudioSource $source */
         $source = AudioSource::factory()->create();
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+            'audio_source_id' => $source->id,
+            'processing_state' => ClipProcessingState::Processed,
         ]);
 
         $feed->audioClips()->attach($clip);
-        $feed->load(Feed::REL_AUDIO_CLIPS_FINISHED_PROCESSING);
+        $feed->load('audioClipsFinishedProcessing');
 
         // Render as if the request came in through a public tunnel, so the
         // request root (which url() absolutizes against) is the tunnel host.
@@ -141,18 +141,18 @@ class ShowRssTest extends TestCase
     {
         /** @var Feed $feed */
         $feed = Feed::factory()->create([
-            Feed::COL_USER_ID => User::factory()->create()->id,
-            Feed::COL_SUBSCRIPTION_ID => $source->id,
+            'user_id' => User::factory()->create()->id,
+            'subscription_id' => $source->id,
         ]);
 
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => ($clipSource ?? $source)->id,
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+            'audio_source_id' => ($clipSource ?? $source)->id,
+            'processing_state' => ClipProcessingState::Processed,
         ]);
 
         $feed->audioClips()->attach($clip, [
-            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::parse('2025-03-04 05:06:07'),
+            'published_at' => CarbonImmutable::parse('2025-03-04 05:06:07'),
         ]);
 
         return $feed;
@@ -165,8 +165,8 @@ class ShowRssTest extends TestCase
         // set the feed up, and a listener seeing their name would be confused.
         /** @var AudioSource $channel */
         $channel = AudioSource::factory()->create([
-            AudioSource::COL_NAME => 'Lecture Channel',
-            AudioSource::COL_TYPE => AudioSourceType::Channel,
+            'name' => 'Lecture Channel',
+            'type' => AudioSourceType::Channel,
         ]);
 
         $feed = $this->subscribedFeed($channel);
@@ -184,9 +184,9 @@ class ShowRssTest extends TestCase
         // "Select Lectures" as the author would read as nonsense.
         /** @var AudioSource $playlist */
         $playlist = AudioSource::factory()->create([
-            AudioSource::COL_NAME => 'Select Lectures',
-            AudioSource::COL_TYPE => AudioSourceType::Playlist,
-            AudioSource::COL_AUTHOR_NAME => 'Lecture Channel',
+            'name' => 'Select Lectures',
+            'type' => AudioSourceType::Playlist,
+            'author_name' => 'Lecture Channel',
         ]);
 
         $feed = $this->subscribedFeed($playlist);
@@ -201,13 +201,13 @@ class ShowRssTest extends TestCase
     {
         /** @var AudioSource $playlist */
         $playlist = AudioSource::factory()->create([
-            AudioSource::COL_NAME => 'Select Lectures',
-            AudioSource::COL_TYPE => AudioSourceType::Playlist,
-            AudioSource::COL_AUTHOR_NAME => 'Lecture Channel',
+            'name' => 'Select Lectures',
+            'type' => AudioSourceType::Playlist,
+            'author_name' => 'Lecture Channel',
         ]);
 
         /** @var AudioSource $uploader */
-        $uploader = AudioSource::factory()->create([AudioSource::COL_NAME => 'A Guest Speaker']);
+        $uploader = AudioSource::factory()->create(['name' => 'A Guest Speaker']);
 
         $feed = $this->subscribedFeed($playlist, clipSource: $uploader);
 
@@ -223,7 +223,7 @@ class ShowRssTest extends TestCase
     public function it_orders_items_by_the_date_the_feed_presents_them_newest_first()
     {
         /** @var Feed $feed */
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => User::factory()->create()->id]);
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id]);
 
         /** @var AudioSource $source */
         $source = AudioSource::factory()->create();
@@ -232,24 +232,24 @@ class ShowRssTest extends TestCase
         // (the bug) would fail this test.
         /** @var AudioClip $older */
         $older = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-            AudioClip::COL_TITLE => $olderTitle = 'The older episode',
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+            'audio_source_id' => $source->id,
+            'title' => $olderTitle = 'The older episode',
+            'processing_state' => ClipProcessingState::Processed,
         ]);
 
         /** @var AudioClip $newer */
         $newer = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => $source->id,
-            AudioClip::COL_TITLE => $newerTitle = 'The newer episode',
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processed,
+            'audio_source_id' => $source->id,
+            'title' => $newerTitle = 'The newer episode',
+            'processing_state' => ClipProcessingState::Processed,
         ]);
 
         // The pivot date, not the clip's own publication date, is what the feed orders by.
         $feed->audioClips()->attach($older, [
-            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::parse('2025-01-01 00:00:00'),
+            'published_at' => CarbonImmutable::parse('2025-01-01 00:00:00'),
         ]);
         $feed->audioClips()->attach($newer, [
-            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::parse('2025-06-01 00:00:00'),
+            'published_at' => CarbonImmutable::parse('2025-06-01 00:00:00'),
         ]);
 
         $response = $this->get("rss/{$feed->uuid}")->content();

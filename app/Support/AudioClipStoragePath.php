@@ -21,7 +21,7 @@ final class AudioClipStoragePath
         do {
             $token = Str::lower(Str::random(6));
             $path = "{$base}-{$token}.mp3";
-        } while (AudioClip::query()->where(AudioClip::COL_STORAGE_PATH, $path)->exists());
+        } while (AudioClip::query()->where('storage_path', $path)->exists());
 
         return $path;
     }

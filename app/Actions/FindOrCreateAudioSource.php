@@ -14,15 +14,15 @@ readonly class FindOrCreateAudioSource
     ): AudioSource {
         return AudioSource::query()->firstOrCreate(
             [
-                AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_URL => $metadata->canonicalUrl,
+                'platform_type' => $platformType,
+                'platform_url' => $metadata->canonicalUrl,
             ],
             [
-                AudioSource::COL_PLATFORM_TYPE => $platformType,
-                AudioSource::COL_PLATFORM_URL => $metadata->canonicalUrl,
-                AudioSource::COL_NAME => $metadata->name,
-                AudioSource::COL_TYPE => $metadata->type,
-                AudioSource::COL_AUTHOR_NAME => $metadata->authorName,
+                'platform_type' => $platformType,
+                'platform_url' => $metadata->canonicalUrl,
+                'name' => $metadata->name,
+                'type' => $metadata->type,
+                'author_name' => $metadata->authorName,
             ]
         );
     }

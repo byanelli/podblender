@@ -6,7 +6,6 @@ use App\Enums\ClipProcessingState;
 use App\Events\FinishedProcessingClip;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
-use App\Models\AudioClipFeed;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Platforms\Exceptions\ContentUnavailableException;
@@ -29,11 +28,11 @@ class DownloadAndStoreAudioClipTest extends TestCase
     {
         /** @var AudioClip $clip */
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
+            'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
 
         Feed::factory()->create()->audioClips()->attach($clip, [
-            AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::now(),
+            'published_at' => CarbonImmutable::now(),
         ]);
 
         return $clip;
@@ -43,8 +42,8 @@ class DownloadAndStoreAudioClipTest extends TestCase
     public function it_floors_the_timeout_at_the_legacy_fixed_value_without_an_estimate(): void
     {
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
-            AudioClip::COL_ESTIMATED_DOWNLOAD_TIME => null,
+            'audio_source_id' => AudioSource::factory()->create()->id,
+            'estimated_download_time' => null,
         ]);
 
         $this->assertEquals(3600, (new DownloadAndStoreAudioClip($clip))->timeout);
@@ -54,8 +53,8 @@ class DownloadAndStoreAudioClipTest extends TestCase
     public function it_scales_the_timeout_with_the_estimate_buffer_and_expected_attempts(): void
     {
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
-            AudioClip::COL_ESTIMATED_DOWNLOAD_TIME => 2400, // e.g. a long article
+            'audio_source_id' => AudioSource::factory()->create()->id,
+            'estimated_download_time' => 2400, // e.g. a long article
         ]);
 
         // (2400 estimate + 300 buffer) * 3 attempts
@@ -66,8 +65,8 @@ class DownloadAndStoreAudioClipTest extends TestCase
     public function it_keeps_the_floor_when_the_scaled_timeout_would_be_smaller(): void
     {
         $clip = AudioClip::factory()->create([
-            AudioClip::COL_AUDIO_SOURCE_ID => AudioSource::factory()->create()->id,
-            AudioClip::COL_ESTIMATED_DOWNLOAD_TIME => 100, // short clip: (100+300)*3 = 1200
+            'audio_source_id' => AudioSource::factory()->create()->id,
+            'estimated_download_time' => 100, // short clip: (100+300)*3 = 1200
         ]);
 
         $this->assertEquals(3600, (new DownloadAndStoreAudioClip($clip))->timeout);

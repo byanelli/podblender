@@ -17,15 +17,15 @@ class HomeTest extends TestCase
     public function it_shows_the_dashboard_with_the_users_feeds_and_clip_counts()
     {
         $user = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $user->id]);
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
 
         $source = AudioSource::factory()->create();
         $feed->audioClips()->attach(
-            AudioClip::factory()->count(2)->create([AudioClip::COL_AUDIO_SOURCE_ID => $source->id])
+            AudioClip::factory()->count(2)->create(['audio_source_id' => $source->id])
         );
 
         // Another user's feed must not leak into this dashboard.
-        Feed::factory()->create([Feed::COL_USER_ID => $user->id + 1]);
+        Feed::factory()->create(['user_id' => $user->id + 1]);
 
         $this->actingAs($user)
             ->get('/')

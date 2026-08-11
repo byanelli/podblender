@@ -22,18 +22,18 @@ class AudioClipFactory extends Factory
     public function definition(): array
     {
         return [
-            AudioClip::COL_PLATFORM_URL => $this->fixUrlSchemeAndHost($this->faker->url()),
-            AudioClip::COL_GUID => $this->faker->uuid,
-            AudioClip::COL_TITLE => $this->faker->name,
-            AudioClip::COL_DESCRIPTION => $this->faker->realText,
-            AudioClip::COL_DURATION => 3_600,
-            AudioClip::COL_SIZE => 1_000_000,
-            AudioClip::COL_STORAGE_PATH => $this->faker->uuid,
-            AudioClip::COL_PROCESSING_STATE => ClipProcessingState::Processing,
+            'platform_url' => $this->fixUrlSchemeAndHost($this->faker->url()),
+            'guid' => $this->faker->uuid,
+            'title' => $this->faker->name,
+            'description' => $this->faker->realText,
+            'duration' => 3_600,
+            'size' => 1_000_000,
+            'storage_path' => $this->faker->uuid,
+            'processing_state' => ClipProcessingState::Processing,
 
             // A clip always gets this from the platform's metadata, so a clip without one isn't a realistic clip to
             // test against. Deliberately not the same as created_at, which is the point: the two dates differ.
-            AudioClip::COL_PUBLISHED_AT => $this->faker->dateTimeBetween('-2 years', '-1 day'),
+            'published_at' => $this->faker->dateTimeBetween('-2 years', '-1 day'),
         ];
     }
 }

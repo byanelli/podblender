@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\FindOrCreateAudioClip;
 use App\Auth\Access\Gate;
 use App\Http\Requests\AudioClipUrlRequest;
-use App\Models\AudioClipFeed;
 use App\Models\Feed;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Platforms;
@@ -44,7 +43,7 @@ readonly class AddClipToFeed
         // leaves the existing pivot row (and its published_at) alone instead of inserting a duplicate that would show
         // up as a second copy of the episode in the feed.
         $feed->audioClips()->syncWithoutDetaching([
-            $clip->id => [AudioClipFeed::COL_PUBLISHED_AT => CarbonImmutable::now()],
+            $clip->id => ['published_at' => CarbonImmutable::now()],
         ]);
     }
 }

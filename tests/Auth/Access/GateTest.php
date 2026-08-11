@@ -49,7 +49,7 @@ class GateTest extends TestCase
     public function it_lets_the_owner_check_and_authorize_a_defined_ability()
     {
         $owner = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $owner->id]);
+        $feed = Feed::factory()->create(['user_id' => $owner->id]);
 
         $this->actingAs($owner);
         $gate = $this->gate();
@@ -65,7 +65,7 @@ class GateTest extends TestCase
     {
         $owner = User::factory()->create();
         $stranger = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $owner->id]);
+        $feed = Feed::factory()->create(['user_id' => $owner->id]);
 
         $this->actingAs($stranger);
         $gate = $this->gate();
@@ -80,7 +80,7 @@ class GateTest extends TestCase
     public function it_denies_everyone_an_ability_the_policy_does_not_define()
     {
         $owner = User::factory()->create();
-        $feed = Feed::factory()->create([Feed::COL_USER_ID => $owner->id]);
+        $feed = Feed::factory()->create(['user_id' => $owner->id]);
 
         $this->actingAs($owner);
         $gate = $this->gate();

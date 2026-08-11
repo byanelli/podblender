@@ -72,9 +72,9 @@ class FindOrCreateAudioSourceTest extends TestCase
     public function it_returns_the_existing_source_matching_platform_type_and_url()
     {
         $existing = AudioSource::factory()->create([
-            AudioSource::COL_PLATFORM_TYPE => PlatformType::YouTube,
-            AudioSource::COL_PLATFORM_URL => $url = 'https://youtube.com/@zzz',
-            AudioSource::COL_NAME => 'Original name',
+            'platform_type' => PlatformType::YouTube,
+            'platform_url' => $url = 'https://youtube.com/@zzz',
+            'name' => 'Original name',
         ]);
 
         // Different name in the metadata: firstOrCreate matches on type + url, so no new row and no rename.

@@ -56,20 +56,8 @@ class Feed extends Model
      * @var array<string, mixed>
      */
     protected $attributes = [
-        self::COL_TRACKS_NEW_EPISODES => true,
+        'tracks_new_episodes' => true,
     ];
-
-    const string COL_NAME = 'name';
-    const string COL_USER_ID = 'user_id';
-    const string COL_SUBSCRIPTION_ID = 'subscription_id';
-    const string COL_SUBSCRIBED_AT = 'subscribed_at';
-    const string COL_BACKFILL_SINCE = 'backfill_since';
-    const string COL_TRACKS_NEW_EPISODES = 'tracks_new_episodes';
-    const string COL_SUBSCRIPTION_FILLED_AT = 'subscription_filled_at';
-    const string REL_AUDIO_CLIPS = 'audioClips';
-    const string REL_AUDIO_CLIPS_FINISHED_PROCESSING = 'audioClipsFinishedProcessing';
-    const string REL_USER = 'user';
-    const string REL_SUBSCRIPTION = 'subscription';
 
     /**
      * @return BelongsTo<User, $this>
@@ -86,7 +74,7 @@ class Feed extends Model
     {
         return $this->belongsToMany(AudioClip::class)
             ->using(AudioClipFeed::class)
-            ->withPivot(AudioClipFeed::COL_PUBLISHED_AT);
+            ->withPivot('published_at');
     }
 
     /**
@@ -95,11 +83,11 @@ class Feed extends Model
     public function audioClipsFinishedProcessing(): BelongsToMany
     {
         return $this->audioClips()
-            ->where(AudioClip::COL_PROCESSING_STATE, ClipProcessingState::Processed)
+            ->where('processing_state', ClipProcessingState::Processed)
             // Newest episode first, in the order the feed itself presents them (the pivot date, not the clip's own
             // publication date). Without this the RSS emits clips in insert order, which is not the order a podcast
             // app expects and not the order ShowFeed renders them in.
-            ->orderByPivot(AudioClipFeed::COL_PUBLISHED_AT, 'desc');
+            ->orderByPivot('published_at', 'desc');
     }
 
     /**
@@ -134,8 +122,8 @@ class Feed extends Model
     {
         $query->where(
             fn (Builder $feeds) => $feeds
-                ->where(self::COL_TRACKS_NEW_EPISODES, true)
-                ->orWhereNull(self::COL_SUBSCRIPTION_FILLED_AT)
+                ->where('tracks_new_episodes', true)
+                ->orWhereNull('subscription_filled_at')
         );
     }
 
