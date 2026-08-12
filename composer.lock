@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1111422b4774e8c6c5925cbcb2bd067c",
+    "content-hash": "db0c161f4b34fb0dddabe04c3b59e778",
     "packages": [
         {
             "name": "brick/math",
@@ -68,10 +68,16 @@
         {
             "name": "byanelli/ngrok-integration",
             "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/byanelli/ngrok-integration.git",
+                "reference": "d8710f1cbdc2a0365c4380646b386d6ab7349140"
+            },
             "dist": {
-                "type": "path",
-                "url": "../ngrok-integration",
-                "reference": "f51960ba1db012e689bdd870f3d48b5a72dc8247"
+                "type": "zip",
+                "url": "https://api.github.com/repos/byanelli/ngrok-integration/zipball/d8710f1cbdc2a0365c4380646b386d6ab7349140",
+                "reference": "d8710f1cbdc2a0365c4380646b386d6ab7349140",
+                "shasum": ""
             },
             "require": {
                 "laravel/framework": "^13.0",
@@ -83,11 +89,12 @@
                 "laravel/pint": "^1.14",
                 "nunomaduro/collision": "^8.6",
                 "orchestra/testbench": "^11.0",
-                "pestphp/pest": "^3.0",
-                "pestphp/pest-plugin-laravel": "^3.0",
+                "pestphp/pest": "^4.0",
+                "pestphp/pest-plugin-laravel": "^4.0",
                 "phpstan/extension-installer": "^1.4",
                 "phpstan/phpstan": "^2.1"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "laravel": {
@@ -147,10 +154,11 @@
                 "tunnel",
                 "vite"
             ],
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
+            "support": {
+                "source": "https://github.com/byanelli/ngrok-integration/tree/main",
+                "issues": "https://github.com/byanelli/ngrok-integration/issues"
+            },
+            "time": "2026-08-12T00:16:06+00:00"
         },
         {
             "name": "byanelli/roma",

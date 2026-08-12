@@ -8,7 +8,7 @@
         "php": "^8.5",
         "ext-zip": "*",
         "byanelli/roma": "@dev",
-        "byanelli/ngrok-integration": "@dev",
+        "byanelli/ngrok-integration": "dev-main",
         "fivefilters/readability.php": "^3.3",
         "guzzlehttp/guzzle": "^7.2",
         "inertiajs/inertia-laravel": "^3.0",
@@ -109,10 +109,7 @@
         }
     }, {
         "name": "ngrok-integration",
-        "type": "path",
-        "url": "../ngrok-integration",
-        "options": {
-            "symlink": true
-        }
+        "type": "vcs",
+        "url": "https://github.com/byanelli/ngrok-integration"
     }]
 }
