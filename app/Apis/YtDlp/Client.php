@@ -188,6 +188,16 @@ readonly class Client
 
             $this->logger->info("Successfully downloaded $url directly");
         } catch (ProcessFailedException $e) {
+            // The proxy is an optional extra, and an install without an account for it has nothing to fall back to.
+            // Report the direct failure as the real one rather than dressing it up as a proxy problem.
+            if (! $this->residentialProxy->isConfigured()) {
+                $this->logger->error(
+                    "Failed to download $url directly, and no residential proxy is configured to fall back to"
+                );
+
+                throw $e;
+            }
+
             $this->logger->warning("Failed to download $url directly; trying residential proxy");
 
             try {

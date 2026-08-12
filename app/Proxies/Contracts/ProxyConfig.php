@@ -5,6 +5,15 @@ namespace App\Proxies\Contracts;
 interface ProxyConfig
 {
     /**
+     * Whether this proxy has everything it needs to be used.
+     *
+     * A proxy is an optional extra: it costs money and needs an account, and plenty of installs will never have one.
+     * Callers are expected to ask before reaching for getUrlForDownload(), so that a missing account degrades into
+     * "there is no proxy to fall back to" rather than an error while building a URL out of nothing.
+     */
+    public function isConfigured(): bool;
+
+    /**
      * A proxy URL to route a single download through.
      *
      * The "single download" is a requirement rather than a description. YouTube signs the media URL it hands out

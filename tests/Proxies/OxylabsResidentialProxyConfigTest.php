@@ -5,6 +5,7 @@ namespace Tests\Proxies;
 use App\Proxies\OxylabsResidentialProxyConfig;
 use Illuminate\Contracts\Config\Repository;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Tests\TestCase;
 
 class OxylabsResidentialProxyConfigTest extends TestCase
@@ -68,6 +69,47 @@ class OxylabsResidentialProxyConfigTest extends TestCase
 
         // The host has to survive an @ in the password.
         $this->assertStringEndsWith('@pr.oxylabs.io:7777', $url);
+    }
+
+    #[Test]
+    public function it_reports_itself_configured_only_when_it_has_both_credentials()
+    {
+        $config = $this->app->make(Repository::class);
+        $proxy = $this->app->make(OxylabsResidentialProxyConfig::class);
+
+        $cases = [
+            'both present'   => ['someuser', 'somepassword', true],
+            'no password'    => ['someuser', null, false],
+            'no user'        => [null, 'somepassword', false],
+            'neither'        => [null, null, false],
+            // An account that was half-filled-in is not an account. Empty strings are what a .env with bare
+            // "OXYLABS_USERNAME=" produces, which is likelier than the key being absent altogether.
+            'empty strings'  => ['', '', false],
+            'empty password' => ['someuser', '', false],
+        ];
+
+        foreach ($cases as $name => [$user, $password, $expected]) {
+            $config->set('services.oxylabs.residential.user', $user);
+            $config->set('services.oxylabs.residential.password', $password);
+
+            $this->assertSame($expected, $proxy->isConfigured(), "Wrong verdict for: $name");
+        }
+    }
+
+    #[Test]
+    public function it_refuses_to_build_a_url_without_credentials()
+    {
+        $config = $this->app->make(Repository::class);
+
+        $config->set('services.oxylabs.residential.user', null);
+        $config->set('services.oxylabs.residential.password', null);
+
+        // Better than a TypeError from somewhere inside the username, which reads like a bug in this class rather
+        // than a machine that never had an Oxylabs account.
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('OXYLABS_USERNAME');
+
+        $this->app->make(OxylabsResidentialProxyConfig::class)->getUrlForDownload();
     }
 
     #[Test]

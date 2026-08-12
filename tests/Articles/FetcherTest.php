@@ -27,6 +27,11 @@ class FetcherTest extends TestCase
         // config's random session id.
         $this->app->bind(ResidentialProxyConfig::class, fn () => new readonly class implements ResidentialProxyConfig
         {
+            public function isConfigured(): bool
+            {
+                return true;
+            }
+
             public function getUrlForDownload(): string
             {
                 return FetcherTest::PROXY_URL;

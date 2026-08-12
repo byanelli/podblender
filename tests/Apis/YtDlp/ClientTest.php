@@ -5,6 +5,7 @@
 namespace Tests\Apis\YtDlp;
 
 use App\Apis\YtDlp\Client;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
@@ -114,6 +115,36 @@ class ClientTest extends TestCase
 
         Process::assertRan(fn (PendingProcess $process) => collect($process->command)
             ->contains(fn (string $a) => Str::startsWith($a, '--proxy=')));
+    }
+
+    #[Test]
+    public function it_gives_up_on_the_direct_failure_when_no_proxy_is_configured()
+    {
+        Sleep::fake();
+
+        // An install with no Oxylabs account, which is most of them: the proxy costs money and needs signing up for.
+        $config = $this->app->make(Repository::class);
+        $config->set('services.oxylabs.residential.user', null);
+        $config->set('services.oxylabs.residential.password', null);
+
+        Process::fake([
+            self::DIRECT_DOWNLOAD => Process::result(exitCode: 1, errorOutput: 'Sign in to confirm you’re not a bot'),
+        ]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        // The direct failure is the real one and should surface as itself, rather than becoming an error about
+        // building a proxy URL out of credentials that were never going to be there.
+        $this->expectException(ProcessFailedException::class);
+
+        try {
+            $client->downloadAudio(self::URL);
+        } finally {
+            // And it must not have tried to go through a proxy it hasn't got.
+            Process::assertNotRan(fn (PendingProcess $process) => collect($process->command)
+                ->contains(fn (string $a) => Str::startsWith($a, '--proxy=')));
+        }
     }
 
     #[Test]
