@@ -81,7 +81,25 @@ Your podcast app needs to be able to reach the feed, which it can't do if the ap
 
 This is the one optional piece. If ngrok isn't installed, `php artisan dev` simply leaves the tunnel out and everything else runs as normal — you just get a `localhost` feed rather than one your phone can reach.
 
-To turn it on, install ngrok (`brew install --cask ngrok`) and authenticate it once with `ngrok config add-authtoken <token>`. If you have a static ngrok domain, set `NGROK_HOST` in `.env` so the URL stays the same between restarts — otherwise your feed's address changes every time you restart and your podcast app loses track of it.
+To turn it on, install the agent. On macOS:
+
+```
+brew install --cask ngrok
+```
+
+On Debian or Ubuntu:
+
+```
+curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
+  | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
+  && echo "deb https://ngrok-agent.s3.amazonaws.com bookworm main" \
+  | sudo tee /etc/apt/sources.list.d/ngrok.list \
+  && sudo apt update && sudo apt install ngrok
+```
+
+For other distributions, see [ngrok's Linux downloads](https://ngrok.com/download/linux) — there's a snap as well. If you install it somewhere that isn't on your `PATH`, point `NGROK_BINARY` in `.env` at it.
+
+Either way, authenticate the agent once with `ngrok config add-authtoken <token>`. If you have a static ngrok domain, set `NGROK_HOST` in `.env` so the URL stays the same between restarts — otherwise your feed's address changes every time you restart and your podcast app loses track of it.
 
 ## Configuration
 
@@ -93,3 +111,4 @@ A few things worth knowing about, all settable in `.env`:
 | `MINUTES_BETWEEN_DOWNLOADS` | `2` | How long to leave between downloads. Raise it if downloads start failing; lower it if a new subscription takes too long to fill in |
 | `AUDIO_PREVIEW_ENABLED` | `true` | In-browser playback of stored clips on the feed page |
 | `NGROK_HOST` | empty | Your static ngrok domain, if you have one |
+| `NGROK_BINARY` | `ngrok` | The ngrok agent, if it isn't on your `PATH` |
