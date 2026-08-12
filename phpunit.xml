@@ -26,5 +26,25 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+
+        <!--
+            Credentials for every external service, faked. These exist so the
+            suite never reads a developer's real keys, and so behaviour doesn't
+            depend on which keys happen to be present in someone's .env: code
+            paths branch on whether a key is configured, so a machine with no
+            Scrapfly key took a different route through the article cascade and
+            failed, while a machine with one passed. Dotenv is immutable, so
+            these win over .env.
+
+            Nothing here is a real credential and nothing here is dialled: the
+            HTTP layer is faked in the tests that reach these services.
+        -->
+        <env name="OXYLABS_USERNAME" value="testing-user"/>
+        <env name="OXYLABS_PASSWORD" value="testing-password"/>
+        <env name="OXYLABS_COUNTRY" value="US"/>
+        <env name="SCRAPFLY_API_KEY" value="testing-key"/>
+        <env name="YOUTUBE_DATA_API_KEY" value="testing-key"/>
+        <env name="GEMINI_API_KEY" value="testing-key"/>
+        <env name="OPENAI_API_KEY" value="testing-key"/>
     </php>
 </phpunit>
