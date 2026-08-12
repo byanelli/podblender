@@ -6,8 +6,15 @@
  *
  * Every file is pinned to an exact version and SHA-256. A pinned hash means `composer install` is reproducible and a
  * tampered-with release can't silently replace a binary we then execute. The tradeoff is that bumping a version is a
- * manual edit of both the version and the hashes; see "Updating the vendored binaries" in the README, which documents
- * how to obtain the hashes for a new release.
+ * manual edit of both the version and the hash.
+ *
+ * The pin is the hash of the file *as installed*, which for a zipped release is the extracted member rather than the
+ * archive around it. So to obtain a new one: download the asset, extract it if necessary, and hash what you end up
+ * with (`shasum -a 256 <file>`). yt-dlp publishes SHA2-256SUMS per release, but it covers the bare binary we install,
+ * so it can be used directly; the others either hash the archive rather than its contents or publish nothing at all.
+ *
+ * Bumping yt-dlp is routine maintenance rather than an optional chore: a stale yt-dlp is the most common cause of
+ * downloads that used to work and then stop.
  */
 final class VendoredBinary
 {
