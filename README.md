@@ -34,7 +34,7 @@ You'll also need API keys, depending on what you want to add to your feeds:
 * Clone the repo
 * `composer install`
   * This installs the executables Podblender runs into `vendor/bin`: `yt-dlp` and `ffmpeg` to download and transcode audio, plus two helpers that YouTube downloads depend on. It also installs a small yt-dlp plugin into `vendor/yt-dlp-plugins`. If any of these fail, downloading and storing audio clips won't work
-* `npm install`
+* `npm install` followed by `npm run build`
 * `cp .env.example .env` and `php artisan key:generate`
 * `php artisan reverb:install` to generate the credentials behind the feed page's live updates
 * In the `.env` file, add whichever API keys you need from the table above:
@@ -81,23 +81,7 @@ Your podcast app needs to be able to reach the feed, which it can't do if the ap
 
 This is the one optional piece. If ngrok isn't installed, `php artisan dev` simply leaves the tunnel out and everything else runs as normal — you just get a `localhost` feed rather than one your phone can reach.
 
-To turn it on, install the agent. On macOS:
-
-```
-brew install --cask ngrok
-```
-
-On Debian or Ubuntu:
-
-```
-curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
-  | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
-  && echo "deb https://ngrok-agent.s3.amazonaws.com bookworm main" \
-  | sudo tee /etc/apt/sources.list.d/ngrok.list \
-  && sudo apt update && sudo apt install ngrok
-```
-
-For other distributions, see [ngrok's Linux downloads](https://ngrok.com/download/linux) — there's a snap as well. If you install it somewhere that isn't on your `PATH`, point `NGROK_BINARY` in `.env` at it.
+To turn it on, install the agent — `brew install --cask ngrok` on macOS, or follow [ngrok's Linux instructions](https://ngrok.com/download/linux) for apt and snap. If you install it somewhere that isn't on your `PATH`, point `NGROK_BINARY` in `.env` at it.
 
 Either way, authenticate the agent once with `ngrok config add-authtoken <token>`. If you have a static ngrok domain, set `NGROK_HOST` in `.env` so the URL stays the same between restarts — otherwise your feed's address changes every time you restart and your podcast app loses track of it.
 
