@@ -15,7 +15,13 @@ return [
     |
     */
 
-    'default'     => env('BROADCAST_CONNECTION', 'reverb'),
+    // Falls back to "null" rather than "reverb", matching stock Laravel. The
+    // fallback is what applies when there is no .env at all — a fresh clone
+    // running "composer install" — and reverb without credentials throws while
+    // constructing the broadcaster, which takes down package:discover and with
+    // it the rest of the install. .env.example sets this to reverb, so a real
+    // install still broadcasts; only the uninitialised case is quiet.
+    'default'     => env('BROADCAST_CONNECTION', 'null'),
 
     /*
     |--------------------------------------------------------------------------
