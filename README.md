@@ -79,7 +79,9 @@ Either way, copy the feed's RSS link into your podcast player and enjoy.
 
 Your podcast app needs to be able to reach the feed, which it can't do if the app is only listening on `localhost`. `php artisan dev` starts an ngrok tunnel for exactly this, so the RSS link you copy from the UI is already a public URL that works from your phone.
 
-To use it, install ngrok (`brew install --cask ngrok`) and authenticate it once with `ngrok config add-authtoken <token>`. If you have a static ngrok domain, set `NGROK_HOST` in `.env` so the URL stays the same between restarts — otherwise your feed's address changes every time you restart and your podcast app loses track of it.
+This is the one optional piece. If ngrok isn't installed, `php artisan dev` simply leaves the tunnel out and everything else runs as normal — you just get a `localhost` feed rather than one your phone can reach.
+
+To turn it on, install ngrok (`brew install --cask ngrok`) and authenticate it once with `ngrok config add-authtoken <token>`. If you have a static ngrok domain, set `NGROK_HOST` in `.env` so the URL stays the same between restarts — otherwise your feed's address changes every time you restart and your podcast app loses track of it.
 
 ## Configuration
 
