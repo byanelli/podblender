@@ -4,68 +4,90 @@
 
 Podblender lets you add audio clips from around the Web to a custom podcast feed that you can subscribe to in your preferred podcast app. It currently supports:
 
-* YouTube videos
-* Web articles (text extraction using [Apify](https://apify.com/lukaskrivka/article-extractor-smart), text-to-speech conversion using [OpenAI Whisper](https://platform.openai.com/docs/guides/speech-to-text))
+* **YouTube videos** — the audio track, downloaded and transcoded to MP3
+* **Web articles** — the text is extracted and narrated using [Gemini text-to-speech](https://ai.google.dev/gemini-api/docs/speech-generation)
+* **YouTube channels and playlists** — subscribe once and new uploads show up in your feed on their own
+* **RSS feeds** — subscribe to a text feed and each new item is narrated the same way
 
-Why would you want this? It turns out there's a lot of interesting audio content (lectures, interviews, etc.) trapped on video sharing sites. I would prefer to listen to this content in my podcast player, with all its affordances for listening to long audio files: controls to scrub forward/back 30s, dynamic range compression for when speakers are recorded at inconsistent levels, ability to skip silences, etc. Also, even when a video platform (e.g., YouTube) lets you cache videos on mobile devices, it often forces you to cache the video along with the audio track even if you don't intend to watch, wasting space on your device. 
+Why would you want this? It turns out there's a lot of interesting audio content (lectures, interviews, etc.) trapped on video sharing sites. I would prefer to listen to this content in my podcast player, with all its affordances for listening to long audio files: controls to scrub forward/back 30s, dynamic range compression for when speakers are recorded at inconsistent levels, ability to skip silences, etc. Also, even when a video platform (e.g., YouTube) lets you cache videos on mobile devices, it often forces you to cache the video along with the audio track even if you don't intend to watch, wasting space on your device.
 
-## Motivation / a note on the code
+## Requirements
 
-This is a side project for personal use and to refresh my Laravel skills. The code style is slightly experimental—my goal was to see how far I could push Laravel in the direction of type-safety, avoidance of globals/facades, and lack of "magic" in general. I wouldn't recommend this style for every project. Still, I enjoyed this experiment and am considering writing more about it in the future. It turns out you can write Laravel in such a way that virtually all code is IDE-inspectable, auditable, and easy to refactor without the use of any vendor-specific plugins. (Note: this experiment does not extend to the [Breeze](https://laravel.com/docs/11.x/starter-kits#laravel-breeze) controllers, routes, components, etc., which are still written in more of a Laravel house style.)
+* PHP 8.5+ and Composer
+* Node and npm
+* Redis (queues and cache)
+* [ngrok](https://ngrok.com/), if you want to reach your feed from a phone while running locally — see [Listening on your phone](#listening-on-your-phone)
+
+You'll also need API keys, depending on what you want to add to your feeds:
+
+| Key | Needed for |
+| --- | --- |
+| [Gemini](https://aistudio.google.com/apikey) | Narrating web articles and RSS items |
+| [YouTube Data API](https://developers.google.com/youtube/v3/getting-started) | Adding YouTube videos, channels, and playlists |
+| [Scrapfly](https://scrapfly.io/) | Optional. Only used to reach articles behind a paywall |
 
 ## Installation
 
 > [!NOTE]
-> Podblender vendors the executables it needs into `vendor/bin` rather than expecting them on your `PATH`. It supports Linux and macOS on x86-64, and macOS on Apple Silicon. On arm64 Linux everything but ffmpeg will install, and ffmpeg has to be provided some other way.
+> Podblender vendors the executables it needs into `vendor/bin` rather than expecting them on your `PATH`. It supports Linux and macOS, on both x86-64 and arm64.
 
 * Clone the repo
 * `composer install`
-  * This installs four executables into `vendor/bin`: `yt-dlp` and `ffmpeg` to download and transcode audio, and `deno` and `bgutil-pot`, which exist only to get YouTube downloads past bot detection (see below). It also installs a small yt-dlp plugin into `vendor/yt-dlp-plugins`. If any of these fail, downloading and storing audio clips won't work
-* In the `.env` file:
-  * Add your [OpenAI API key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key)
-  * Add your [Apify API token](https://docs.apify.com/platform/integrations/api)
-* Run all of the following to run the app locally:
-  * `npm run dev`
-  * `php artisan serve`
-  * `php artisan queue:work`
-  * `php artisan reverb:start`
+  * This installs the executables Podblender runs into `vendor/bin`: `yt-dlp` and `ffmpeg` to download and transcode audio, plus two helpers that YouTube downloads depend on. It also installs a small yt-dlp plugin into `vendor/yt-dlp-plugins`. If any of these fail, downloading and storing audio clips won't work
+* `npm install`
+* `cp .env.example .env` and `php artisan key:generate`
+* `php artisan reverb:install` to generate the credentials behind the feed page's live updates
+* In the `.env` file, add whichever API keys you need from the table above:
+  * `GEMINI_API_KEY`
+  * `YOUTUBE_DATA_API_KEY`
+  * `SCRAPFLY_API_KEY`
+* Create the database and run the migrations:
+  * `touch database/database.sqlite`
+  * `php artisan migrate`
+* `php artisan storage:link`
+
+## Running it
+
+```
+php artisan dev
+```
+
+The `dev` command starts the web server, the queue worker, the scheduler, Vite, Reverb (which pushes the feed page an update when a clip finishes processing), the log tailer, and an ngrok tunnel, all in one terminal. Run `php artisan dev:list` to see them.
+
+The scheduler is what keeps subscriptions current, so it's included — but note that subscriptions are only swept on even hours, which may well not happen during a short session. If you want to see a subscription pick up new episodes right now, dispatch the sweep by hand:
+
+```
+php artisan tinker --execute="App\Jobs\UpdateAllSubscriptions::dispatch()"
+```
+
+In production the scheduler is cron's job instead — see [the usual entry](https://laravel.com/docs/13.x/scheduling#running-the-scheduler).
 
 ## Usage
 
-Create a feed and copy-paste URLs into the UI to add clips. Copy the RSS link into your podcast player and enjoy. Note: if you're running locally and not on a public web server, you may have to use a service like [ngrok](https://ngrok.com/) to get your phone connected to the RSS feed.
+**For one-off clips**, create a feed and copy-paste URLs into the UI — a YouTube video or a link to an article. Each one is downloaded (or narrated) in the background; the feed page shows every clip's status and updates itself the moment one is ready.
 
-## Downloading from YouTube without getting blocked
+**To follow something ongoing**, subscribe to it instead: paste a YouTube channel or playlist URL, or the URL of an RSS feed. When you subscribe you can choose:
 
-Downloading one video from YouTube is easy. Downloading a channel's worth, on a schedule, forever, is the actual engineering problem this project has, so it's worth writing down what the moving parts are for.
+* **How far back to reach.** By default a new subscription pulls in the last month of episodes, so there's something to listen to straight away rather than an empty feed. You can pick a different date, or ask for everything the source has ever published.
+* **Whether to keep following it.** On by default. Turn it off to capture the source as it stands right now and then leave it alone — useful for a playlist you want a snapshot of rather than a running subscription.
 
-YouTube decides whether to serve a request based on roughly three things:
+Subscriptions are checked every two hours, and new episodes are added to your feed automatically.
 
-**1. Whether the request carries a proof-of-origin (PO) token.** This is the big one, and its absence is what produces "Sign in to confirm you're not a bot". Tokens are minted per video by `bgutil-pot`, via a yt-dlp plugin, and yt-dlp additionally needs a real JavaScript runtime — Deno — to solve the challenges guarding them. Both are installed by `composer install` and wired up in `App\Apis\YtDlp\Client`. Note the failure mode: without them yt-dlp mostly *degrades* rather than failing loudly, so this stays working right up until it doesn't.
+Either way, copy the feed's RSS link into your podcast player and enjoy.
 
-**2. The reputation of the IP the request comes from.** Datacenter IP ranges are flagged more or less on sight, and *every commercial VPN endpoint is a datacenter IP*, so routing yt-dlp through a VPN makes things worse rather than better. Residential IPs are treated as people. So the client tries the host's own connection first and only falls back to a residential proxy (Oxylabs) if that fails.
+### Listening on your phone
 
-Note that a residential pool hands out a different address on *every request* unless told otherwise, and a YouTube download can't survive that: YouTube signs the media URL against the address that asked for it, so fetching the metadata and the media from two addresses is refused, with a 403 that looks just like being blocked. `App\Proxies\OxylabsResidentialProxyConfig` pins one address per download, which is what `ProxyConfig::getUrlForDownload()` exists to express.
+Your podcast app needs to be able to reach the feed, which it can't do if the app is only listening on `localhost`. `php artisan dev` starts an ngrok tunnel for exactly this, so the RSS link you copy from the UI is already a public URL that works from your phone.
 
-The practical consequence is that **where you run this matters more than any setting in it**. Running it on a home connection is ideal. If you want it on a VPS, the cheapest good option is to route its traffic out through your home connection with a WireGuard or Tailscale exit node, which gets you a residential IP without paying anyone for one.
+To use it, install ngrok (`brew install --cask ngrok`) and authenticate it once with `ngrok config add-authtoken <token>`. If you have a static ngrok domain, set `NGROK_HOST` in `.env` so the URL stays the same between restarts — otherwise your feed's address changes every time you restart and your podcast app loses track of it.
 
-**3. Whether requests arrive in a burst.** Subscribing to a channel can create a lot of clips at once, and Horizon is happy to run many workers, so `App\Jobs\DownloadAndStoreAudioClip` deliberately downloads one clip at a time with a gap between each (`config/downloads.php`). A podcast feed is read minutes or hours after it's published, so a slow trickle costs nothing.
+## Configuration
 
-If downloads start failing, in order: update yt-dlp, raise `MINUTES_BETWEEN_DOWNLOADS`, then look at the IP.
+A few things worth knowing about, all settable in `.env`:
 
-### Updating the vendored binaries
-
-Each binary is pinned to an exact version and SHA-256 in `scripts/`, so `composer install` is reproducible and a tampered-with release can't silently replace something we execute. The tradeoff is that upgrading is a manual edit.
-
-**Updating yt-dlp is routine maintenance, not an optional chore.** YouTube changes its defenses regularly, and a stale yt-dlp is the single most common cause of downloads that used to work and no longer do. To bump it, edit `$version` in `scripts/install-yt-dlp.php` and update the hashes, which yt-dlp publishes for each release:
-
-```
-curl -sL https://github.com/yt-dlp/yt-dlp/releases/download/<version>/SHA2-256SUMS
-```
-
-Deno and ffmpeg publish per-asset checksums, but they're for the zip archives rather than the binary inside, and we pin the binary. `bgutil-pot` publishes no checksums at all. For those, download the asset, extract it if necessary, and hash what you'd end up with:
-
-```
-shasum -a 256 <file>
-```
-
-Then run `composer install`: a changed pin makes the installer delete and re-download the file, and a hash that doesn't match what arrives is a hard error.
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `SUBSCRIPTION_BACKFILL_MONTHS` | `1` | How far back a new subscription reaches by default |
+| `MINUTES_BETWEEN_DOWNLOADS` | `2` | How long to leave between downloads. Raise it if downloads start failing; lower it if a new subscription takes too long to fill in |
+| `AUDIO_PREVIEW_ENABLED` | `true` | In-browser playback of stored clips on the feed page |
+| `NGROK_HOST` | empty | Your static ngrok domain, if you have one |
