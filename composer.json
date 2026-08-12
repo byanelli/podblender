@@ -1,13 +1,13 @@
 {
-    "name": "laravel/laravel",
+    "name": "byanelli/podblender",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Turn audio from around the web into a private podcast feed: YouTube videos and channels, web articles narrated by text-to-speech, and RSS feeds.",
+    "keywords": ["podcast", "rss", "youtube", "text-to-speech", "laravel"],
     "license": "Elastic-2.0",
     "require": {
         "php": "^8.5",
         "ext-zip": "*",
-        "byanelli/roma": "@dev",
+        "byanelli/roma": "dev-main",
         "byanelli/ngrok-integration": "dev-main",
         "fivefilters/readability.php": "^3.3",
         "guzzlehttp/guzzle": "^7.2",
@@ -102,11 +102,8 @@
     "prefer-stable": true,
     "repositories": [{
         "name": "roma",
-        "type": "path",
-        "url": "../simple-request",
-        "options": {
-            "symlink": true
-        }
+        "type": "vcs",
+        "url": "https://github.com/byanelli/roma"
     }, {
         "name": "ngrok-integration",
         "type": "vcs",

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "db0c161f4b34fb0dddabe04c3b59e778",
+    "content-hash": "bb172509a36371071e9660ea693c9a89",
     "packages": [
         {
             "name": "brick/math",
@@ -163,10 +163,16 @@
         {
             "name": "byanelli/roma",
             "version": "dev-main",
-            "dist": {
-                "type": "path",
-                "url": "../simple-request",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/byanelli/roma.git",
                 "reference": "b13e01e4e951579ba4651ae67dc5a71d59429cca"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/byanelli/roma/zipball/b13e01e4e951579ba4651ae67dc5a71d59429cca",
+                "reference": "b13e01e4e951579ba4651ae67dc5a71d59429cca",
+                "shasum": ""
             },
             "require": {
                 "illuminate/contracts": "^13.15",
@@ -188,6 +194,7 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "spatie/laravel-ray": "^1.35"
             },
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "laravel": {
@@ -248,10 +255,17 @@
                 "request",
                 "response"
             ],
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
+            "support": {
+                "source": "https://github.com/byanelli/roma/tree/main",
+                "issues": "https://github.com/byanelli/roma/issues"
+            },
+            "funding": [
+                {
+                    "type": "github",
+                    "url": "https://github.com/billisonline"
+                }
+            ],
+            "time": "2026-08-12T05:47:00+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
