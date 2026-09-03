@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'defaults'         => [
+    'defaults'                    => [
         'guard'     => env('AUTH_GUARD', 'web'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
@@ -37,7 +37,7 @@ return [
     |
     */
 
-    'guards'           => [
+    'guards'                      => [
         'web' => [
             'driver'   => 'session',
             'provider' => 'users',
@@ -61,7 +61,7 @@ return [
     |
     */
 
-    'providers'        => [
+    'providers'                   => [
         'users' => [
             'driver' => 'eloquent',
             'model'  => env('AUTH_MODEL', User::class),
@@ -92,7 +92,7 @@ return [
     |
     */
 
-    'passwords'        => [
+    'passwords'                   => [
         'users' => [
             'provider' => 'users',
             'table'    => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
@@ -112,6 +112,28 @@ return [
     |
     */
 
-    'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+    'password_timeout'            => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed Registration Emails
+    |--------------------------------------------------------------------------
+    |
+    | For deployments that are meant for a handful of known people, registration
+    | can be limited to a fixed set of addresses. Set
+    | ALLOWED_REGISTRATION_EMAILS to a comma-separated list to close it off:
+    |
+    |     ALLOWED_REGISTRATION_EMAILS="me@example.com, you@example.com"
+    |
+    | Leaving it empty (the default) keeps registration open to anyone. The
+    | list is normalised here -- split, trimmed, lowercased, empties dropped --
+    | so the rest of the app only ever sees an array of lowercase addresses.
+    |
+    */
+
+    'allowed_registration_emails' => array_values(array_filter(array_map(
+        fn (string $email): string => mb_strtolower(trim($email)),
+        explode(',', (string) env('ALLOWED_REGISTRATION_EMAILS', ''))
+    ), fn (string $email): bool => $email !== '')),
 
 ];

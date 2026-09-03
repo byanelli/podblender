@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
+use App\Rules\AllowedRegistrationEmail;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class RegisteredUserBaseController
     {
         $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class, new AllowedRegistrationEmail],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
