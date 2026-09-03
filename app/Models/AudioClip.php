@@ -33,7 +33,8 @@ use Illuminate\Support\Traits\Tappable;
  * @property CarbonImmutable $updated_at
  * @property AudioSource $audioSource
  * @property Collection<int, Feed> $feeds
- * @property string|null $audio_url {@see self::audioUrl()}
+ * @property string $audio_url {@see self::audioUrl()}
+ * @property string|null $preview_url {@see self::previewUrl()}
  * @property string $formatted_time {@see self::formattedTime()}
  * @property PlatformType $platform_type {@see self::platformType()}
  */
@@ -59,6 +60,7 @@ class AudioClip extends Model
 
     protected $appends = [
         'audio_url',
+        'preview_url',
     ];
 
     /**
@@ -90,14 +92,26 @@ class AudioClip extends Model
     }
 
     /**
-     * @return Attribute<string|null, never>
+     * The clip's public URL, used for the RSS enclosure. Always populated: a
+     * podcast client fetches it directly, whatever disk the file lives on.
+     *
+     * @return Attribute<string, never>
      */
     protected function audioUrl(): Attribute
     {
+        return Attribute::make(fn () => url(Storage::url($this->storage_path)));
+    }
+
+    /**
+     * The same URL, but only when the browser can play it back in the feed
+     * page; null otherwise. {@see AudioPreview}
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function previewUrl(): Attribute
+    {
         return Attribute::make(
-            fn () => AudioPreview::available()
-                ? url(Storage::url($this->storage_path))
-                : null
+            fn () => AudioPreview::available() ? $this->audio_url : null
         );
     }
 

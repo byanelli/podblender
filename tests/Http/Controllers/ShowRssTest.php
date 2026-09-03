@@ -11,6 +11,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -57,6 +58,30 @@ class ShowRssTest extends TestCase
         $this->assertStringContainsString("<itunes:duration>$clip->formatted_time</itunes:duration>", $response);
         $this->assertStringContainsString("<enclosure url=\"$clip->audio_url", $response);
         $this->assertStringContainsString("<guid isPermaLink=\"false\">$clip->guid</guid>", $response);
+    }
+
+    #[Test]
+    public function it_shows_enclosure_urls_when_browser_preview_is_disabled()
+    {
+        // Browser preview is a feed-page convenience; podcast clients fetch the
+        // enclosure themselves, so turning preview off must not empty the feed.
+        Config::set('audio-preview.enabled', false);
+
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id]);
+
+        /** @var AudioClip $clip */
+        $clip = AudioClip::factory()->create([
+            'audio_source_id'  => AudioSource::factory()->create()->id,
+            'processing_state' => ClipProcessingState::Processed,
+        ]);
+
+        $feed->audioClips()->attach($clip);
+
+        $response = $this->get("rss/{$feed->uuid}")->content();
+
+        $this->assertNotEmpty($clip->audio_url);
+        $this->assertStringContainsString("<enclosure url=\"{$clip->audio_url}\"", $response);
     }
 
     #[Test]

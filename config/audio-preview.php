@@ -12,7 +12,8 @@ return [
     | disks whose files are already publicly reachable (the local "public"
     | disk). Cloud disks (S3) need signed URLs, which add expiry/renewal
     | complexity that isn't worth it here, so preview stays gated to local
-    | disks.
+    | disks. This affects the feed page's play button only: RSS enclosure URLs
+    | are always emitted, whatever the disk.
     |
     | Set AUDIO_PREVIEW_ENABLED=false to turn it off entirely.
     |
@@ -26,8 +27,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | Filesystem drivers whose files are served to the browser directly,
-    | without any signing. Preview is only exposed when the default disk
-    | (the one AudioClip uses) uses one of these drivers.
+    | without any signing. AudioClip::$preview_url is only populated when the
+    | default disk (the one AudioClip uses) uses one of these drivers.
     |
     */
 

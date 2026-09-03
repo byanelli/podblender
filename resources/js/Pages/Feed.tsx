@@ -98,7 +98,7 @@ export default function Feed({ feed }: { feed: FeedType }) {
             audioRef.current.addEventListener('ended', () => setPlayingId(null));
         }
 
-        audioRef.current.src = clip.audio_url as string;
+        audioRef.current.src = clip.preview_url as string;
         void audioRef.current.play();
         setPlayingId(clip.id);
     };
@@ -213,7 +213,7 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                         </div>
 
                                         <div className="flex flex-none items-center gap-1">
-                                            {clip.audio_url && (
+                                            {clip.preview_url && (
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
