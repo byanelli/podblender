@@ -281,6 +281,11 @@ export default function AddSubscriptionForm({
                     required
                     value={name}
                     placeholder="Lectures"
+                    // A field called "name" looks like a person's name to
+                    // password managers, which offer to fill it in.
+                    autoComplete="off"
+                    data-1p-ignore
+                    data-lpignore="true"
                     onChange={(e) => setName(e.target.value)}
                 />
             </div>
