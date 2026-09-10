@@ -95,6 +95,16 @@ export default function Login({
                     </Button>
                 </div>
             </form>
+
+            <p className="mt-6 text-sm text-muted-foreground">
+                Don&apos;t have an account?{' '}
+                <Link
+                    href={route('register')}
+                    className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                    Register
+                </Link>
+            </p>
         </GuestLayout>
     );
 }
