@@ -27,6 +27,18 @@ trait FakesFfmpeg
                 return collect($mp3s)->map(fn ($mp3) => file_get_contents($mp3))->implode('');
             }
 
+            public function imageToSquareJpeg(string $inputPath, int $maxSide = 1400): string
+            {
+                // Pretend crop: the real method returns a distinct file, and
+                // what the caller does with those bytes is what a test cares
+                // about, so hand back a copy under a .jpg path.
+                $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.jpg';
+
+                copy($inputPath, $outputPath);
+
+                return $outputPath;
+            }
+
             public function pcmToMp3(string $pcm, int $sampleRate): string
             {
                 // Pretend transcode: copy the bytes to a fresh .mp3 path (the

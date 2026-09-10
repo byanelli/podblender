@@ -6,8 +6,10 @@ use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
+use App\Support\AudioClipStoragePath;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
@@ -36,6 +38,30 @@ class DeleteClipTest extends TestCase
         $this->assertEquals(0, $feed->audioClips()->count());
         // The clip itself is only detached, never deleted.
         $this->assertModelExists($clip);
+    }
+
+    #[Test]
+    public function it_leaves_the_clips_stored_files_in_place()
+    {
+        $storage = Storage::fake();
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->create(['user_id' => $user->id]);
+        $clip = $this->clip();
+        $clip->thumbnail_path = AudioClipStoragePath::thumbnailFor($clip->storage_path);
+        $clip->save();
+        $feed->audioClips()->attach($clip);
+
+        $storage->put($clip->storage_path, 'audio');
+        $storage->put($clip->thumbnail_path, 'artwork');
+
+        $this->actingAs($user)->delete("/feeds/{$feed->id}/clips/{$clip->id}");
+
+        // Removing a clip from a feed detaches it and nothing more: the clip
+        // record stays, and so do its audio and its artwork, because the same
+        // clip may still be on another feed — or be added back to this one.
+        $storage->assertExists($clip->storage_path);
+        $storage->assertExists($clip->thumbnail_path);
     }
 
     #[Test]

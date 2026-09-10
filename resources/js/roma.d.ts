@@ -26,6 +26,7 @@ export interface ClipMetadata {
   publishedAt: string;
   source: SourceMetadata;
   estimatedDownloadTime: number | null;
+  thumbnail: ThumbnailSource | null;
 }
 
 export interface CreateCustomFeedRequestBody {
@@ -55,4 +56,8 @@ export interface SourceMetadata {
 export interface SourceMetadataResponseBody {
   metadata: SourceMetadata;
   platformType: PlatformTypeEnum;
+}
+
+export interface ThumbnailSource {
+
 }

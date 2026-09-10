@@ -12,6 +12,34 @@ use Tests\TestCase;
 
 class ClientTest extends TestCase
 {
+    /**
+     * The snippet.thumbnails map the API returns for a video, keyed by size
+     * name. Which sizes are present varies from video to video — maxres is only
+     * there when the uploader supplied a big enough image — so a test can ask
+     * for a subset of them.
+     *
+     * @param  array<int, string>  $sizes
+     * @return array<string, array<string, mixed>>
+     */
+    private function thumbnails(string $videoId, array $sizes = ['default', 'high', 'maxres']): array
+    {
+        $files = [
+            'default'  => ['default.jpg', 120, 90],
+            'medium'   => ['mqdefault.jpg', 320, 180],
+            'high'     => ['hqdefault.jpg', 480, 360],
+            'standard' => ['sddefault.jpg', 640, 480],
+            'maxres'   => ['maxresdefault.jpg', 1280, 720],
+        ];
+
+        return collect($sizes)
+            ->mapWithKeys(fn (string $size) => [$size => [
+                'url'    => "https://i.ytimg.com/vi/{$videoId}/{$files[$size][0]}",
+                'width'  => $files[$size][1],
+                'height' => $files[$size][2],
+            ]])
+            ->all();
+    }
+
     #[Test]
     public function it_gets_video_metadata()
     {
@@ -25,6 +53,7 @@ class ClientTest extends TestCase
                         'channelId'    => $sourceId = 'eiorjg90ej',
                         'channelTitle' => $sourceName = 'some channel',
                         'publishedAt'  => ($publishedAt = now()->subDay()->roundSeconds())->format(DateTimeInterface::RFC3339),
+                        'thumbnails'   => $this->thumbnails($clipId),
                     ],
                     'contentDetails' => [
                         'duration' => 'PT4M13S',
@@ -45,6 +74,92 @@ class ClientTest extends TestCase
         $this->assertEquals($sourceName, $metadata->channel->name);
         $this->assertEquals($sourceId, $metadata->channel->id);
         $this->assertSame(253, $metadata->durationSeconds);
+        $this->assertSame("https://i.ytimg.com/vi/{$clipId}/maxresdefault.jpg", $metadata->thumbnailUrl);
+    }
+
+    #[Test]
+    public function it_takes_the_largest_thumbnail_the_api_listed()
+    {
+        // Plenty of videos have no maxres image, so asking for one size by name
+        // would leave those with nothing. Take the widest of whatever is there.
+        Http::fake(['*' => Http::response([
+            'items' => [
+                [
+                    'id'      => $clipId = 'leirjieljrg',
+                    'snippet' => [
+                        'title'        => 'some video',
+                        'description'  => 'foo bar',
+                        'channelId'    => 'eiorjg90ej',
+                        'channelTitle' => 'some channel',
+                        'publishedAt'  => now()->format(DateTimeInterface::RFC3339),
+                        'thumbnails'   => $this->thumbnails($clipId, ['default', 'medium', 'high']),
+                    ],
+                ],
+            ],
+        ])]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->assertSame(
+            "https://i.ytimg.com/vi/{$clipId}/hqdefault.jpg",
+            $client->getVideoMetadata($clipId)->thumbnailUrl
+        );
+    }
+
+    #[Test]
+    public function it_falls_back_to_the_size_names_when_the_api_omits_the_dimensions()
+    {
+        Http::fake(['*' => Http::response([
+            'items' => [
+                [
+                    'id'      => $clipId = 'leirjieljrg',
+                    'snippet' => [
+                        'title'        => 'some video',
+                        'description'  => 'foo bar',
+                        'channelId'    => 'eiorjg90ej',
+                        'channelTitle' => 'some channel',
+                        'publishedAt'  => now()->format(DateTimeInterface::RFC3339),
+                        'thumbnails'   => [
+                            'default' => ['url' => "https://i.ytimg.com/vi/{$clipId}/default.jpg"],
+                            'high'    => ['url' => "https://i.ytimg.com/vi/{$clipId}/hqdefault.jpg"],
+                        ],
+                    ],
+                ],
+            ],
+        ])]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->assertSame(
+            "https://i.ytimg.com/vi/{$clipId}/hqdefault.jpg",
+            $client->getVideoMetadata($clipId)->thumbnailUrl
+        );
+    }
+
+    #[Test]
+    public function it_returns_a_null_thumbnail_when_the_api_lists_none()
+    {
+        Http::fake(['*' => Http::response([
+            'items' => [
+                [
+                    'id'      => 'leirjieljrg',
+                    'snippet' => [
+                        'title'        => 'some video',
+                        'description'  => 'foo bar',
+                        'channelId'    => 'eiorjg90ej',
+                        'channelTitle' => 'some channel',
+                        'publishedAt'  => now()->format(DateTimeInterface::RFC3339),
+                    ],
+                ],
+            ],
+        ])]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->assertNull($client->getVideoMetadata('leirjieljrg')->thumbnailUrl);
     }
 
     #[Test]
@@ -146,6 +261,7 @@ class ClientTest extends TestCase
                     'channelTitle'           => 'Playlist Owner',
                     'videoOwnerChannelId'    => $video['ownerId'] ?? 'UCuploader',
                     'videoOwnerChannelTitle' => $video['ownerTitle'] ?? 'The Uploader',
+                    'thumbnails'             => $this->thumbnails($video['id'], ['default', 'high']),
                 ],
                 'contentDetails' => [
                     'videoId'          => $video['id'],
@@ -199,6 +315,24 @@ class ClientTest extends TestCase
 
         $this->assertEquals('UCguest', $videos[0]->channel->id);
         $this->assertEquals('The Guest', $videos[0]->channel->name);
+    }
+
+    #[Test]
+    public function it_reads_a_playlist_videos_thumbnail()
+    {
+        // A playlist item carries the video's own thumbnails, and this fixture
+        // has no maxres — as most real ones don't — so the biggest listed size
+        // is what should come back.
+        Http::fake(['*' => Http::response($this->playlistItemsPage([
+            ['id' => 'v1', 'title' => 'A talk', 'videoPublishedAt' => '2024-05-05T10:00:00Z'],
+        ]))]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $videos = $client->getAllVideoMetadataForPlaylist('PLabc');
+
+        $this->assertSame('https://i.ytimg.com/vi/v1/hqdefault.jpg', $videos[0]->thumbnailUrl);
     }
 
     #[Test]

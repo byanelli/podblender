@@ -12,6 +12,7 @@ use App\Concerns\FixesUrls;
 use App\Enums\AudioSourceType;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
+use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Contracts\SubscribablePlatform;
 use App\Platforms\Exceptions\ContentUnavailableException;
@@ -38,6 +39,9 @@ readonly class YouTube implements SubscribablePlatform
             publishedAt: $video->publishedAt,
             source: $this->convertChannelMetadataToSourceMetadata($video->channel),
             estimatedDownloadTime: $this->estimateDownloadTime($video),
+            thumbnail: $video->thumbnailUrl === null
+                ? null
+                : new RemoteImageThumbnail($video->thumbnailUrl),
         );
     }
 

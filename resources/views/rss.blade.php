@@ -29,6 +29,11 @@
                 <enclosure url="{{$clip->audio_url}}"
                            type="audio/mpeg" length="{{$clip->size}}"/>
                 <itunes:duration>{{$clip->formatted_time}}</itunes:duration>
+                {{-- Episode artwork, when the clip has any. A missing href is worse than a missing tag: some clients
+                     show a broken image where the channel's own picture would otherwise stand in. --}}
+                @if($clip->thumbnail_url)
+                    <itunes:image href="{{$clip->thumbnail_url}}"/>
+                @endif
                 <guid isPermaLink="false">{{$clip->guid}}</guid>
             </item>
         @endforeach

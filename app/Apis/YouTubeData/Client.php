@@ -301,6 +301,7 @@ readonly class Client implements Contracts\Client
                 id: $snippet['videoOwnerChannelId'] ?? $snippet['channelId'],
                 name: html_entity_decode($snippet['videoOwnerChannelTitle'] ?? $snippet['channelTitle']),
             ),
+            thumbnailUrl: $this->getLargestThumbnailUrl($snippet),
         );
     }
 
@@ -328,7 +329,55 @@ readonly class Client implements Contracts\Client
                 name: $snippet['channelTitle'],
             ),
             durationSeconds: $this->parseIso8601Duration($video['contentDetails']['duration'] ?? null),
+            thumbnailUrl: $this->getLargestThumbnailUrl($snippet),
         );
+    }
+
+    /**
+     * The largest thumbnail the API listed for a video, or null if it listed
+     * none.
+     *
+     * snippet.thumbnails maps a size name ("default", "medium", "high",
+     * "standard", "maxres") to a {url, width, height} object, and which sizes
+     * are present varies from video to video — maxres especially is often
+     * missing. So pick by reported width rather than by asking for one size,
+     * and fall back to the names' own ascending order for the occasional entry
+     * that omits its dimensions.
+     *
+     * @param  array<string, mixed>  $snippet
+     */
+    private function getLargestThumbnailUrl(array $snippet): ?string
+    {
+        $thumbnails = $snippet['thumbnails'] ?? null;
+
+        if (! is_array($thumbnails)) {
+            return null;
+        }
+
+        $sizeOrder = ['default', 'medium', 'high', 'standard', 'maxres'];
+
+        $bestUrl = null;
+        $bestRank = [-1, -1];
+
+        foreach ($thumbnails as $name => $thumbnail) {
+            if (! is_array($thumbnail) || ! isset($thumbnail['url']) || ! is_string($thumbnail['url'])) {
+                continue;
+            }
+
+            $index = array_search($name, $sizeOrder, true);
+
+            $rank = [
+                isset($thumbnail['width']) && is_numeric($thumbnail['width']) ? (int) $thumbnail['width'] : 0,
+                $index === false ? -1 : $index,
+            ];
+
+            if ($rank > $bestRank) {
+                $bestRank = $rank;
+                $bestUrl = $thumbnail['url'];
+            }
+        }
+
+        return $bestUrl;
     }
 
     /**

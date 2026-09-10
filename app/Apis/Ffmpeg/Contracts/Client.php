@@ -15,5 +15,11 @@ interface Client
      */
     public function pcmToMp3(string $pcm, int $sampleRate): string;
 
+    /**
+     * Crop an image to a centred square and re-encode it as JPEG at most
+     * $maxSide on a side, returning the path to the new file.
+     */
+    public function imageToSquareJpeg(string $inputPath, int $maxSide = 1400): string;
+
     public function getDuration(string $path): int;
 }

@@ -25,4 +25,19 @@ final class AudioClipStoragePath
 
         return $path;
     }
+
+    /**
+     * Where a clip's artwork goes, given where its audio goes: the same name
+     * with a .jpg extension. Deriving it means the two files sit side by side
+     * under the same slug, and nothing has to store or look up a second path
+     * to find the image for a clip.
+     */
+    public static function thumbnailFor(string $audioPath): string
+    {
+        // A clip created before storage paths were slugs is a bare UUID with no
+        // extension at all, so only strip one when there's one to strip.
+        $extension = pathinfo($audioPath, PATHINFO_EXTENSION);
+
+        return ($extension === '' ? $audioPath : Str::beforeLast($audioPath, '.')).'.jpg';
+    }
 }

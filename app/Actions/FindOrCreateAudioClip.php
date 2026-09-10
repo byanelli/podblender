@@ -14,7 +14,10 @@ use Ramsey\Uuid\Uuid;
 
 readonly class FindOrCreateAudioClip
 {
-    public function __construct(private QueueAudioClipDownload $queueDownload) {}
+    public function __construct(
+        private QueueAudioClipDownload $queueDownload,
+        private QueueThumbnailDownload $queueThumbnailDownload,
+    ) {}
 
     public function __invoke(PlatformType $platformType, ClipMetadata $metadata): AudioClip
     {
@@ -68,6 +71,12 @@ readonly class FindOrCreateAudioClip
 
         // Queue a job to download the clip.
         ($this->queueDownload)($clip);
+
+        // And its artwork, when the platform offers any. This is a separate job because it's a separate concern: a
+        // thumbnail that won't download mustn't hold up, or fail, the audio that's the point of the clip.
+        if ($metadata->thumbnail !== null) {
+            ($this->queueThumbnailDownload)($clip, $metadata->thumbnail);
+        }
 
         return $clip;
     }

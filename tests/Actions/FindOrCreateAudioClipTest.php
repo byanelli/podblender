@@ -8,9 +8,11 @@ use App\Actions\FindOrCreateAudioClip;
 use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
 use App\Jobs\DownloadAndStoreAudioClip;
+use App\Jobs\DownloadAndStoreThumbnail;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Platforms\Contracts\ClipMetadata;
+use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\SourceMetadata;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -55,6 +57,41 @@ class FindOrCreateAudioClipTest extends TestCase
 
         // A newly created clip has no audio yet, so its download must be queued exactly once.
         Bus::assertDispatchedTimes(DownloadAndStoreAudioClip::class, 1);
+
+        // This platform offered no artwork, and an empty thumbnail job would only
+        // fail three times over before giving up on nothing.
+        Bus::assertNotDispatched(DownloadAndStoreThumbnail::class);
+    }
+
+    #[Test]
+    public function it_queues_a_thumbnail_download_when_the_metadata_has_one()
+    {
+        $metadata = new ClipMetadata(
+            title: 'foo',
+            description: 'zzz',
+            canonicalUrl: 'https://youtube.com/watch?v=withart',
+            publishedAt: now()->subDay()->roundSeconds(),
+            source: new SourceMetadata(
+                name: 'bar',
+                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
+                authorName: 'bar',
+            ),
+            thumbnail: new RemoteImageThumbnail($thumbnailUrl = 'https://i.ytimg.com/vi/withart/maxresdefault.jpg'),
+        );
+
+        Bus::fake();
+
+        /** @var FindOrCreateAudioClip $createAudioClip */
+        $createAudioClip = $this->app->make(FindOrCreateAudioClip::class);
+
+        $clip = $createAudioClip->__invoke(PlatformType::YouTube, $metadata);
+
+        Bus::assertDispatched(
+            DownloadAndStoreThumbnail::class,
+            fn (DownloadAndStoreThumbnail $job) => $job->clip->is($clip)
+                && $job->source instanceof RemoteImageThumbnail
+                && $job->source->url === $thumbnailUrl
+        );
     }
 
     #[Test]
@@ -75,6 +112,9 @@ class FindOrCreateAudioClipTest extends TestCase
                 canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
                 authorName: 'bar',
             ),
+            // Artwork and all: a clip we already have is a clip we've already
+            // fetched a picture for.
+            thumbnail: new RemoteImageThumbnail('https://i.ytimg.com/vi/already/maxresdefault.jpg'),
         );
 
         Bus::fake();
@@ -88,6 +128,7 @@ class FindOrCreateAudioClipTest extends TestCase
         $this->assertTrue($clip->is($existing));
         $this->assertDatabaseCount('audio_clips', 1);
         Bus::assertNotDispatched(DownloadAndStoreAudioClip::class);
+        Bus::assertNotDispatched(DownloadAndStoreThumbnail::class);
     }
 
     #[Test]

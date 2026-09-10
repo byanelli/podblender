@@ -26,5 +26,10 @@ readonly class ClipMetadata implements Arrayable
          * timeout by adding a buffer and multiplying by the expected attempts.
          */
         public ?int $estimatedDownloadTime = null,
+        /**
+         * Where the clip's artwork comes from, when the platform offers one.
+         * {@see ThumbnailSource}
+         */
+        public ?ThumbnailSource $thumbnail = null,
     ) {}
 }

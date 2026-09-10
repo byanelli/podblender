@@ -41,6 +41,26 @@ class AudioClipStoragePathTest extends TestCase
     }
 
     #[Test]
+    public function it_names_a_thumbnail_after_the_audio_it_belongs_to()
+    {
+        $this->assertSame(
+            'the-bakers-dozen-cooking-abc123.jpg',
+            AudioClipStoragePath::thumbnailFor('the-bakers-dozen-cooking-abc123.mp3')
+        );
+    }
+
+    #[Test]
+    public function it_appends_the_thumbnail_extension_to_a_path_that_has_none()
+    {
+        // Clips created before storage paths were slugs are bare UUIDs, so
+        // there's no extension to swap out — only one to add.
+        $this->assertSame(
+            'f556d3ed-fd1e-486c-aec8-8dfff0657cf6.jpg',
+            AudioClipStoragePath::thumbnailFor('f556d3ed-fd1e-486c-aec8-8dfff0657cf6')
+        );
+    }
+
+    #[Test]
     public function it_never_returns_a_path_already_in_use()
     {
         $source = AudioSource::factory()->create(['platform_type' => PlatformType::Web]);

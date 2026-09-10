@@ -6,6 +6,7 @@ use App\Apis\YouTubeData\ChannelMetadata;
 use App\Apis\YouTubeData\PlaylistMetadata;
 use App\Apis\YouTubeData\VideoMetadata;
 use App\Enums\AudioSourceType;
+use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\YouTube;
 use Illuminate\Process\PendingProcess;
@@ -29,6 +30,7 @@ class YouTubeTest extends TestCase
             publishedAt: $publishedAt,
             channel: new ChannelMetadata(id: $channelId, name: $channelName),
             durationSeconds: 600,
+            thumbnailUrl: "https://i.ytimg.com/vi/{$id}/maxresdefault.jpg",
         );
     }
 
@@ -212,6 +214,7 @@ class YouTubeTest extends TestCase
                 name: $channelName = 'some channel',
             ),
             durationSeconds: 600,
+            thumbnailUrl: $thumbnailUrl = "https://i.ytimg.com/vi/{$videoId}/maxresdefault.jpg",
         ));
 
         /** @var YouTube $youtube */
@@ -225,6 +228,47 @@ class YouTubeTest extends TestCase
         $this->assertEquals($publishTime, $metadata->publishedAt);
         $this->assertEquals($channelUrl, $metadata->source->canonicalUrl);
         $this->assertEquals($channelName, $metadata->source->name);
+        $this->assertInstanceOf(RemoteImageThumbnail::class, $metadata->thumbnail);
+        $this->assertEquals($thumbnailUrl, $metadata->thumbnail->url);
+    }
+
+    #[Test]
+    public function it_reports_no_thumbnail_when_the_video_has_none()
+    {
+        $videoUrl = 'https://youtube.com/watch?v='.($videoId = 'wlijflwijf');
+
+        $this->fakeYouTubeData(videoMetadata: new VideoMetadata(
+            id: $videoId,
+            title: 'some video',
+            description: 'some description',
+            publishedAt: now(),
+            channel: new ChannelMetadata(id: 'channel-id', name: 'some channel'),
+            thumbnailUrl: null,
+        ));
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $this->assertNull($youtube->getClipMetadata($videoUrl)->thumbnail);
+    }
+
+    #[Test]
+    public function it_carries_a_thumbnail_for_every_clip_it_lists()
+    {
+        $this->fakeYouTubeData(playlistVideos: [
+            $this->video('v1', 'First', now()->subDay()),
+        ]);
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $clips = $youtube->getMetadataForAllClipsPublishedSince(
+            'https://youtube.com/playlist?list=PLabc123',
+            now()->subYear(),
+        );
+
+        $this->assertInstanceOf(RemoteImageThumbnail::class, $clips[0]->thumbnail);
+        $this->assertEquals('https://i.ytimg.com/vi/v1/maxresdefault.jpg', $clips[0]->thumbnail->url);
     }
 
     #[Test]

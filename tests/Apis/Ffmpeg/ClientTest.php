@@ -208,6 +208,48 @@ class ClientTest extends TestCase
     }
 
     #[Test]
+    public function it_crops_an_image_to_a_centred_square_jpeg()
+    {
+        $png = sys_get_temp_dir().'/'.Uuid::uuid4().'.png';
+
+        Process::fake(['*' => $this->fakeEncodeProducing('jpeg bytes')]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $jpeg = $client->imageToSquareJpeg($png, 1400);
+
+        $this->assertFileExists($jpeg);
+        $this->assertStringEndsWith('.jpg', $jpeg);
+
+        // Podcast artwork is square and the source usually isn't, so the crop
+        // takes the shorter side; the scale's min() is what stops a small
+        // thumbnail being blown up to the maximum.
+        Process::assertRan(fn (PendingProcess $process) => collect($process->command)
+            ->map(fn (string $argument) => Str::replace("'", '', $argument))
+            ->contains('crop=min(iw,ih):min(iw,ih),scale=min(1400,iw):-1'));
+    }
+
+    #[Test]
+    public function it_rejects_a_crop_that_wrote_no_file()
+    {
+        $png = sys_get_temp_dir().'/'.Uuid::uuid4().'.png';
+
+        // The same silent failure the audio methods guard against: exit 0,
+        // nothing written. Storing that would put an empty file where an
+        // episode's artwork should be.
+        Process::fake(['*' => $this->fakeEncodeProducing('')]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('wrote no file');
+
+        $client->imageToSquareJpeg($png);
+    }
+
+    #[Test]
     public function it_gets_duration()
     {
         $mp3 = sys_get_temp_dir().'/'.Uuid::uuid4().'.mp3';

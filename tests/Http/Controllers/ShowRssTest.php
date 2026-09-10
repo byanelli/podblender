@@ -12,6 +12,7 @@ use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -82,6 +83,54 @@ class ShowRssTest extends TestCase
 
         $this->assertNotEmpty($clip->audio_url);
         $this->assertStringContainsString("<enclosure url=\"{$clip->audio_url}\"", $response);
+    }
+
+    #[Test]
+    public function it_gives_an_episode_with_artwork_its_own_image()
+    {
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id]);
+
+        /** @var AudioClip $clip */
+        $clip = AudioClip::factory()->create([
+            'audio_source_id'  => AudioSource::factory()->create()->id,
+            'processing_state' => ClipProcessingState::Processed,
+            'thumbnail_path'   => 'some-channel-some-video-abc123.jpg',
+        ]);
+
+        $feed->audioClips()->attach($clip);
+
+        $body = $this->get("rss/{$feed->uuid}")->content();
+
+        $this->assertNotEmpty($clip->thumbnail_url);
+        $this->assertStringContainsString("<itunes:image href=\"{$clip->thumbnail_url}\"/>", $body);
+
+        // Still valid XML with the extra element in the item.
+        $this->assertNotFalse(simplexml_load_string($body));
+    }
+
+    #[Test]
+    public function it_leaves_the_image_out_for_an_episode_without_artwork()
+    {
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id]);
+
+        /** @var AudioClip $clip */
+        $clip = AudioClip::factory()->create([
+            'audio_source_id'  => AudioSource::factory()->create()->id,
+            'processing_state' => ClipProcessingState::Processed,
+            'thumbnail_path'   => null,
+        ]);
+
+        $feed->audioClips()->attach($clip);
+
+        $body = $this->get("rss/{$feed->uuid}")->content();
+
+        // An <itunes:image> with an empty href is worse than none at all: some
+        // clients show a broken image where the channel's own would stand in.
+        $item = Str::between($body, '<item>', '</item>');
+
+        $this->assertStringNotContainsString('<itunes:image', $item);
     }
 
     #[Test]

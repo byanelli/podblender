@@ -4,6 +4,7 @@ namespace Tests\Http\Controllers;
 
 use App\Models\User;
 use App\Platforms\Contracts\ClipMetadata;
+use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\SourceMetadata;
 use DateTimeInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -54,11 +55,43 @@ class ShowMetadataTest extends TestCase
                     'clipCount'    => null,
                 ],
                 'estimatedDownloadTime' => $estimatedDownloadTime,
+                'thumbnail'             => null,
             ],
             'platformType' => [
                 'name'  => 'YouTube',
                 'value' => 1,
             ],
         ]);
+    }
+
+    #[Test]
+    public function it_shows_a_clips_thumbnail_source()
+    {
+        $url = 'https://youtube.com/watch?v='.($id = 'lijwliejfwlef');
+
+        $this->fakePlatform(
+            clipMetadata: new ClipMetadata(
+                title: 'Some title',
+                description: 'Lorem ipsum.',
+                canonicalUrl: $url,
+                publishedAt: now()->subDay()->roundSeconds(),
+                source: new SourceMetadata(
+                    name: 'Some channel',
+                    canonicalUrl: 'https://youtube.com/channel/lwefjiritlrth',
+                    authorName: 'Some channel',
+                ),
+                thumbnail: new RemoteImageThumbnail(
+                    $thumbnailUrl = "https://i.ytimg.com/vi/{$id}/maxresdefault.jpg"
+                ),
+            ),
+        );
+
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post('api/fetch-metadata', ['url' => $url]);
+
+        // The thumbnail is a nested object like the source is, so it survives
+        // the trip to the client rather than serializing as an empty value.
+        $response->assertJsonPath('metadata.thumbnail', ['url' => $thumbnailUrl]);
     }
 }

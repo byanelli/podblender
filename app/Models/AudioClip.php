@@ -28,6 +28,7 @@ use Illuminate\Support\Traits\Tappable;
  * @property ClipProcessingState $processing_state
  * @property int $size
  * @property string $storage_path
+ * @property string|null $thumbnail_path
  * @property string $title
  * @property CarbonImmutable $created_at
  * @property CarbonImmutable $updated_at
@@ -35,6 +36,7 @@ use Illuminate\Support\Traits\Tappable;
  * @property Collection<int, Feed> $feeds
  * @property string $audio_url {@see self::audioUrl()}
  * @property string|null $preview_url {@see self::previewUrl()}
+ * @property string|null $thumbnail_url {@see self::thumbnailUrl()}
  * @property string $formatted_time {@see self::formattedTime()}
  * @property PlatformType $platform_type {@see self::platformType()}
  */
@@ -61,6 +63,7 @@ class AudioClip extends Model
     protected $appends = [
         'audio_url',
         'preview_url',
+        'thumbnail_url',
     ];
 
     /**
@@ -112,6 +115,22 @@ class AudioClip extends Model
     {
         return Attribute::make(
             fn () => AudioPreview::available() ? $this->audio_url : null
+        );
+    }
+
+    /**
+     * The clip's artwork, or null for a clip that has none — a platform that
+     * offered no image, or a download that never succeeded. The feed page and
+     * the RSS item both leave the picture out rather than substitute one.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function thumbnailUrl(): Attribute
+    {
+        return Attribute::make(
+            fn () => $this->thumbnail_path === null
+                ? null
+                : url(Storage::url($this->thumbnail_path))
         );
     }
 

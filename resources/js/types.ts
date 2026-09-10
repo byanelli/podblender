@@ -31,6 +31,7 @@ export type AudioClip = {
     platform_url: string,
     audio_url: string,
     preview_url: string | null,
+    thumbnail_url: string | null,
     created_at: string,
     published_at: string,
 

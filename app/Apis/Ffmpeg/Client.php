@@ -143,6 +143,66 @@ readonly class Client implements ClientContract
         return $outputPath;
     }
 
+    /**
+     * Crop an image to a square and re-encode it as JPEG, returning the path to
+     * the new file.
+     *
+     * Podcast artwork is square, and what platforms hand us usually isn't — a
+     * YouTube thumbnail is 16:9 — so take the centre of the frame and scale it
+     * down to at most $maxSide. The scale filter's min() never enlarges a
+     * smaller image: blowing a 120px thumbnail up to 1400 would only make it
+     * blurry and heavy.
+     *
+     * Any format ffmpeg can decode is accepted (JPEG, PNG, WebP); the single
+     * -frames:v 1 keeps an animated input to its first frame.
+     */
+    public function imageToSquareJpeg(string $inputPath, int $maxSide = 1400): string
+    {
+        $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.jpg';
+
+        $this->runProducingFile(120, [
+            '-i',
+            $inputPath,
+            '-vf',
+            "crop='min(iw,ih)':'min(iw,ih)',scale='min($maxSide,iw)':-1",
+            '-frames:v',
+            '1',
+            // 2 is ffmpeg's near-best JPEG quality. Artwork is displayed at a
+            // few hundred pixels, and the file rides along with an episode, so
+            // there's no reason to spend the bytes on 1.
+            '-q:v',
+            '2',
+            $outputPath,
+        ], $outputPath);
+
+        return $outputPath;
+    }
+
+    /**
+     * Run ffmpeg and insist it actually wrote something to $outputPath.
+     *
+     * The same silent failure runProducingAudio() guards against — exiting 0
+     * having written nothing — applies to an image, minus the duration check
+     * that doesn't mean anything for a single frame. An empty or missing file
+     * is the whole of what can go wrong here.
+     *
+     * @param  array<int, string>  $args
+     */
+    private function runProducingFile(int $timeout, array $args, string $outputPath): void
+    {
+        $result = $this->runSuccessfully($timeout, $args);
+
+        clearstatcache(true, $outputPath);
+
+        if (! file_exists($outputPath) || filesize($outputPath) === 0) {
+            throw new \RuntimeException(
+                "ffmpeg exited successfully but wrote no file to $outputPath.\n".
+                'Command: '.implode(' ', $args)."\n".
+                'Output: '.trim($result->errorOutput())
+            );
+        }
+    }
+
     public function getDuration(string $path): int
     {
         $duration = $this->getPreciseDurationOrNull($path);
