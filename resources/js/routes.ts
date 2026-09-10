@@ -11,6 +11,7 @@ export default {
         createSubscription: route('createSubscription'),
         createCustomFeed: route('createCustomFeed'),
         deleteClip: (feedId: number, clipId: number) => route('deleteClip', {feed: feedId, clip: clipId}),
+        retryClip: (feedId: number, clipId: number) => route('retryClip', {feed: feedId, clip: clipId}),
         deleteFeed: (feedId: number) => route('deleteFeed', {feed: feedId}),
     }
 }

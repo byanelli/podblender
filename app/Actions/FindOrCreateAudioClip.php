@@ -4,19 +4,17 @@ namespace App\Actions;
 
 use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
-use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Support\AudioClipStoragePath;
-use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
 readonly class FindOrCreateAudioClip
 {
-    public function __construct(private Dispatcher $dispatcher) {}
+    public function __construct(private QueueAudioClipDownload $queueDownload) {}
 
     public function __invoke(PlatformType $platformType, ClipMetadata $metadata): AudioClip
     {
@@ -69,7 +67,7 @@ readonly class FindOrCreateAudioClip
         }
 
         // Queue a job to download the clip.
-        $this->dispatcher->dispatch(new DownloadAndStoreAudioClip($clip));
+        ($this->queueDownload)($clip);
 
         return $clip;
     }

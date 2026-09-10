@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
-import { ExternalLink, ListMusic, Pause, Play, Trash2 } from 'lucide-react';
+import {
+    ExternalLink,
+    ListMusic,
+    Pause,
+    Play,
+    RotateCcw,
+    Trash2,
+} from 'lucide-react';
 import RadioWaves from '@/Components/RadioWaves';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -80,6 +87,7 @@ function previewLabel(clip: AudioClip, isPlaying: boolean): string {
 
 export default function Feed({ feed }: { feed: FeedType }) {
     const [errorMessage, setErrorMessage] = useState('');
+    const [errorOperation, setErrorOperation] = useState('deleting your clip');
     const [isLoading, setIsLoading] = useState(false);
     const [playingId, setPlayingId] = useState<number | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -120,10 +128,30 @@ export default function Feed({ feed }: { feed: FeedType }) {
 
     const deleteClip = (clip: AudioClip) => {
         setErrorMessage('');
+        setErrorOperation('deleting your clip');
         setIsLoading(true);
 
         axios
             .delete(routes.api.deleteClip(feed.id, clip.id))
+            .then(() => {
+                reloadFeed();
+                setIsLoading(false);
+            })
+            .catch((error) => {
+                setIsLoading(false);
+                setErrorMessage(
+                    error.response?.data?.message ?? error.response?.data?.error,
+                );
+            });
+    };
+
+    const retryClip = (clip: AudioClip) => {
+        setErrorMessage('');
+        setErrorOperation('retrying your download');
+        setIsLoading(true);
+
+        axios
+            .post(routes.api.retryClip(feed.id, clip.id))
             .then(() => {
                 reloadFeed();
                 setIsLoading(false);
@@ -171,7 +199,7 @@ export default function Feed({ feed }: { feed: FeedType }) {
                 {errorMessage !== '' && (
                     <ErrorPanel
                         message={errorMessage}
-                        operation="deleting your clip"
+                        operation={errorOperation}
                     />
                 )}
 
@@ -261,6 +289,21 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                                     ) : (
                                                         <Play />
                                                     )}
+                                                </Button>
+                                            )}
+
+                                            {clip.processing_state.name ===
+                                                'Failed' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-muted-foreground hover:text-foreground"
+                                                    disabled={isLoading}
+                                                    aria-label={`Retry ${clip.title}`}
+                                                    title="Retry download"
+                                                    onClick={() => retryClip(clip)}
+                                                >
+                                                    <RotateCcw />
                                                 </Button>
                                             )}
 
