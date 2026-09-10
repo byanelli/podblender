@@ -67,6 +67,17 @@ function formatDate(value: string): string {
     }
 }
 
+function previewLabel(clip: AudioClip, isPlaying: boolean): string {
+    switch (clip.processing_state.name) {
+        case 'Processed':
+            return isPlaying ? `Pause ${clip.title}` : `Preview ${clip.title}`;
+        case 'Processing':
+            return `Still processing ${clip.title}`;
+        default:
+            return `Audio unavailable for ${clip.title}`;
+    }
+}
+
 export default function Feed({ feed }: { feed: FeedType }) {
     const [errorMessage, setErrorMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -87,6 +98,10 @@ export default function Feed({ feed }: { feed: FeedType }) {
     }, [feed.id]);
 
     const togglePlayback = (clip: AudioClip) => {
+        if (clip.processing_state.name !== 'Processed') {
+            return;
+        }
+
         if (playingId === clip.id) {
             audioRef.current?.pause();
             setPlayingId(null);
@@ -222,10 +237,22 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                                             ? 'text-primary hover:text-primary'
                                                             : 'text-muted-foreground hover:text-foreground'
                                                     }
-                                                    aria-label={
-                                                        playingId === clip.id
-                                                            ? `Pause ${clip.title}`
-                                                            : `Preview ${clip.title}`
+                                                    disabled={
+                                                        clip.processing_state.name !==
+                                                        'Processed'
+                                                    }
+                                                    aria-label={previewLabel(
+                                                        clip,
+                                                        playingId === clip.id,
+                                                    )}
+                                                    title={
+                                                        clip.processing_state.name ===
+                                                        'Processed'
+                                                            ? undefined
+                                                            : previewLabel(
+                                                                  clip,
+                                                                  playingId === clip.id,
+                                                              )
                                                     }
                                                     onClick={() => togglePlayback(clip)}
                                                 >
