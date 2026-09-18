@@ -14,32 +14,32 @@ return [
     |
     */
 
-    'postmark'         => [
+    'postmark'          => [
         'token' => env('POSTMARK_TOKEN'),
     ],
 
-    'ses'              => [
+    'ses'               => [
         'key'    => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'resend'           => [
+    'resend'            => [
         'key' => env('RESEND_KEY'),
     ],
 
-    'slack'            => [
+    'slack'             => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel'              => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
 
-    'youtube_data_api' => [
+    'youtube_data_api'  => [
         'key' => env('YOUTUBE_DATA_API_KEY'),
     ],
 
-    'gemini'           => [
+    'gemini'            => [
         // Generative Language API key (aistudio.google.com/apikey). Used for
         // text-to-speech via App\Apis\Tts\GeminiClient.
         'api_key' => env('GEMINI_API_KEY'),
@@ -49,19 +49,26 @@ return [
         ],
     ],
 
-    'scrapfly'         => [
+    'scrapfly'          => [
         // Anti-Scraping-Protection scrape API, used to clear archive.is's
         // Cloudflare CAPTCHA for gated articles. Every scrape spends credits.
         'key' => env('SCRAPFLY_API_KEY'),
     ],
 
-    'ytdlp'            => [
+    'ytdlp'             => [
         // How long to remember that YouTube has refused this host's address, and so skip straight to the residential
         // proxy. The refusal lasts hours, and the only cost of guessing short is one wasted download attempt.
         'direct_block_minutes' => env('YTDLP_DIRECT_BLOCK_MINUTES', 60),
     ],
 
-    'oxylabs'          => [
+    // Which residential proxy provider the app uses, one of 'oxylabs' or 'dataimpulse'. Only one is in play at a
+    // time, and only the chosen one's credentials are read. The default keeps installs that predate DataImpulse
+    // working exactly as they did.
+    'residential_proxy' => [
+        'provider' => env('RESIDENTIAL_PROXY_PROVIDER', 'oxylabs'),
+    ],
+
+    'oxylabs'           => [
         'residential' => [
             'user'     => env('OXYLABS_USERNAME'),
             'password' => env('OXYLABS_PASSWORD'),
@@ -69,6 +76,17 @@ return [
             // The country to take an exit address in. YouTube serves some countries poorly or not at all, and an
             // address near the content is faster.
             'country'  => env('OXYLABS_COUNTRY', 'US'),
+        ],
+    ],
+
+    'dataimpulse'       => [
+        'residential' => [
+            'user'     => env('DATAIMPULSE_USERNAME'),
+            'password' => env('DATAIMPULSE_PASSWORD'),
+
+            // The country to take an exit address in. DataImpulse wants a lowercase two-letter code; the proxy class
+            // lowercases whatever is written here.
+            'country'  => env('DATAIMPULSE_COUNTRY', 'US'),
         ],
     ],
 ];

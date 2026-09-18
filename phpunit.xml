@@ -40,9 +40,18 @@
             Nothing here is a real credential and nothing here is dialled: the
             HTTP layer is faked in the tests that reach these services.
         -->
+        <!--
+            Pinned so the suite never depends on which provider a developer
+            happens to have selected in their own .env. There is no
+            .env.testing, so anything not named here is read from .env.
+        -->
+        <env name="RESIDENTIAL_PROXY_PROVIDER" value="oxylabs"/>
         <env name="OXYLABS_USERNAME" value="testing-user"/>
         <env name="OXYLABS_PASSWORD" value="testing-password"/>
         <env name="OXYLABS_COUNTRY" value="US"/>
+        <env name="DATAIMPULSE_USERNAME" value="testing-user"/>
+        <env name="DATAIMPULSE_PASSWORD" value="testing-password"/>
+        <env name="DATAIMPULSE_COUNTRY" value="US"/>
         <env name="SCRAPFLY_API_KEY" value="testing-key"/>
         <env name="YOUTUBE_DATA_API_KEY" value="testing-key"/>
         <env name="GEMINI_API_KEY" value="testing-key"/>

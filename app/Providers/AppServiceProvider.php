@@ -16,6 +16,7 @@ use App\Articles\Fetcher;
 use App\Articles\Reader;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Proxies\Contracts\ResidentialProxyConfig;
+use App\Proxies\DataImpulseResidentialProxyConfig;
 use App\Proxies\OxylabsResidentialProxyConfig;
 use Carbon\CarbonImmutable;
 use Illuminate\Broadcasting\BroadcastManager;
@@ -25,6 +26,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
+use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -54,11 +56,40 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FetcherContract::class, Fetcher::class);
         $this->app->bind(ReaderContract::class, Reader::class);
 
-        $this->app->bind(ResidentialProxyConfig::class, OxylabsResidentialProxyConfig::class);
+        $this->app->bind(
+            ResidentialProxyConfig::class,
+            fn () => $this->app->make($this->residentialProxyConfigClass()),
+        );
 
         $this->registerDownloadRateLimiter();
 
         $this->app->make(BroadcastManager::class)->routes();
+    }
+
+    /**
+     * Which residential proxy implementation this install uses, decided by config rather than by editing this file.
+     * Both providers cost money and need an account, so an install has at most one of them, and the app only ever
+     * reads the credentials of the one named here.
+     *
+     * An unrecognised name is an error and not a reason to fall back to the default: a typo in
+     * RESIDENTIAL_PROXY_PROVIDER would otherwise leave the app quietly using an account the operator didn't pick,
+     * which shows up much later as a bill or a download that keeps failing.
+     *
+     * @return class-string<ResidentialProxyConfig>
+     */
+    private function residentialProxyConfigClass(): string
+    {
+        $provider = $this->app->make(Config::class)->get('services.residential_proxy.provider');
+
+        return match ($provider) {
+            'oxylabs'     => OxylabsResidentialProxyConfig::class,
+            'dataimpulse' => DataImpulseResidentialProxyConfig::class,
+            default       => throw new InvalidArgumentException(sprintf(
+                'Unknown residential proxy provider [%s]. RESIDENTIAL_PROXY_PROVIDER must be one of: oxylabs, '
+                .'dataimpulse.',
+                is_string($provider) ? $provider : get_debug_type($provider),
+            )),
+        };
     }
 
     /**

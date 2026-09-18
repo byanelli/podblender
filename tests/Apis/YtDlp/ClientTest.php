@@ -410,12 +410,18 @@ class ClientTest extends TestCase
     }
 
     /**
-     * An install with no Oxylabs account, which is most of them: the proxy costs money and needs signing up for.
+     * An install with no residential proxy account, which is most of them: a proxy costs money and needs signing up
+     * for. Every provider's credentials are cleared, not just the one selected by default, so these tests keep
+     * meaning "there is no proxy" whichever provider the config names.
      */
     private function withoutAResidentialProxy(): void
     {
         $config = $this->app->make(Repository::class);
+
         $config->set('services.oxylabs.residential.user', null);
         $config->set('services.oxylabs.residential.password', null);
+
+        $config->set('services.dataimpulse.residential.user', null);
+        $config->set('services.dataimpulse.residential.password', null);
     }
 }
