@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\FindOrCreateAudioSource;
+use App\Actions\GenerateFeedCover;
 use App\Http\Requests\CreateSubscriptionRequest;
 use App\Jobs\UpdateSubscription;
 use App\Models\Feed;
@@ -18,6 +19,7 @@ readonly class CreateSubscription
         Platforms $platforms,
         Dispatcher $dispatcher,
         FindOrCreateAudioSource $findOrCreateAudioSource,
+        GenerateFeedCover $generateCover,
         CreateSubscriptionRequest $request,
         #[CurrentUser] User $user,
     ): void {
@@ -30,7 +32,7 @@ readonly class CreateSubscription
         // Find-or-create the source, create the feed, and queue its initial fill as one unit. If any step throws, we
         // don't want a half-made subscription left behind — a feed with no source, or a source and feed with no job to
         // fill them in.
-        DB::transaction(function () use ($dispatcher, $findOrCreateAudioSource, $platformType, $metadata, $request, $user) {
+        $feed = DB::transaction(function () use ($dispatcher, $findOrCreateAudioSource, $platformType, $metadata, $request, $user): Feed {
             $source = $findOrCreateAudioSource($platformType, $metadata);
 
             /** @var Feed $feed */
@@ -47,6 +49,13 @@ readonly class CreateSubscription
             ]);
 
             $dispatcher->dispatch(new UpdateSubscription($source, $feed));
+
+            return $feed;
         });
+
+        // Drawn after the transaction has committed, not inside it: a rollback
+        // would leave a cover file on disk with no feed left to own it. It
+        // never throws, so the subscription stands either way.
+        $generateCover($feed);
     }
 }

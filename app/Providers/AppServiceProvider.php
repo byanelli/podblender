@@ -14,6 +14,8 @@ use App\Articles\Contracts\Fetcher as FetcherContract;
 use App\Articles\Contracts\Reader as ReaderContract;
 use App\Articles\Fetcher;
 use App\Articles\Reader;
+use App\Covers\Contracts\CoverGenerator as CoverGeneratorContract;
+use App\Covers\GdCoverGenerator;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Proxies\Contracts\ResidentialProxyConfig;
 use App\Proxies\DataImpulseResidentialProxyConfig;
@@ -52,6 +54,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
         $this->app->bind(YouTubeDataClientContract::class, YouTubeDataClient::class);
         $this->app->bind(ScrapflyClientContract::class, ScrapflyClient::class);
+
+        $this->app->bind(CoverGeneratorContract::class, GdCoverGenerator::class);
 
         $this->app->bind(FetcherContract::class, Fetcher::class);
         $this->app->bind(ReaderContract::class, Reader::class);

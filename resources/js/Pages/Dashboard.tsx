@@ -29,6 +29,7 @@ type Feed = {
     uuid: string;
     name: string;
     description: string;
+    cover_url: string | null;
     subscription_id: number | null;
     subscription: { platform_url: string } | null;
     audio_clips_count: number;
@@ -107,40 +108,51 @@ export default function Dashboard({ user }: { user: User }) {
                                 <li key={feed.id}>
                                     <Card className="relative gap-0 py-0 transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg">
                                         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-                                            <div className="min-w-0">
-                                                <Link
-                                                    href={routes.feed(feed.id)}
-                                                    className="font-display text-lg font-bold transition-colors hover:text-primary after:absolute after:inset-0 after:content-['']"
-                                                >
-                                                    {feed.name}
-                                                </Link>
-                                                <div className="mt-1.5 flex items-center gap-2">
-                                                    <Badge
-                                                        variant={
-                                                            feed.subscription_id ==
-                                                            null
-                                                                ? "secondary"
-                                                                : "default"
-                                                        }
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                {/* A feed whose cover could not be drawn simply shows no picture,
+                                                    the same way a clip without a thumbnail does. */}
+                                                {feed.cover_url && (
+                                                    <img
+                                                        src={feed.cover_url}
+                                                        alt=""
+                                                        className="size-12 flex-none rounded-[7px] border-2 border-ink object-cover"
+                                                    />
+                                                )}
+                                                <div className="min-w-0">
+                                                    <Link
+                                                        href={routes.feed(feed.id)}
+                                                        className="font-display text-lg font-bold transition-colors hover:text-primary after:absolute after:inset-0 after:content-['']"
                                                     >
-                                                        {feed.subscription_id ==
-                                                        null ? (
-                                                            <ListMusic />
-                                                        ) : (
-                                                            <RadioWaves />
-                                                        )}
-                                                        {feed.subscription_id ==
-                                                        null
-                                                            ? "Custom"
-                                                            : "Subscription"}
-                                                    </Badge>
-                                                    <span className="text-xs font-semibold text-muted-foreground">
-                                                        {feed.audio_clips_count}{" "}
-                                                        {feed.audio_clips_count ===
-                                                        1
-                                                            ? "clip"
-                                                            : "clips"}
-                                                    </span>
+                                                        {feed.name}
+                                                    </Link>
+                                                    <div className="mt-1.5 flex items-center gap-2">
+                                                        <Badge
+                                                            variant={
+                                                                feed.subscription_id ==
+                                                                null
+                                                                    ? "secondary"
+                                                                    : "default"
+                                                            }
+                                                        >
+                                                            {feed.subscription_id ==
+                                                            null ? (
+                                                                <ListMusic />
+                                                            ) : (
+                                                                <RadioWaves />
+                                                            )}
+                                                            {feed.subscription_id ==
+                                                            null
+                                                                ? "Custom"
+                                                                : "Subscription"}
+                                                        </Badge>
+                                                        <span className="text-xs font-semibold text-muted-foreground">
+                                                            {feed.audio_clips_count}{" "}
+                                                            {feed.audio_clips_count ===
+                                                            1
+                                                                ? "clip"
+                                                                : "clips"}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
 

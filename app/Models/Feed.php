@@ -14,12 +14,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
  * @property string $name
  * @property string $uuid
  * @property ?string $description
+ * @property ?string $cover_path
  * @property int $user_id
  * @property ?int $subscription_id
  * @property ?CarbonImmutable $subscribed_at
@@ -33,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
  * @property User $user
  * @property ?AudioSource $subscription
  * @property string $author_name
+ * @property ?string $cover_url {@see self::coverUrl()}
  */
 class Feed extends Model
 {
@@ -57,6 +60,10 @@ class Feed extends Model
      */
     protected $attributes = [
         'tracks_new_episodes' => true,
+    ];
+
+    protected $appends = [
+        'cover_url',
     ];
 
     /**
@@ -153,6 +160,24 @@ class Feed extends Model
             fn (): string => is_null($this->subscription)
                 ? $this->user->name
                 : $this->subscription->author_name,
+        );
+    }
+
+    /**
+     * The feed's show artwork, or null for a feed that has none. Both the feed
+     * page and the RSS channel leave the picture out rather than substitute
+     * one, the same way a clip without a thumbnail does.
+     *
+     * {@see AudioClip::thumbnailUrl()}
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function coverUrl(): Attribute
+    {
+        return Attribute::make(
+            fn () => $this->cover_path === null
+                ? null
+                : url(Storage::url($this->cover_path))
         );
     }
 

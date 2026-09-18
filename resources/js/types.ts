@@ -42,6 +42,7 @@ export type Feed = {
     uuid: string,
     name: string,
     description: string,
+    cover_url: string | null,
     audio_clips: AudioClip[],
     subscription: AudioSource|null,
 }

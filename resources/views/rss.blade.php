@@ -14,7 +14,17 @@
         </itunes:owner>
         {{-- Who publishes the podcast: for a subscription that's the channel, not the podblender user who set it up. --}}
         <itunes:author>{{$feed->author_name}}</itunes:author>
-        <itunes:image href="https://placehold.co/400"/> {{--todo: specify image url?--}}
+        {{-- Show artwork, when the feed has any. Left out entirely otherwise, for the reason given on the episode
+             artwork below: a tag pointing at nothing is worse than no tag. Both elements carry the same picture —
+             itunes:image is what the podcast apps read, and <image> is what plain RSS readers read. --}}
+        @if($feed->cover_url)
+            <itunes:image href="{{$feed->cover_url}}"/>
+            <image>
+                <url>{{$feed->cover_url}}</url>
+                <title>{{$feed->name}}</title>
+                <link>{{route('rss', [$feed])}}</link>
+            </image>
+        @endif
         <language>en-us</language>
         @foreach($feed->audioClipsFinishedProcessing as $clip)
             <item>

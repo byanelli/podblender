@@ -148,6 +148,49 @@ class ShowRssTest extends TestCase
     }
 
     #[Test]
+    public function it_shows_the_cover_as_both_kinds_of_channel_artwork()
+    {
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create([
+            'user_id'    => User::factory()->create()->id,
+            'cover_path' => 'covers/lectures-abc123.jpg',
+        ]);
+
+        $body = $this->get("rss/{$feed->uuid}")->content();
+
+        $this->assertNotEmpty($feed->cover_url);
+
+        // itunes:image is what the podcast apps read; <image> is what a plain
+        // RSS reader reads. Both carry the same picture.
+        $this->assertStringContainsString("<itunes:image href=\"{$feed->cover_url}\"/>", $body);
+        $this->assertStringContainsString("<url>{$feed->cover_url}</url>", $body);
+        $this->assertStringContainsString('<title>'.htmlentities($feed->name).'</title>', $body);
+        $this->assertStringContainsString('<link>'.url("rss/{$feed->uuid}").'</link>', $body);
+
+        $this->assertNotFalse(simplexml_load_string($body));
+    }
+
+    #[Test]
+    public function it_leaves_both_image_tags_out_for_a_feed_without_a_cover()
+    {
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create([
+            'user_id'    => User::factory()->create()->id,
+            'cover_path' => null,
+        ]);
+
+        $body = $this->get("rss/{$feed->uuid}")->content();
+
+        // Same reasoning as the episode artwork: an href pointing at nothing is
+        // worse than no tag at all.
+        $channel = Str::before($body, '<item>');
+
+        $this->assertStringNotContainsString('<itunes:image', $channel);
+        $this->assertStringNotContainsString('<image>', $channel);
+        $this->assertStringNotContainsString('placehold.co', $body);
+    }
+
+    #[Test]
     public function its_xml_is_parseable()
     {
         /** @var Feed $feed */

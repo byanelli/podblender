@@ -6,6 +6,7 @@ use App\Models\Feed;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -16,6 +17,33 @@ class DeleteFeedTest extends TestCase
     {
         $user = User::factory()->create();
         $feed = Feed::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($user)->delete("/feeds/{$feed->id}");
+
+        $this->assertModelMissing($feed);
+    }
+
+    #[Test]
+    public function it_deletes_the_feeds_cover_with_it()
+    {
+        $storage = Storage::fake();
+        $storage->put($coverPath = 'covers/lectures-abc123.jpg', 'a cover');
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->create(['user_id' => $user->id, 'cover_path' => $coverPath]);
+
+        $this->actingAs($user)->delete("/feeds/{$feed->id}");
+
+        $storage->assertMissing($coverPath);
+    }
+
+    #[Test]
+    public function deleting_a_feed_without_a_cover_is_fine()
+    {
+        Storage::fake();
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->create(['user_id' => $user->id, 'cover_path' => null]);
 
         $this->actingAs($user)->delete("/feeds/{$feed->id}");
 

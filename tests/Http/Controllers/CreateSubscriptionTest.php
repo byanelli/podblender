@@ -8,12 +8,26 @@ use App\Models\User;
 use App\Platforms\Contracts\SourceMetadata;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\Concerns\FakesCoverGenerator;
 use Tests\Concerns\FakesPlatform;
 use Tests\TestCase;
 
 class CreateSubscriptionTest extends TestCase
 {
-    use FakesPlatform;
+    use FakesCoverGenerator, FakesPlatform;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Every feed gets a cover drawn as it is created, and no test here
+        // looks at the picture, so nothing has to be drawn for real.
+        Storage::fake();
+        $this->fakeCoverGenerator();
+    }
 
     public function test_create_subscription()
     {
@@ -146,5 +160,55 @@ class CreateSubscriptionTest extends TestCase
         // then the feed still needs its one sweep.
         $this->assertNull($feed->subscription_filled_at);
         $this->assertTrue($feed->needsUpdating());
+    }
+
+    #[Test]
+    public function it_gives_the_new_feed_a_cover()
+    {
+        $storage = Storage::fake();
+
+        $this->actingAs(User::factory()->create());
+
+        $this->fakePlatform(sourceMetadata: new SourceMetadata(
+            name: 'Test channel',
+            canonicalUrl: $sourceUrl = 'https://youtube.com/@zzz',
+            authorName: 'Test channel',
+        ));
+
+        Bus::fake();
+
+        $this->postJson('/feeds/subscription', ['url' => $sourceUrl, 'name' => 'Adam Tooze'])
+            ->assertOk();
+
+        $feed = Feed::query()->sole();
+
+        $this->assertNotNull($feed->cover_path);
+        $storage->assertExists($feed->cover_path);
+    }
+
+    #[Test]
+    public function a_cover_that_cannot_be_drawn_does_not_stop_the_subscription_being_created()
+    {
+        $this->fakeCoverGeneratorThatFails('the cover font is missing');
+
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(fn (string $message) => str_contains($message, 'the cover font is missing'));
+
+        $this->actingAs(User::factory()->create());
+
+        $this->fakePlatform(sourceMetadata: new SourceMetadata(
+            name: 'Test channel',
+            canonicalUrl: $sourceUrl = 'https://youtube.com/@zzz',
+            authorName: 'Test channel',
+        ));
+
+        Bus::fake();
+
+        $this->postJson('/feeds/subscription', ['url' => $sourceUrl, 'name' => 'Adam Tooze'])
+            ->assertOk();
+
+        $this->assertNull(Feed::query()->sole()->cover_path);
+        $this->assertDatabaseCount('feeds', 1);
     }
 }

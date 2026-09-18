@@ -170,27 +170,38 @@ export default function Feed({ feed }: { feed: FeedType }) {
     return (
         <AuthenticatedLayout
             header={
-                <div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground shadow-hard-sm">
-                        {feed.subscription != null ? (
-                            <>
-                                <RadioWaves className="size-3.5" />
-                                {feed.subscription.name} ·{' '}
-                                {feed.subscription.platform_type.name}
-                            </>
-                        ) : (
-                            <>
-                                <ListMusic className="size-3.5" />
-                                Custom feed
-                            </>
-                        )}
-                    </span>
-                    <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
-                        {feed.name}
-                    </h1>
-                    <p className="mt-1 text-sm font-semibold text-muted-foreground">
-                        {clipCount} {clipCount === 1 ? 'clip' : 'clips'}
-                    </p>
+                <div className="flex items-center gap-4">
+                    {/* A feed whose cover could not be drawn simply shows no picture, the same way a clip
+                        without a thumbnail does. */}
+                    {feed.cover_url && (
+                        <img
+                            src={feed.cover_url}
+                            alt=""
+                            className="size-20 flex-none rounded-[7px] border-2 border-ink object-cover shadow-hard-sm sm:size-24"
+                        />
+                    )}
+                    <div className="min-w-0">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground shadow-hard-sm">
+                            {feed.subscription != null ? (
+                                <>
+                                    <RadioWaves className="size-3.5" />
+                                    {feed.subscription.name} ·{' '}
+                                    {feed.subscription.platform_type.name}
+                                </>
+                            ) : (
+                                <>
+                                    <ListMusic className="size-3.5" />
+                                    Custom feed
+                                </>
+                            )}
+                        </span>
+                        <h1 className="mt-3 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
+                            {feed.name}
+                        </h1>
+                        <p className="mt-1 text-sm font-semibold text-muted-foreground">
+                            {clipCount} {clipCount === 1 ? 'clip' : 'clips'}
+                        </p>
+                    </div>
                 </div>
             }
         >
