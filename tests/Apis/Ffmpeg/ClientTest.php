@@ -223,11 +223,12 @@ class ClientTest extends TestCase
         $this->assertStringEndsWith('.jpg', $jpeg);
 
         // Podcast artwork is square and the source usually isn't, so the crop
-        // takes the shorter side; the scale's min() is what stops a small
-        // thumbnail being blown up to the maximum.
+        // takes the shorter side. The scale then fixes both sides at the
+        // maximum — Apple rejects anything under 1400 — with lanczos to keep a
+        // source that has to be enlarged as sharp as it can be.
         Process::assertRan(fn (PendingProcess $process) => collect($process->command)
             ->map(fn (string $argument) => Str::replace("'", '', $argument))
-            ->contains('crop=min(iw,ih):min(iw,ih),scale=min(1400,iw):-1'));
+            ->contains('crop=min(iw,ih):min(iw,ih),scale=1400:1400:flags=lanczos'));
     }
 
     #[Test]

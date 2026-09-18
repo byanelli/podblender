@@ -144,17 +144,29 @@ readonly class Client implements ClientContract
     }
 
     /**
-     * Crop an image to a square and re-encode it as JPEG, returning the path to
-     * the new file.
+     * Crop an image to a square and re-encode it as a JPEG exactly $maxSide on
+     * a side, returning the path to the new file.
      *
      * Podcast artwork is square, and what platforms hand us usually isn't — a
-     * YouTube thumbnail is 16:9 — so take the centre of the frame and scale it
-     * down to at most $maxSide. The scale filter's min() never enlarges a
-     * smaller image: blowing a 120px thumbnail up to 1400 would only make it
-     * blurry and heavy.
+     * YouTube thumbnail is 16:9 — so take the centre of the frame, then scale
+     * that square to $maxSide whether it started larger or smaller.
+     *
+     * This used to refuse to enlarge, on the grounds that stretching a small
+     * thumbnail only makes it blurry and heavy. Apple Podcasts settled the
+     * argument the other way: its artwork has to be between 1400 and 3000
+     * pixels square, and YouTube's best thumbnail is 1280x720, so every image
+     * we stored came out at 720 and was under the minimum. A 720 image enlarged
+     * to 1400 looks soft but is accepted; a 720 image is liable to be ignored,
+     * and an episode shows no artwork at all.
+     *
+     * lanczos is what makes the enlargement bearable — ffmpeg's default
+     * bicubic is softer still on the way up.
      *
      * Any format ffmpeg can decode is accepted (JPEG, PNG, WebP); the single
-     * -frames:v 1 keeps an animated input to its first frame.
+     * -frames:v 1 keeps an animated input to its first frame. The output stays
+     * a plain JPEG: ffmpeg converts whatever the input's pixel format was to
+     * the yuvj the mjpeg encoder takes, so an input with an alpha channel
+     * loses it here rather than producing something a podcast client can't read.
      */
     public function imageToSquareJpeg(string $inputPath, int $maxSide = 1400): string
     {
@@ -164,7 +176,7 @@ readonly class Client implements ClientContract
             '-i',
             $inputPath,
             '-vf',
-            "crop='min(iw,ih)':'min(iw,ih)',scale='min($maxSide,iw)':-1",
+            "crop='min(iw,ih)':'min(iw,ih)',scale=$maxSide:$maxSide:flags=lanczos",
             '-frames:v',
             '1',
             // 2 is ffmpeg's near-best JPEG quality. Artwork is displayed at a

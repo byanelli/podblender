@@ -62,6 +62,20 @@ class ShowRssTest extends TestCase
     }
 
     #[Test]
+    public function it_declares_the_feed_as_rss_xml()
+    {
+        // A bare view goes out as text/html. The podcast specs and the feed
+        // validators expect application/rss+xml, and a strict client is
+        // entitled to hold us to that.
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id]);
+
+        $this->get("rss/{$feed->uuid}")
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/rss+xml; charset=UTF-8');
+    }
+
+    #[Test]
     public function it_shows_enclosure_urls_when_browser_preview_is_disabled()
     {
         // Browser preview is a feed-page convenience; podcast clients fetch the

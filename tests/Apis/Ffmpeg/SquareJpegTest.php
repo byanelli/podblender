@@ -60,20 +60,22 @@ class SquareJpegTest extends TestCase
     }
 
     #[Test]
-    public function it_crops_a_widescreen_image_to_a_square_of_its_shorter_side()
+    public function it_crops_a_widescreen_image_to_a_square_at_the_full_side()
     {
+        // 1280x720 is YouTube's best thumbnail, so this is the case that
+        // matters most: the centre 720x720 of the frame, enlarged to 1400.
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
         [$width, $height, $type] = $this->dimensions($client->imageToSquareJpeg($this->png(1280, 720)));
 
         $this->assertSame($width, $height);
-        $this->assertSame(720, $width);
+        $this->assertSame(1400, $width);
         $this->assertSame(IMAGETYPE_JPEG, $type);
     }
 
     #[Test]
-    public function it_scales_a_large_square_down_to_the_maximum_side()
+    public function it_scales_a_large_square_down_to_the_given_side()
     {
         /** @var Client $client */
         $client = $this->app->make(Client::class);
@@ -85,18 +87,30 @@ class SquareJpegTest extends TestCase
     }
 
     #[Test]
-    public function it_never_enlarges_an_image_smaller_than_the_maximum()
+    public function it_enlarges_an_image_smaller_than_the_given_side()
     {
-        // YouTube's smallest thumbnail is 120x90. Stretching that to 1400 would
-        // only produce a big blurry file, so the scale filter's min() leaves it
-        // at the size it came in.
+        // Apple Podcasts wants artwork of at least 1400 pixels square and is
+        // liable to ignore anything smaller, so even a thumbnail this far under
+        // the minimum is stretched rather than stored as it arrived.
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
         [$width, $height] = $this->dimensions($client->imageToSquareJpeg($this->png(120, 90)));
 
-        $this->assertSame(90, $width);
-        $this->assertSame(90, $height);
+        $this->assertSame(1400, $width);
+        $this->assertSame(1400, $height);
+    }
+
+    #[Test]
+    public function it_honours_a_side_other_than_the_default()
+    {
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        [$width, $height] = $this->dimensions($client->imageToSquareJpeg($this->png(1280, 720), 2000));
+
+        $this->assertSame(2000, $width);
+        $this->assertSame(2000, $height);
     }
 
     #[Test]
@@ -110,7 +124,32 @@ class SquareJpegTest extends TestCase
 
         [$width, $height] = $this->dimensions($client->imageToSquareJpeg($this->png(721, 405)));
 
-        $this->assertSame(405, $width);
-        $this->assertSame(405, $height);
+        $this->assertSame(1400, $width);
+        $this->assertSame(1400, $height);
+    }
+
+    #[Test]
+    public function its_output_is_an_rgb_jpeg_with_no_alpha_channel()
+    {
+        // Apple's spec is RGB; a JPEG that decodes as CMYK, or a PNG's alpha
+        // carried through, is artwork some clients won't render.
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $path = $client->imageToSquareJpeg($this->png(1280, 720));
+
+        $image = imagecreatefromjpeg($path);
+
+        $this->assertNotFalse($image, "$path could not be read back as a JPEG.");
+        $this->assertFalse(imageistruecolor($image) && imagecolortransparent($image) !== -1);
+
+        // JPEG has no alpha, so what matters is that the pixels came back as a
+        // recognisable colour rather than as a channel-swapped mess.
+        $colour = imagecolorsforindex($image, imagecolorat($image, 700, 700));
+
+        $this->assertEqualsWithDelta(20, $colour['red'], 12);
+        $this->assertEqualsWithDelta(120, $colour['green'], 12);
+        $this->assertEqualsWithDelta(200, $colour['blue'], 12);
+        $this->assertSame(0, $colour['alpha']);
     }
 }
