@@ -200,6 +200,58 @@
     animation: action-burst 0.5s ease-out forwards;
   }
 
+  /* Stand-in fills for clips that have no thumbnail. Five of them, picked by clip id, so a run of thumbnail-less
+     rows is not a column of near-identical squares. Each pairs a light and a darker tone from the blue-green
+     palette, and the five angles put the light end in a different place every time: top-left, top, top-right,
+     bottom-left, right. The shared corner highlight gives every square the same lit-from-above look as the page
+     wash. Shades written out rather than taken from a token are still on the same ramp: sky blue at the blue end
+     (hue 200-215) and spring green at the green end (hue 155-170). */
+  .clip-placeholder {
+    background-image:
+      radial-gradient(75% 65% at 22% 18%, oklch(1 0 0 / 0.32), transparent 70%),
+      var(--clip-placeholder-fill);
+  }
+
+  .clip-placeholder-1 {
+    --clip-placeholder-fill: linear-gradient(
+      135deg,
+      oklch(0.93 0.06 170),
+      var(--primary)
+    );
+  }
+
+  .clip-placeholder-2 {
+    --clip-placeholder-fill: linear-gradient(
+      0deg,
+      var(--primary),
+      oklch(0.8 0.1 205)
+    );
+  }
+
+  .clip-placeholder-3 {
+    --clip-placeholder-fill: linear-gradient(
+      200deg,
+      oklch(0.9 0.07 200),
+      var(--success)
+    );
+  }
+
+  .clip-placeholder-4 {
+    --clip-placeholder-fill: linear-gradient(
+      60deg,
+      oklch(0.88 0.1 155),
+      oklch(0.55 0.12 188)
+    );
+  }
+
+  .clip-placeholder-5 {
+    --clip-placeholder-fill: linear-gradient(
+      90deg,
+      oklch(0.7 0.11 215),
+      var(--accent)
+    );
+  }
+
   /* A small friendly pulse for live/processing dots. */
   @keyframes signal-pulse {
     0%,

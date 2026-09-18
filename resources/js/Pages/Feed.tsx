@@ -14,6 +14,7 @@ import RadioWaves from '@/Components/RadioWaves';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AddClipForm from '@/AppComponents/AddClipForm';
+import ClipThumbnail from '@/AppComponents/ClipThumbnail';
 import ErrorPanel from '@/AppComponents/ErrorPanel';
 import events from '@/events';
 import routes from '@/routes';
@@ -226,13 +227,10 @@ export default function Feed({ feed }: { feed: FeedType }) {
                             <li key={clip.id}>
                                 <Card className="gap-0 py-0 transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-hard-lg">
                                     <div className="flex items-start justify-between gap-4 p-4">
-                                        {clip.thumbnail_url && (
-                                            <img
-                                                src={clip.thumbnail_url}
-                                                alt=""
-                                                className="size-12 flex-none rounded-[7px] border-2 border-ink object-cover"
-                                            />
-                                        )}
+                                        <ClipThumbnail
+                                            url={clip.thumbnail_url}
+                                            clipId={clip.id}
+                                        />
 
                                         <div className="min-w-0 flex-1">
                                             <div className="flex flex-wrap items-center gap-2">
