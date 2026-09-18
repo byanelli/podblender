@@ -230,7 +230,7 @@ export default function Feed({ feed }: { feed: FeedType }) {
                                             <img
                                                 src={clip.thumbnail_url}
                                                 alt=""
-                                                className="size-12 flex-none rounded-xs border-2 border-ink object-cover"
+                                                className="size-12 flex-none rounded-[7px] border-2 border-ink object-cover"
                                             />
                                         )}
 
