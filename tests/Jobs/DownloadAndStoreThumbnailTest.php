@@ -203,7 +203,7 @@ class DownloadAndStoreThumbnailTest extends TestCase
 
         // Later passes add sources that aren't a URL to fetch. Until one is
         // handled here, saying so is better than storing nothing quietly.
-        $this->runJob($this->clip(), new readonly class extends ThumbnailSource {});
+        $this->runJob($this->clip(), new readonly class implements ThumbnailSource {});
     }
 
     #[Test]

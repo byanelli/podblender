@@ -26,7 +26,7 @@ export interface ClipMetadata {
   publishedAt: string;
   source: SourceMetadata;
   estimatedDownloadTime: number | null;
-  thumbnail: ThumbnailSource | null;
+  thumbnail: RemoteImageThumbnail | null;
 }
 
 export interface CreateCustomFeedRequestBody {
@@ -45,6 +45,10 @@ export interface MetadataResponseBody {
   platformType: PlatformTypeEnum;
 }
 
+export interface RemoteImageThumbnail {
+  url: string;
+}
+
 export interface SourceMetadata {
   name: string;
   canonicalUrl: string;
@@ -56,8 +60,4 @@ export interface SourceMetadata {
 export interface SourceMetadataResponseBody {
   metadata: SourceMetadata;
   platformType: PlatformTypeEnum;
-}
-
-export interface ThumbnailSource {
-
 }

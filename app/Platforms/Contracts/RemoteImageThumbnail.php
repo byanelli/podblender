@@ -10,7 +10,7 @@ use Illuminate\Contracts\Support\Arrayable;
  *
  * @implements Arrayable<string, mixed>
  */
-readonly class RemoteImageThumbnail extends ThumbnailSource implements Arrayable
+readonly class RemoteImageThumbnail implements Arrayable, ThumbnailSource
 {
     use IsArrayable;
 
