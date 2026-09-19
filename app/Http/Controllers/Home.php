@@ -19,7 +19,7 @@ readonly class Home
         $user->load([
             'feeds' => fn (HasMany $feeds) => $feeds
                 ->withCount('audioClips')
-                ->with('subscription:id,platform_url'),
+                ->with('subscription:id,name,platform_url'),
         ]);
 
         return $views->home($user);

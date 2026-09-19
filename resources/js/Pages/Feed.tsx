@@ -245,7 +245,7 @@ export default function Feed({ feed }: { feed: FeedType }) {
 
                                         <div className="min-w-0 flex-1">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <p className="font-bold">
+                                                <p className="font-display text-lg leading-tight font-bold">
                                                     {clip.title}
                                                 </p>
                                                 <StatusBadge
