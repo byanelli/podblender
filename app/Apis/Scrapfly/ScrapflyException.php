@@ -7,9 +7,16 @@ use RuntimeException;
 /**
  * A Scrapfly-level failure: the API returned an error, reported the scrape
  * unsuccessful, or the connection failed on every retry.
- *
- * SECURITY: the Scrapfly API key is in the request query string, so cURL and
- * Guzzle exception messages include it. Never construct this exception from
- * such a message or pass one as $previous.
  */
-class ScrapflyException extends RuntimeException {}
+class ScrapflyException extends RuntimeException
+{
+    /**
+     * Takes no $previous. The API key is in the request's query string, and
+     * cURL and Guzzle exception messages include the full URL. For the same
+     * reason, never build $message from one of those messages.
+     */
+    public function __construct(string $message)
+    {
+        parent::__construct($message);
+    }
+}
