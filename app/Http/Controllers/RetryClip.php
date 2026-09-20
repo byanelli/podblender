@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\QueueAudioClipDownload;
 use App\Auth\Access\Gate;
 use App\Enums\ClipProcessingState;
+use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
 use App\Models\Feed;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Http\Response;
 
 readonly class RetryClip
@@ -17,7 +18,7 @@ readonly class RetryClip
      */
     public function __invoke(
         Gate $gate,
-        QueueAudioClipDownload $queueDownload,
+        Dispatcher $dispatcher,
         Feed $feed,
         AudioClip $clip
     ): void {
@@ -39,6 +40,6 @@ readonly class RetryClip
         $clip->processing_state = ClipProcessingState::Processing;
         $clip->save();
 
-        $queueDownload($clip);
+        $dispatcher->dispatch(new DownloadAndStoreAudioClip($clip));
     }
 }

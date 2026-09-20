@@ -4,20 +4,20 @@ namespace App\Actions;
 
 use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
+use App\Jobs\DownloadAndStoreAudioClip;
+use App\Jobs\DownloadAndStoreThumbnail;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Support\AudioClipStoragePath;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
 readonly class FindOrCreateAudioClip
 {
-    public function __construct(
-        private QueueAudioClipDownload $queueDownload,
-        private QueueThumbnailDownload $queueThumbnailDownload,
-    ) {}
+    public function __construct(private Dispatcher $dispatcher) {}
 
     public function __invoke(PlatformType $platformType, ClipMetadata $metadata): AudioClip
     {
@@ -64,11 +64,11 @@ readonly class FindOrCreateAudioClip
             return AudioClip::query()->where('platform_url', $metadata->canonicalUrl)->first() ?? throw $e;
         }
 
-        ($this->queueDownload)($clip);
+        $this->dispatcher->dispatch(new DownloadAndStoreAudioClip($clip));
 
         // A separate job, so a thumbnail failure can't delay or fail the audio download.
         if ($metadata->thumbnail !== null) {
-            ($this->queueThumbnailDownload)($clip, $metadata->thumbnail);
+            $this->dispatcher->dispatch(new DownloadAndStoreThumbnail($clip, $metadata->thumbnail));
         }
 
         return $clip;
