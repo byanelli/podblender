@@ -4,8 +4,8 @@ namespace App\Actions;
 
 use App\Covers\Contracts\CoverGenerator;
 use App\Models\Feed;
-use App\Support\FeedCoverStoragePath;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -29,34 +29,34 @@ readonly class GenerateFeedCover
 
     public function __invoke(Feed $feed): void
     {
-        $temporaryPath = null;
-        $handle = null;
+        $temporaryCoverPath = null;
+        $coverHandle = null;
 
         try {
             // The feed id selects the background, so a renamed feed keeps it.
-            $temporaryPath = $this->generator->generate($feed->name, $feed->id);
+            $temporaryCoverPath = $this->generator->generate($feed->name, $feed->id);
 
-            $handle = fopen($temporaryPath, 'r');
+            $coverHandle = fopen($temporaryCoverPath, 'r');
 
-            if (! $handle) {
-                throw new \RuntimeException("Couldn't open {$temporaryPath} as a resource");
+            if (! $coverHandle) {
+                throw new \RuntimeException("Couldn't open {$temporaryCoverPath} as a resource");
             }
 
-            $path = FeedCoverStoragePath::for($feed->name);
+            $newCoverPath = $this->buildCoverPath($feed->name);
 
-            if (! $this->storage->put($path, $handle)) {
-                throw new \RuntimeException("Couldn't store a cover from {$temporaryPath}");
+            if (! $this->storage->put($newCoverPath, $coverHandle)) {
+                throw new \RuntimeException("Couldn't store a cover from {$temporaryCoverPath}");
             }
 
-            $previousPath = $feed->cover_path;
+            $previousCoverPath = $feed->cover_path;
 
-            $feed->cover_path = $path;
+            $feed->cover_path = $newCoverPath;
             $feed->save();
 
-            // Delete only after the save, so a failed save leaves the feed
-            // with a cover that still exists.
-            if ($previousPath !== null) {
-                $this->storage->delete($previousPath);
+            // The old cover is deleted after the save. If the save fails,
+            // cover_path still names the old file, so it has to exist.
+            if ($previousCoverPath !== null) {
+                $this->storage->delete($previousCoverPath);
             }
         } catch (\Throwable $e) {
             // A feed works without artwork, so a failure here must not stop
@@ -65,13 +65,26 @@ readonly class GenerateFeedCover
                 "Couldn't generate a cover for feed {$feed->id}: {$e->getMessage()}"
             );
         } finally {
-            if (is_resource($handle)) {
-                fclose($handle);
+            if (is_resource($coverHandle)) {
+                fclose($coverHandle);
             }
 
-            if ($temporaryPath !== null && file_exists($temporaryPath)) {
-                unlink($temporaryPath);
+            if ($temporaryCoverPath !== null && file_exists($temporaryCoverPath)) {
+                unlink($temporaryCoverPath);
             }
         }
+    }
+
+    private function buildCoverPath(string $name): string
+    {
+        $base = Str::slug($name);
+        $base = $base === '' ? 'feed' : Str::limit($base, 100, '');
+
+        do {
+            $token = Str::lower(Str::random(6));
+            $path = "covers/{$base}-{$token}.jpg";
+        } while (Feed::query()->where('cover_path', $path)->exists());
+
+        return $path;
     }
 }
