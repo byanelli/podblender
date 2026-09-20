@@ -3,6 +3,8 @@
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+/* Worktrees under .claude are full checkouts of other branches. */
+@source not '../../.claude';
 
 /*
   Podblender — "friendly blender bar"
