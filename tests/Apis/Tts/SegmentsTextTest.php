@@ -50,12 +50,26 @@ class SegmentsTextTest extends TestCase
     }
 
     #[Test]
-    public function it_emits_a_word_longer_than_the_limit_as_its_own_segment()
+    public function it_truncates_a_word_longer_than_the_limit()
     {
         $long = str_repeat('x', 50);
+        $truncated = str_repeat('x', 25);
 
-        $this->assertEquals([$long], $this->segmenter->split($long, 25));
-        $this->assertEquals(['hello', $long], $this->segmenter->split('hello '.$long, 25));
+        $this->assertEquals([$truncated], $this->segmenter->split($long, 25));
+        $this->assertEquals(
+            ['hello', $truncated, 'world'],
+            $this->segmenter->split("hello {$long} world", 25)
+        );
+    }
+
+    #[Test]
+    public function it_truncates_a_multibyte_word_without_splitting_a_character()
+    {
+        // Each "é" is 2 bytes, so a 25-byte limit fits 12 of them (24 bytes).
+        $segments = $this->segmenter->split(str_repeat('é', 20), 25);
+
+        $this->assertEquals([str_repeat('é', 12)], $segments);
+        $this->assertTrue(mb_check_encoding($segments[0], 'UTF-8'));
     }
 
     #[Test]
