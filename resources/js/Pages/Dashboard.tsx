@@ -5,14 +5,14 @@ import { ExternalLink, ListMusic, Rss, Trash2 } from "lucide-react";
 import RadioWaves from "@/Components/RadioWaves";
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import AddSubscriptionForm from "@/AppComponents/AddSubscriptionForm";
+import NewFeedCard from "@/AppComponents/NewFeedCard";
 import CopyRssButton from "@/AppComponents/CopyRssButton";
 import ErrorPanel from "@/AppComponents/ErrorPanel";
 import MetadataSeparator from "@/AppComponents/MetadataSeparator";
 import routes from "@/routes";
 import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
+import { Card, CardContent } from "@/Components/ui/card";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -256,19 +256,10 @@ export default function Dashboard({ user }: { user: User }) {
                 </div>
 
                 <div className="lg:col-span-1">
-                    <Card className="lg:sticky lg:top-24">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <span className="grid size-7 place-items-center rounded-lg border-2 border-ink bg-accent text-foreground">
-                                    <Rss className="size-4" />
-                                </span>
-                                New feed
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <AddSubscriptionForm onCreated={reloadUser} />
-                        </CardContent>
-                    </Card>
+                    <NewFeedCard
+                        className="lg:sticky lg:top-24"
+                        onCreated={reloadUser}
+                    />
                 </div>
             </div>
         </AuthenticatedLayout>

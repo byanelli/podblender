@@ -13,7 +13,7 @@ import {
 import RadioWaves from '@/Components/RadioWaves';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import AddClipForm from '@/AppComponents/AddClipForm';
+import AddClipCard from '@/AppComponents/AddClipCard';
 import ClipThumbnail from '@/AppComponents/ClipThumbnail';
 import ErrorPanel from '@/AppComponents/ErrorPanel';
 import MetadataSeparator from '@/AppComponents/MetadataSeparator';
@@ -22,7 +22,7 @@ import routes from '@/routes';
 import { AudioClip, ClipProcessingState, Feed as FeedType } from '@/types';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Card, CardContent } from '@/Components/ui/card';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -220,14 +220,7 @@ export default function Feed({ feed }: { feed: FeedType }) {
                 )}
 
                 {feed.subscription == null && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Add a clip</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <AddClipForm feedId={feed.id} onAdded={reloadFeed} />
-                        </CardContent>
-                    </Card>
+                    <AddClipCard feedId={feed.id} onAdded={reloadFeed} />
                 )}
 
                 {clipCount === 0 ? (
