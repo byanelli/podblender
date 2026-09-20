@@ -4,8 +4,8 @@ import { Check, Rss } from "lucide-react";
 import { Button } from "@/Components/ui/button";
 
 /**
- * Copies a feed's RSS URL instead of navigating to it — podcast apps want the address, not the XML. Feedback is a
- * comic-style burst of action lines around the button plus the label flipping to "Copied!" for a moment.
+ * Copies a feed's RSS URL to the clipboard, since the URL is what gets pasted into a podcast app. On copy, action
+ * lines animate around the button and the label reads "Copied!" briefly.
  */
 export default function CopyRssButton({ url }: { url: string }) {
     const [copied, setCopied] = useState(false);
@@ -16,7 +16,7 @@ export default function CopyRssButton({ url }: { url: string }) {
         try {
             await navigator.clipboard.writeText(url);
         } catch {
-            // Clipboard API needs a secure context; fall back to a transient offscreen textarea.
+            // The Clipboard API requires a secure context. Fall back to copying from a hidden textarea.
             const textarea = document.createElement("textarea");
             textarea.value = url;
             textarea.style.position = "fixed";
@@ -27,7 +27,7 @@ export default function CopyRssButton({ url }: { url: string }) {
             textarea.remove();
         }
 
-        // Re-keying the burst restarts its animation on rapid re-clicks.
+        // A new key remounts the burst, which restarts its animation on repeated clicks.
         setBurstKey((key) => key + 1);
         setCopied(true);
         clearTimeout(resetTimer.current);

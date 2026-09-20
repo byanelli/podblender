@@ -25,10 +25,9 @@ import SubscriptionOptions, {
 type NewFeedType = 'custom' | 'subscription';
 
 /**
- * A subscription is created in two steps: look up what's at the URL, then
- * confirm. The look-up is what makes the choice of how much history to pull an
- * informed one — a channel's whole back catalogue can be hundreds of episodes,
- * and each one is a download.
+ * A subscription is created in two steps: look up the source at the URL, then
+ * confirm. The confirm step shows the source's episode count, since a full
+ * backfill can be hundreds of downloads.
  */
 type Display = 'form' | 'confirm';
 
@@ -74,8 +73,8 @@ export default function AddSubscriptionForm({
     };
 
     /**
-     * Step one for a subscription: find out what's at the URL. A custom feed has
-     * no source to look up, so it's created outright.
+     * For a subscription, looks up the source at the URL. A custom feed has no
+     * source, so it's created immediately.
      */
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -281,8 +280,8 @@ export default function AddSubscriptionForm({
                     required
                     value={name}
                     placeholder="Lectures"
-                    // A field called "name" looks like a person's name to
-                    // password managers, which offer to fill it in.
+                    // Password managers treat a field called "name" as a
+                    // person's name and offer to fill it in.
                     autoComplete="off"
                     data-1p-ignore
                     data-lpignore="true"
@@ -319,8 +318,7 @@ export default function AddSubscriptionForm({
 }
 
 /**
- * Above this many episodes, a full backfill is worth warning about: every one is
- * a download, and they're deliberately serialised so the platform doesn't start
- * refusing them.
+ * Episode count above which a full backfill shows a warning. Downloads run one
+ * at a time so the platform doesn't block them, so a large backfill is slow.
  */
 const LARGE_BACKFILL = 50;

@@ -1,8 +1,8 @@
 import { SVGProps } from 'react';
 
 /**
- * A broadcast mark for subscription feeds: a filled center dot with widely spaced wave arcs. Replaces lucide's Radio,
- * whose small hollow circle and tightly packed arcs looked unbalanced next to ListMusic in the feed-type chips.
+ * Icon for subscription feeds. Drawn to match ListMusic's visual weight in the feed-type chips, which lucide's Radio
+ * does not.
  */
 export default function RadioWaves(props: SVGProps<SVGSVGElement>) {
     return (

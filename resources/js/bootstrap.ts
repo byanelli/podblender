@@ -29,10 +29,8 @@ declare global {
 window.Pusher = Pusher;
 
 /**
- * Note that these are REVERB_HOST and REVERB_PORT rather than REVERB_SERVER_HOST and REVERB_SERVER_PORT. The latter
- * pair is the address Reverb binds to, which is 0.0.0.0: every interface at once. That isn't somewhere a browser can
- * connect to, so what's wanted here is the address Reverb is reachable at, which is the same one the back end uses to
- * broadcast in config/broadcasting.php.
+ * Uses REVERB_HOST and REVERB_PORT, the address Reverb is reachable at and the one config/broadcasting.php uses.
+ * REVERB_SERVER_HOST and REVERB_SERVER_PORT are the bind address (0.0.0.0), which a browser can't connect to.
  */
 const options = {
     broadcaster: 'reverb' as const,

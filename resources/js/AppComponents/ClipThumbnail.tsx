@@ -3,12 +3,11 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /*
-   A clip has no thumbnail while it is still processing, when the platform never offered one, and when the download
-   failed. Those rows still get a square of the same size so titles line up down the list.
+   A clip has no thumbnail while it is processing, when the platform has none, or when the download failed. Those rows
+   get a placeholder of the same size so titles stay aligned.
 */
 
-// The gradients themselves live in app.css. Listing the class names in full (rather than building them from an
-// index) keeps them greppable.
+// The gradients are defined in app.css. The class names are written out in full so they can be found with grep.
 const PLACEHOLDER_CLASSES = [
     'clip-placeholder-1',
     'clip-placeholder-2',
@@ -17,7 +16,7 @@ const PLACEHOLDER_CLASSES = [
     'clip-placeholder-5',
 ];
 
-// The square, the 7px radius and the ink outline have to match on both variants or the rows stop lining up.
+// Shared by the image and the placeholder so rows stay aligned.
 const BOX_CLASSES = 'size-12 flex-none rounded-[7px] border-2 border-ink';
 
 export default function ClipThumbnail({
@@ -27,12 +26,11 @@ export default function ClipThumbnail({
     url: string | null;
     clipId: number;
 }) {
-    // Remembering which URL failed, rather than a plain "it failed" flag, means a clip that finishes processing and
-    // gets a new thumbnail will try to load it instead of staying on the placeholder.
+    // Stores the failed URL so that a clip whose thumbnail URL later changes loads the new one.
     const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
     if (url === null || url === failedUrl) {
-        // The gradient comes from the clip id, so a clip keeps the same one on every render and every page load.
+        // Chosen by clip id so a clip's gradient is the same on every render and page load.
         const placeholder =
             PLACEHOLDER_CLASSES[clipId % PLACEHOLDER_CLASSES.length];
 

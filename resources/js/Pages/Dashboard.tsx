@@ -108,12 +108,9 @@ export default function Dashboard({ user }: { user: User }) {
                             {user.feeds.map((feed) => (
                                 <li key={feed.id}>
                                     <Card className="relative gap-0 py-0 transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard-lg">
-                                        {/* The buttons sit at the top, as they do on a clip card, so they stay
-                                            beside the feed name when a long name wraps to a second line. */}
+                                        {/* items-start keeps the buttons beside the feed name when the name wraps. */}
                                         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
                                             <div className="flex min-w-0 items-start gap-4">
-                                                {/* A feed whose cover could not be drawn simply shows no picture,
-                                                    the same way a clip without a thumbnail does. */}
                                                 {feed.cover_url && (
                                                     <img
                                                         src={feed.cover_url}
