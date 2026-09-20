@@ -126,8 +126,7 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioClip $clip */
         $clip = $subscriber->audioClips()->first();
 
-        // Not the date it was downloaded, which is now: a lecture given a year ago is a year old in a subscription,
-        // however long it took us to fetch it. It's what keeps a series in the order it was given.
+        // The platform's publication date, not the download date, so a series stays in the order it was published.
         $this->assertEquals($publishedAt, $clip->pivot->published_at);
     }
 
@@ -148,7 +147,7 @@ class UpdateSubscriptionTest extends TestCase
                 title: 'An old lecture',
                 description: 'Description',
                 canonicalUrl: 'https://youtube.com/watch?v=old',
-                // Published long before anyone subscribed, so ordinarily this would be left out entirely.
+                // Published before the subscription date, so only the backfill includes it.
                 publishedAt: CarbonImmutable::now()->subMonths(6)->roundSeconds(),
                 source: new SourceMetadata(
                     name: $subscription->name,
@@ -162,7 +161,7 @@ class UpdateSubscriptionTest extends TestCase
 
         $this->app->call([new UpdateSubscription($subscription, $subscriber, $backfillSince), 'handle']);
 
-        // Creating the clip isn't enough: it has to end up attached to the feed that asked for the backfill.
+        // The clip must also be attached to the feed that requested the backfill.
         $this->assertEquals(1, $subscriber->audioClips()->count());
     }
 
@@ -172,9 +171,8 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioSource $subscription */
         $subscription = AudioSource::factory()->create();
 
-        // Subscribed just now, but asked to reach back a year. The backfill
-        // window and the subscription date are different things: reading the
-        // latter would leave this feed with nothing in it.
+        // Subscribed now, with a backfill window of a year. Filtering by the
+        // subscription date would leave this feed empty.
         $subscriber = Feed::factory()->create([
             'subscription_id' => $subscription->id,
             'subscribed_at'   => CarbonImmutable::now(),
@@ -229,7 +227,7 @@ class UpdateSubscriptionTest extends TestCase
 
         $this->assertEquals(1, $subscriber->audioClips()->count());
 
-        // Having been filled, it drops out of the sweep for good.
+        // Once filled, it is excluded from later sweeps.
         $this->assertNotNull($subscriber->subscription_filled_at);
         $this->assertFalse($subscriber->needsUpdating());
     }
@@ -262,9 +260,9 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioSource $subscription */
         $subscription = AudioSource::factory()->create();
 
-        // A one-shot that asked for everything back to 2014 and has had it. If
-        // it stayed in the cursor calculation, every future sweep of this
-        // source would re-fetch a decade of clips forever.
+        // A filled one-shot whose backfill window starts in 2014. If it counted
+        // towards the cursor, every sweep of this source would re-fetch a decade
+        // of clips.
         Feed::factory()->create([
             'subscription_id'        => $subscription->id,
             'subscribed_at'          => CarbonImmutable::now()->subDays(2),
@@ -299,7 +297,7 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioSource $subscription */
         $subscription = AudioSource::factory()->create();
 
-        // The subscriber that's been here longest and is fully caught up: it has a clip from just yesterday.
+        // The earliest subscriber is caught up, with a clip from yesterday.
         $caughtUp = Feed::factory()->create([
             'subscription_id' => $subscription->id,
             'subscribed_at'   => CarbonImmutable::now()->subDays(30),
@@ -313,8 +311,8 @@ class UpdateSubscriptionTest extends TestCase
             'published_at' => $recentClip->published_at,
         ]);
 
-        // A subscriber that joined more recently and has no clips yet — its initial fill failed, say. Taking only the
-        // earliest subscriber's newest clip as the cursor would leave this feed stranded forever.
+        // A later subscriber with no clips, e.g. because its initial fill failed. Using only the earliest subscriber's
+        // newest clip as the cursor would never fill this feed.
         $lagging = Feed::factory()->create([
             'subscription_id' => $subscription->id,
             'subscribed_at'   => CarbonImmutable::now()->subDays(10),
@@ -322,8 +320,8 @@ class UpdateSubscriptionTest extends TestCase
 
         Bus::fake();
 
-        // A clip published between when the lagging subscriber joined and the caught-up subscriber's newest clip. The
-        // old cursor (yesterday) would never fetch this; the fix reaches back to the lagging subscriber's join date.
+        // Published after the lagging subscriber joined and before the caught-up subscriber's newest clip. A cursor of
+        // yesterday would not fetch it.
         $this->fakePlatform(clipMetadataList: [
             new ClipMetadata(
                 title: 'A clip the lagging subscriber missed',
@@ -336,9 +334,8 @@ class UpdateSubscriptionTest extends TestCase
 
         $this->app->call([new UpdateSubscription($subscription), 'handle']);
 
-        // The lagging subscriber receives the missed clip...
         $this->assertEquals(1, $lagging->audioClips()->count());
-        // ...and the caught-up subscriber picks it up too (it now has both).
+        // The caught-up subscriber is attached to it as well, so it has two.
         $this->assertEquals(2, $caughtUp->audioClips()->count());
     }
 
@@ -352,7 +349,7 @@ class UpdateSubscriptionTest extends TestCase
             'subscribed_at'   => CarbonImmutable::now()->subYear(),
         ]);
 
-        // The subscriber already has a clip from ten days ago; that's where the incremental cursor should start.
+        // The subscriber's newest clip is from ten days ago, which is where the cursor should start.
         /** @var AudioClip $existing */
         $existing = AudioClip::factory()->create([
             'audio_source_id' => $subscription->id,
@@ -383,7 +380,6 @@ class UpdateSubscriptionTest extends TestCase
 
         $this->app->call([new UpdateSubscription($subscription), 'handle']);
 
-        // The clip published before the existing one is left alone; only the newer one is created.
         $this->assertDatabaseMissing('audio_clips', ['platform_url' => $olderUrl]);
         $this->assertDatabaseHas('audio_clips', ['platform_url' => $newerUrl]);
         $this->assertEquals(2, $subscriber->audioClips()->count());
@@ -444,7 +440,6 @@ class UpdateSubscriptionTest extends TestCase
 
         $this->app->call([new UpdateSubscription($subscription), 'handle']);
 
-        // No subscribers means no reason to fetch or create anything.
         $this->assertDatabaseCount('audio_clips', 0);
     }
 
@@ -454,13 +449,13 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioSource $subscription */
         $subscription = AudioSource::factory()->create();
 
-        // A real subscriber, so the source isn't empty and we reach the per-subscriber check.
+        // A real subscriber, so the job gets past the no-subscribers check.
         Feed::factory()->create([
             'subscription_id' => $subscription->id,
             'subscribed_at'   => CarbonImmutable::now()->subYear(),
         ]);
 
-        // A feed that is not subscribed to this source at all.
+        // A feed that is not subscribed to this source.
         $stranger = Feed::factory()->create();
 
         $this->expectException(RuntimeException::class);

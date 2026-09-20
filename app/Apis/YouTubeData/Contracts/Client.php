@@ -33,10 +33,9 @@ interface Client
      * Every video in a playlist published on or after $publishedAfter, newest
      * first.
      *
-     * The API has no server-side date filter here — playlistItems accepts
-     * publishedAfter and silently ignores it — so the cutoff is applied as we
-     * page. Items come back newest-first, which lets paging stop as soon as it
-     * crosses the cutoff rather than reading the whole playlist.
+     * playlistItems accepts publishedAfter and ignores it, so the cutoff is
+     * applied client-side. Items arrive newest-first, so paging stops at the
+     * cutoff.
      *
      * @return array<int, VideoMetadata>
      */

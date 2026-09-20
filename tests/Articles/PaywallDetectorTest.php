@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class PaywallDetectorTest extends TestCase
 {
-    /** A body comfortably over the 500-char min_body_length, ~120 words. */
+    /** 527 chars, which is over the 500-char min_body_length. */
     private const LONG_BODY = 'The council met for three hours on Tuesday evening to work through a crowded agenda that ranged from the routine approval of last month minutes to a contentious debate over the proposed rezoning of the old cannery district near the waterfront. Residents packed the chamber to voice their concerns, and several stayed well past midnight to make sure their comments were entered into the official record before the final vote was called by the presiding chair of the assembled body of local representatives who governed the town.';
 
     private function detector(): PaywallDetector

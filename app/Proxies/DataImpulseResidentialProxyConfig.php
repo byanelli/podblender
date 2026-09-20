@@ -8,15 +8,13 @@ use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
- * DataImpulse's residential pool, an alternative to Oxylabs. The reason for wanting a residential address at all is
- * the same one: YouTube treats an address belonging to a cable company as a person and an address belonging to a
- * hosting company as a robot, and every commercial VPN is the latter.
+ * DataImpulse's residential pool, an alternative to Oxylabs. YouTube blocks addresses that belong to hosting companies,
+ * which includes every commercial VPN, far more readily than addresses that belong to home ISPs.
  *
- * DataImpulse offers two ways to hold one address. One is a range of per-port proxies, where the port decides the
- * address and the address changes on the provider's own schedule rather than ours. The other, used here, is the
- * rotating gateway on port 823 with a session parameter: we name a session, and requests carrying that name come out
- * of the same address. Only the second gives us what ProxyConfig::getUrlForDownload() asks for, which is one address
- * for the length of a download and a different one next time.
+ * This uses the rotating gateway on port 823 with a session parameter: requests that carry the same session id leave
+ * from the same address. That meets ProxyConfig::getUrlForDownload()'s requirement of one address per download and a
+ * different one next time. DataImpulse's per-port proxies don't, because the provider decides when their address
+ * changes.
  *
  * @see https://docs.dataimpulse.com/proxies/parameters/session-id
  * @see https://docs.dataimpulse.com/proxies/parameters/session-interval
@@ -26,24 +24,19 @@ class DataImpulseResidentialProxyConfig implements ResidentialProxyConfig
     private const string HOST = 'gw.dataimpulse.com';
 
     /**
-     * The HTTP/HTTPS gateway that takes its parameters from the username. Port 824 is the same thing over SOCKS5, and
-     * ports 10000-20000 are the per-port sticky proxies we're deliberately not using.
+     * The HTTP/HTTPS gateway, which takes its parameters from the username. Port 824 is the same over SOCKS5, and
+     * ports 10000-20000 are the per-port proxies.
      */
     private const int PORT = 823;
 
     /**
-     * How long DataImpulse should hold an address, in minutes.
+     * How long a session keeps its address, in minutes.
      *
-     * DataImpulse documents `sessttl` only for their per-port proxies and doesn't say whether port 823 honours it
-     * alongside `sessid`, so we measured it. On 2026-09-18, against a real account and a URL built by this class, a
-     * session was polled through the proxy every five minutes: it returned the same exit address from the first
-     * request through the 55-minute poll, then a different address at 60 minutes, which it kept from there. So port
-     * 823 does honour `sessttl` together with `sessid`, and the 30 minutes in their documentation is a default
-     * rather than a ceiling. That run says nothing about an idle session, which was never idle for more than five
-     * minutes, but a download is never idle either.
+     * DataImpulse documents `sessttl` only for the per-port proxies, with a default of 30. Measured on 2026-09-18:
+     * port 823 applies it together with `sessid`. A session polled every five minutes kept one exit address through
+     * 55 minutes and had a new one at 60. Idle sessions were not tested.
      *
-     * An hour is generous on purpose: holding an address for longer than a download needs costs nothing, while an
-     * address that changes midway through a download fails as an unexplained 403.
+     * Longer than a download needs, which costs nothing. An address that changes during a download fails with a 403.
      */
     private const int SESSION_MINUTES = 60;
 
@@ -58,8 +51,7 @@ class DataImpulseResidentialProxyConfig implements ResidentialProxyConfig
     {
         $credentials = $this->credentials();
 
-        // Callers are meant to check isConfigured() first. Say so plainly rather than letting a null credential turn
-        // into a TypeError halfway through building the username, which reads like a bug in this class.
+        // Callers should check isConfigured() first.
         if (is_null($credentials)) {
             throw new RuntimeException(
                 'No DataImpulse credentials are configured; set DATAIMPULSE_USERNAME and DATAIMPULSE_PASSWORD to use '
@@ -72,30 +64,27 @@ class DataImpulseResidentialProxyConfig implements ResidentialProxyConfig
         /** @var array<string, string|int> $parameters */
         $parameters = [];
 
-        // Downloads are refused outright from some countries, and an address near the content is faster. An install
-        // that hasn't named a country gets no `cr` at all rather than an empty one, which DataImpulse reads as a
-        // malformed parameter; without it they pick the exit country themselves.
+        // Downloads are refused from some countries, and an address near the content is faster. With no `cr`,
+        // DataImpulse chooses the exit country.
         $country = $this->countryCode();
 
         if (! is_null($country)) {
             $parameters['cr'] = $country;
         }
 
-        // A fresh session per call, which is per download attempt: one address for this download, a different one for
-        // the next.
+        // A new session per call gives each download attempt its own address.
         $parameters['sessid'] = Str::random(16);
 
         $parameters['sessttl'] = self::SESSION_MINUTES;
 
-        // DataImpulse takes its parameters in the username, not the URL's query string: the login, then a double
-        // underscore, then key.value pairs joined by semicolons.
+        // DataImpulse reads its parameters from the username: the login, a double underscore, then key.value pairs
+        // joined by semicolons.
         $username = $user.'__'.collect($parameters)
             ->map(fn (string|int $value, string $key) => "$key.$value")
             ->join(';');
 
-        // Both halves are percent-encoded. The password is generated by DataImpulse and routinely contains characters
-        // that mean something else inside a URL, and the semicolons separating the parameters become %3B, which is
-        // what we want: the client decodes the username before sending it.
+        // DataImpulse's generated passwords often contain characters that are reserved in a URL. The semicolons
+        // become %3B, and the client decodes the username before sending it.
         return sprintf(
             'http://%s:%s@%s:%d',
             rawurlencode($username),
@@ -106,13 +95,8 @@ class DataImpulseResidentialProxyConfig implements ResidentialProxyConfig
     }
 
     /**
-     * The country to take an exit address in, or null if this install hasn't named one.
-     *
-     * A missing or blank country means the `cr` parameter is left out of the username altogether, and DataImpulse
-     * applies its own default targeting. Sending `cr.` with nothing after it would be worse than sending nothing:
-     * it's a parameter with no value, which they answer with a refusal rather than a sensible default.
-     *
-     * Every country code in DataImpulse's documentation is lowercase, so send one whichever way the config writes it.
+     * The exit country, or null if none is configured. A blank value counts as none, because DataImpulse refuses a
+     * `cr` parameter with no value. Lowercased because every country code in DataImpulse's documentation is.
      */
     private function countryCode(): ?string
     {
@@ -126,10 +110,8 @@ class DataImpulseResidentialProxyConfig implements ResidentialProxyConfig
     }
 
     /**
-     * The configured user and password, or null if this install hasn't got a DataImpulse account.
-     *
-     * Both halves are needed, and a blank one is as good as a missing one — "DATAIMPULSE_USERNAME=" with nothing
-     * after it is what a .env copied from the example actually looks like, and is likelier than the key being absent.
+     * The configured user and password, or null unless both are set. A blank value counts as unset, since a .env
+     * copied from the example has "DATAIMPULSE_USERNAME=" with no value.
      *
      * @return array{string, string}|null
      */
@@ -151,7 +133,7 @@ class DataImpulseResidentialProxyConfig implements ResidentialProxyConfig
 
     public function requiresInsecureTls(): bool
     {
-        // DataImpulse tunnels with CONNECT, so TLS stays end-to-end between us and YouTube and we can still verify it.
+        // DataImpulse tunnels with CONNECT, so TLS stays end-to-end with YouTube and can be verified.
         return false;
     }
 }

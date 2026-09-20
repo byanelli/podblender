@@ -21,12 +21,8 @@ class ClientTest extends TestCase
     }
 
     /**
-     * Is this the duration probe rather than an encode?
-     *
-     * ffmpeg's own grammar is the distinction: an encode names an output file
-     * after its input, a probe stops at the input. So the last argument being
-     * the input itself — the one right after `-i` — is what identifies a probe,
-     * whatever other flags either command carries.
+     * Whether the command is a duration probe. An encode names an output file
+     * after its input; a probe ends with the argument after `-i`.
      */
     private function isDurationProbe(PendingProcess $process): bool
     {
@@ -39,8 +35,8 @@ class ClientTest extends TestCase
     }
 
     /**
-     * Fake an encode: write $contents to the output, and answer the duration
-     * probe that follows it with $duration.
+     * Fake an encode that writes $contents to the output file, and a duration
+     * probe that reports $duration.
      */
     private function fakeEncodeProducing(string $contents, string $duration = '00:00:05.06'): \Closure
     {
@@ -85,9 +81,8 @@ class ClientTest extends TestCase
             sys_get_temp_dir().'/'.Uuid::uuid4().'.mp3',
         ];
 
-        // ffmpeg has been seen to exit 0 having written an empty file. Silently
-        // accepting that puts a stretch of nothing into the finished episode, so
-        // it has to be an error the job can retry.
+        // ffmpeg has been observed to exit 0 after writing an empty file. That
+        // must throw so the job can retry.
         Process::fake(['*' => $this->fakeEncodeProducing('')]);
 
         /** @var Client $client */
@@ -120,9 +115,8 @@ class ClientTest extends TestCase
     {
         $pcm = sys_get_temp_dir().'/'.Uuid::uuid4().'.pcm';
 
-        // Encoding no samples still yields a small but structurally valid MP3 —
-        // headers and no frames. It passes a "file isn't empty" check, so the
-        // reported duration is what actually distinguishes it from real audio.
+        // Encoding no samples produces a valid MP3 with headers and no frames.
+        // The file is not empty, so only its zero duration identifies it.
         Process::fake(['*' => $this->fakeEncodeProducing('ID3 header but no frames', '00:00:00.00')]);
 
         /** @var Client $client */
@@ -139,8 +133,8 @@ class ClientTest extends TestCase
     {
         $pcm = sys_get_temp_dir().'/'.Uuid::uuid4().'.pcm';
 
-        // A short segment is real audio. Truncating its duration to whole
-        // seconds would read as zero and wrongly fail the encode.
+        // Truncating this duration to whole seconds would give zero and fail
+        // the encode.
         Process::fake(['*' => $this->fakeEncodeProducing('half a second of audio', '00:00:00.52')]);
 
         /** @var Client $client */
@@ -161,8 +155,8 @@ class ClientTest extends TestCase
 
         $client->pcmToMp3($pcm, 24000);
 
-        // combineMp3s() splices these files together byte-wise, so a Xing/LAME
-        // header or ID3 tag would land mid-stream and decode as a broken frame.
+        // combineMp3s() concatenates these files byte-wise, so a Xing/LAME
+        // header or ID3 tag would end up mid-stream and decode as a broken frame.
         Process::assertRan(fn (PendingProcess $process) => collect($process->command)->contains('-write_xing')
             && collect($process->command)->contains('-id3v2_version'));
     }
@@ -182,7 +176,7 @@ class ClientTest extends TestCase
         $this->assertFileExists($mp3);
         $this->assertStringEndsWith('.mp3', $mp3);
 
-        // The raw PCM has no container, so ffmpeg must be told its format.
+        // Raw PCM has no container, so the command must state its format.
         Process::assertRan(fn (PendingProcess $process) => collect($process->command)->contains('s16le')
             && collect($process->command)->contains('24000')
             && collect($process->command)->contains('128k'));
@@ -201,9 +195,8 @@ class ClientTest extends TestCase
         $client->pcmToMp3($pcm, 24000);
 
         // Without -y, ffmpeg prompts before overwriting an existing file, reads
-        // EOF from our non-interactive stdin, and exits *successfully* having
-        // written nothing — leaving whatever was already at that path. That
-        // failure is silent, so the flag is what keeps it from happening.
+        // EOF from the non-interactive stdin, and exits 0 having written
+        // nothing.
         Process::assertRan(fn (PendingProcess $process) => collect($process->command)->contains('-y'));
     }
 
@@ -222,10 +215,8 @@ class ClientTest extends TestCase
         $this->assertFileExists($jpeg);
         $this->assertStringEndsWith('.jpg', $jpeg);
 
-        // Podcast artwork is square and the source usually isn't, so the crop
-        // takes the shorter side. The scale then fixes both sides at the
-        // maximum — Apple rejects anything under 1400 — with lanczos to keep a
-        // source that has to be enlarged as sharp as it can be.
+        // The crop takes the shorter side, and the scale sets both sides to
+        // 1400, the minimum Apple Podcasts accepts.
         Process::assertRan(fn (PendingProcess $process) => collect($process->command)
             ->map(fn (string $argument) => Str::replace("'", '', $argument))
             ->contains('crop=min(iw,ih):min(iw,ih),scale=1400:1400:flags=lanczos'));
@@ -236,9 +227,7 @@ class ClientTest extends TestCase
     {
         $png = sys_get_temp_dir().'/'.Uuid::uuid4().'.png';
 
-        // The same silent failure the audio methods guard against: exit 0,
-        // nothing written. Storing that would put an empty file where an
-        // episode's artwork should be.
+        // Exit 0 with an empty file, as in the audio tests above.
         Process::fake(['*' => $this->fakeEncodeProducing('')]);
 
         /** @var Client $client */

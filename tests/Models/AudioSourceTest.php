@@ -34,7 +34,7 @@ class AudioSourceTest extends TestCase
         $subscriberA = Feed::factory()->create(['subscription_id' => $source->id]);
         $subscriberB = Feed::factory()->create(['subscription_id' => $source->id]);
 
-        // A feed subscribed to a different source, and a feed subscribed to nothing, must not appear.
+        // Feeds that must not appear: one subscribed to another source, one with no subscription.
         Feed::factory()->create(['subscription_id' => $otherSource->id]);
         Feed::factory()->create();
 

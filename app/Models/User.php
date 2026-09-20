@@ -31,7 +31,6 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory;
 
     protected $casts = [
-        // Without this, email_verified_at is a string rather than the date the @property annotation above promises.
         'email_verified_at' => 'datetime',
     ];
 

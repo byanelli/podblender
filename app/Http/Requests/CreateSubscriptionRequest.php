@@ -17,15 +17,15 @@ readonly class CreateSubscriptionRequest
         public string $name,
 
         /**
-         * How far back to reach for episodes. Absent means the default window;
-         * a date at the epoch means everything the source has ever published.
+         * Earliest publication date to backfill from. Null means the default
+         * window; the epoch means everything the source has published.
          */
         #[Rule(['nullable', 'date'])]
         public ?CarbonImmutable $backfillSince = null,
 
         /**
-         * Whether to keep collecting episodes published from here on. False
-         * captures the source as it stands and then leaves it alone.
+         * Whether to keep adding episodes published after the subscription is
+         * created. If false, the feed is filled once and not updated again.
          */
         #[Rule(['boolean'])]
         public bool $tracksNewEpisodes = true,

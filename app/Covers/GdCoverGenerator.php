@@ -10,47 +10,40 @@ use Ramsey\Uuid\Uuid;
  * Draws a feed's show artwork with PHP's GD extension: a blue-green gradient
  * with the feed's name centred on it in white, over a hard offset shadow.
  *
- * GD and FreeType are all this needs, and both are already installed here and
- * on the server, so no image library and no headless browser had to be added
- * for it. Drawing one cover costs somewhere around 80 milliseconds, which is
- * why the app can do it while a request is waiting rather than on a queue.
+ * Needs only GD and FreeType, which are installed locally and on the server.
+ * Drawing a cover takes about 80 milliseconds, so it runs during the request
+ * and not on a queue.
  */
 final class GdCoverGenerator implements CoverGenerator
 {
     /**
-     * Apple Podcasts accepts show artwork from 1400 to 3000 pixels square and
-     * rejects anything smaller. Nothing here gets sharper above 1400 — the
-     * background is a gradient and the text is a handful of huge glyphs — so
-     * the smallest accepted size is also the best one.
+     * Apple Podcasts accepts show artwork from 1400 to 3000 pixels square. A
+     * gradient with a few large glyphs gains nothing from more pixels, so this
+     * is the minimum.
      */
     public const int SIDE = 1400;
 
     private const int JPEG_QUALITY = 90;
 
     /**
-     * The font ships in the repo because the production server has no system
-     * fonts at all. It's a static ExtraBold cut of Baloo 2, the app's display
-     * face: GD can't pick a weight out of the variable font the browser loads.
+     * The font is in the repo because the production server has no system
+     * fonts. It is a static ExtraBold instance of Baloo 2, the app's display
+     * face, because GD can't select a weight from the variable font the browser
+     * loads.
      */
     private const string FONT = 'fonts/Baloo2-ExtraBold.ttf';
 
     /**
-     * The five backgrounds, as [start colour, end colour, angle]. They're the
-     * sRGB counterparts of the .clip-placeholder-1 to -5 gradients in
-     * resources/css/app.css, which stand in for clips that have no thumbnail —
-     * a cover and a placeholder for the same app should look related. The
-     * values are written out because the CSS states them in oklch, which GD
-     * has never heard of.
+     * The five backgrounds, as [start colour, end colour, angle]. They are sRGB
+     * conversions of the .clip-placeholder-1 to -5 gradients in
+     * resources/css/app.css, which are in oklch. GD only takes RGB.
      *
-     * The angle is read the way CSS reads it: degrees clockwise from straight
-     * up, pointing from the start colour towards the end colour.
+     * The angle follows CSS: degrees clockwise from straight up, pointing from
+     * the start colour towards the end colour.
      *
-     * The fifth pair is deliberately not a copy of .clip-placeholder-5. That
-     * one runs from a medium blue to a pale mint, and white text on the pale
-     * end is barely there. A 48-pixel square in a list can get away with it; a
-     * 1400-pixel cover carrying nothing but the show's name cannot. So its
-     * light end has been pulled down and its dark end deepened into green,
-     * which keeps it inside the same palette and distinct from the other four.
+     * The fifth pair differs from .clip-placeholder-5, whose pale mint end
+     * gives white text too little contrast. Its light end is darker here and
+     * its dark end is green.
      *
      * @var list<array{0: array{int, int, int}, 1: array{int, int, int}, 2: int}>
      */
@@ -63,10 +56,9 @@ final class GdCoverGenerator implements CoverGenerator
     ];
 
     /**
-     * The gradient is drawn one pixel at a time on a small canvas and then
-     * scaled up. A smooth gradient loses nothing by it, and two million
-     * imagesetpixel() calls would cost more than everything else here put
-     * together. 175 divides 1400 exactly.
+     * The gradient is drawn pixel by pixel on a small canvas and scaled up,
+     * which loses nothing for a smooth gradient. At full size it would take two
+     * million imagesetpixel() calls. 175 divides 1400 exactly.
      */
     private const int GRADIENT_CANVAS = 175;
 
@@ -75,16 +67,14 @@ final class GdCoverGenerator implements CoverGenerator
 
     private const float TEXT_HEIGHT = 0.70;
 
-    /** How far above the middle the title sits, as a fraction of the square. */
+    /** How far above centre the title is drawn, as a fraction of the square. */
     private const float OPTICAL_LIFT = 0.02;
 
     /**
-     * The title is set as large as it will go and shrunk in steps until it
-     * fits. The ceiling stops a one-word name from filling the square edge to
-     * edge. The floor is the point below which a cover stops doing its job:
-     * artwork is often seen an inch wide on a phone, and text smaller than
-     * this is a grey smudge there. A title that still doesn't fit is cut
-     * short instead of shrunk further.
+     * The title starts at the maximum size and shrinks in steps until it fits.
+     * The maximum keeps a one-word name from filling the square. Below the
+     * minimum, text is illegible when the artwork is shown an inch wide on a
+     * phone, so a title that doesn't fit there is truncated.
      */
     private const int MAX_FONT_SIZE = 360;
 
@@ -93,11 +83,10 @@ final class GdCoverGenerator implements CoverGenerator
     private const int FONT_SIZE_STEP = 10;
 
     /**
-     * Characters GD can't usefully draw, dropped before anything is measured:
-     * pictographs and emoji, the joiners and variation selectors that bind
-     * them together, and the private use area. GD draws one font in one
-     * colour, so a colour emoji comes out as an empty box or as nothing at
-     * all, and its width still pushes the rest of the title around.
+     * Characters removed before measuring: pictographs and emoji, their
+     * joiners and variation selectors, and the private use area. GD draws one
+     * font in one colour, so a colour emoji renders as an empty box or as
+     * nothing, and its width still shifts the rest of the title.
      */
     private const string UNDRAWABLE = '/[\x{1F000}-\x{1FAFF}\x{2190}-\x{2BFF}\x{FE00}-\x{FE0F}'
         .'\x{E000}-\x{F8FF}\x{200D}\x{20E3}\x{3030}\x{303D}]/u';
@@ -115,9 +104,8 @@ final class GdCoverGenerator implements CoverGenerator
             throw new \RuntimeException("The cover font is missing from {$this->font}");
         }
 
-        // Nothing frees the images: since PHP 8.0 a GdImage is an object that
-        // goes when the last reference to it does, and imagedestroy() has been
-        // deprecated since 8.5 for saying so.
+        // The images are not freed explicitly. Since PHP 8.0 a GdImage is freed
+        // with its last reference, and imagedestroy() is deprecated as of 8.5.
         $image = $this->background($variant);
 
         $this->drawTitle($image, $this->drawable($title));
@@ -132,21 +120,19 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * The gradient square, before any text goes on it.
+     * The gradient square, without the title.
      */
     private function background(int $variant): GdImage
     {
         $count = count(self::GRADIENTS);
 
-        // The caller passes a feed id, but nothing stops it passing anything
-        // else, and a negative number would index off the front of the table.
+        // The double modulo keeps a negative $variant in range.
         [$from, $to, $angle] = self::GRADIENTS[(($variant % $count) + $count) % $count];
 
         $small = imagecreatetruecolor(self::GRADIENT_CANVAS, self::GRADIENT_CANVAS);
 
-        // Where each pixel sits along the gradient is how far it has travelled
-        // in the gradient's direction, so project it onto that direction and
-        // rescale the answer to run from 0 at one corner to 1 at the other.
+        // Project each pixel onto the gradient's direction, then rescale so
+        // the result runs from 0 at one corner to 1 at the opposite corner.
         $radians = deg2rad($angle);
         $dx = sin($radians);
         $dy = -cos($radians);
@@ -180,14 +166,13 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * Set the title across the middle of the square.
+     * Draw the title centred on the square.
      */
     private function drawTitle(GdImage $image, string $title): void
     {
         if ($title === '') {
-            // A feed with no usable name gets the gradient on its own. That
-            // still meets the specification and still looks like this app,
-            // which is better than a square with a question mark on it.
+            // A feed with no drawable name gets the gradient alone, which still
+            // meets Apple's artwork requirements.
             return;
         }
 
@@ -198,19 +183,16 @@ final class GdCoverGenerator implements CoverGenerator
         $shadow = max(5, (int) round($size * 0.05));
         $lineHeight = $this->lineHeight($size);
 
-        // Centre the ink the glyphs actually cover, not the em boxes they sit
-        // in. Baloo 2's baseline is unusually low in its em box (app.css says
-        // the same thing about the underline stroke), so measuring the boxes
-        // leaves the title looking as though it has slid down the square.
+        // Centre on the glyphs' bounding boxes. Baloo 2's baseline is low in
+        // its em box (see the underline stroke in app.css), so centring on em
+        // boxes puts the title visibly low.
         $ascent = -$this->boundingBox($size, $lines[0])[5];
         $descent = $this->boundingBox($size, $lines[array_key_last($lines)])[1];
         $blockHeight = $ascent + (count($lines) - 1) * $lineHeight + $descent;
 
-        // Two corrections on top of that. The shadow is ink below and to the
-        // right of every glyph, so the pair reads as sitting half a shadow
-        // further that way than the letters alone do. And text measured dead
-        // centre looks low, because the weight of a line sits below its
-        // ascenders — so lift it by the small amount that makes it look right.
+        // Two corrections. The shadow extends below and to the right of each
+        // glyph, so the text is shifted half a shadow up and left. Text at
+        // the measured centre also looks low, so it is raised by OPTICAL_LIFT.
         $lift = $shadow / 2 + self::SIDE * self::OPTICAL_LIFT;
         $baseline = (int) round((self::SIDE - $blockHeight) / 2 + $ascent - $lift);
 
@@ -232,10 +214,8 @@ final class GdCoverGenerator implements CoverGenerator
      */
     private function fit(string $title): array
     {
-        // Sizes at which every word still fits a line of its own. Setting the
-        // whole title smaller always reads better than cutting a word in half,
-        // so a break is only worth considering once no size is left that
-        // avoids one.
+        // First try every size without breaking words. A smaller title reads
+        // better than a broken word.
         for ($size = self::MAX_FONT_SIZE; $size >= self::MIN_FONT_SIZE; $size -= self::FONT_SIZE_STEP) {
             $lines = $this->wrap($title, $size, breakWords: false);
 
@@ -244,9 +224,8 @@ final class GdCoverGenerator implements CoverGenerator
             }
         }
 
-        // Some word is wider than a whole line even at the smallest readable
-        // size, so it has to be cut. Start large again: a cut word set large is
-        // easier to read than a whole one set too small to see.
+        // A word is wider than a line even at the minimum size, so words must
+        // be broken. Start from the maximum size again.
         for ($size = self::MAX_FONT_SIZE; $size >= self::MIN_FONT_SIZE; $size -= self::FONT_SIZE_STEP) {
             $lines = $this->wrap($title, $size, breakWords: true) ?? [];
 
@@ -255,9 +234,8 @@ final class GdCoverGenerator implements CoverGenerator
             }
         }
 
-        // Too tall even at the floor. Keep the lines that fit and mark the cut
-        // with an ellipsis: a name nobody can read is no more use than a name
-        // that stops early and says so.
+        // Too tall even at the minimum size. Keep the lines that fit and end
+        // them with an ellipsis.
         $size = self::MIN_FONT_SIZE;
         $lines = $this->wrap($title, $size, breakWords: true) ?? [];
         $maxLines = max(1, intdiv($this->textHeight(), $this->lineHeight($size)));
@@ -274,13 +252,11 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * Break the title into lines that fit the text box at this size, measuring
-     * with the real font rather than counting characters.
+     * Break the title into lines that fit the text box at this size, measured
+     * with the font.
      *
-     * A word too wide for a line of its own is either refused — which tells the
-     * caller to try a smaller size — or cut where it runs out of room. There's
-     * no hyphen on a cut: the break isn't a real one, and a hyphen in the
-     * middle of a name reads as part of the name.
+     * A word wider than a line is broken where the line is full, without a
+     * hyphen, because a hyphen would read as part of the name.
      *
      * @return list<string>|null Null when a word doesn't fit and cutting it wasn't allowed.
      */
@@ -296,9 +272,8 @@ final class GdCoverGenerator implements CoverGenerator
                     return null;
                 }
 
-                // An over-long word gets lines of its own, so the break never
-                // shows up as a space in the middle of it. Whatever is left
-                // over stays open for the words that follow.
+                // A broken word starts on a new line. Its last piece stays
+                // open so the following words can join it.
                 if ($line !== '') {
                     $lines[] = $line;
                 }
@@ -379,8 +354,7 @@ final class GdCoverGenerator implements CoverGenerator
         $kept = array_slice($lines, 0, $maxLines);
         $last = $kept[$maxLines - 1];
 
-        // Take characters off the end until the ellipsis has room beside what
-        // is left of the line.
+        // Remove characters from the end until the ellipsis fits.
         while ($last !== '' && $this->measure($size, $last.'…') > $this->textWidth()) {
             $last = mb_substr($last, 0, mb_strlen($last) - 1);
         }
@@ -391,12 +365,9 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * What's left of a title once the parts GD can't draw are gone: invalid
-     * bytes, emoji, and the runs of whitespace that dropping them leaves
-     * behind. Everything else is handed to FreeType as it is, including scripts
-     * Baloo 2 has no glyphs for — those come out as empty boxes, which is a
-     * poor cover but not a failure, and the alternative is refusing to draw a
-     * name its owner can read perfectly well.
+     * The title without invalid bytes, emoji, and the extra whitespace their
+     * removal leaves. Scripts Baloo 2 has no glyphs for are kept and render as
+     * empty boxes.
      */
     private function drawable(string $title): string
     {
@@ -410,7 +381,7 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * How wide the glyphs of $text run at this size, in pixels.
+     * The width of $text at this size, in pixels.
      */
     private function measure(int $size, string $text): int
     {
@@ -420,9 +391,9 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * Where FreeType would put the corners of $text, relative to the point the
-     * text is drawn from. The upper edge comes back negative, because it is
-     * above the baseline.
+     * The corners of $text as imagettfbbox() returns them, relative to the
+     * drawing origin. The upper edge is negative because it is above the
+     * baseline.
      *
      * @return array<int, int>
      */
@@ -438,9 +409,9 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * A colour to draw with, clamped to the range GD accepts. GD hands back
-     * false when it can't allocate one, and passing that on as a colour draws
-     * something arbitrary instead of failing.
+     * Allocate a colour, clamped to the range GD accepts. GD returns false when
+     * allocation fails, and drawing with false gives an arbitrary colour, so
+     * this throws.
      */
     private function colour(GdImage $image, int $red, int $green, int $blue): int
     {
@@ -459,10 +430,9 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * The step from one baseline to the next. Baloo 2 has tall ascenders and
-     * deep descenders, so a tighter step than this lets a "p" on one line
-     * collide with an "h" on the next — which is easiest to see on a long word
-     * broken across several lines.
+     * The distance between baselines. Baloo 2 has tall ascenders and deep
+     * descenders, and with a smaller multiplier a "p" on one line touches an
+     * "h" on the next.
      */
     private function lineHeight(int $size): int
     {

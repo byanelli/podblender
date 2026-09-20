@@ -3,17 +3,16 @@
 namespace App\Apis\Tts\Concerns;
 
 /**
- * Splits a long body of text into whole-word segments no longer than a
- * provider's per-request input limit. Every TTS backend caps how much text one
- * synthesis call accepts, so both clients narrate a segment at a time and stitch
- * the resulting audio back together.
+ * Splits text into whole-word segments no longer than a provider's
+ * per-request input limit. Each client narrates the segments separately and
+ * concatenates the audio.
  */
 trait SegmentsText
 {
     /**
      * Yield successive segments of at most $maxLength characters, never
-     * splitting a word. A word that on its own exceeds $maxLength is emitted as
-     * its own oversized segment rather than dropped.
+     * splitting a word. A single word longer than $maxLength is yielded as an
+     * oversized segment.
      *
      * @return \Generator<int, string>
      */

@@ -9,13 +9,9 @@ use Ramsey\Uuid\Uuid;
 use Tests\TestCase;
 
 /**
- * Runs the vendored ffmpeg for real.
- *
- * The rest of the suite fakes it, which proves the client passes the arguments
- * it means to but says nothing about what ffmpeg does with them — and the crop
- * filter is exactly the kind of expression that reads correctly and produces
- * something else. So these few tests hand it real pixels and measure what comes
- * back, and skip themselves where the binary or GD isn't installed.
+ * Runs the vendored ffmpeg binary. The rest of the suite fakes it, which checks
+ * the arguments but not what the crop filter produces. Skipped where the
+ * binary or GD isn't installed.
  */
 class SquareJpegTest extends TestCase
 {
@@ -35,7 +31,7 @@ class SquareJpegTest extends TestCase
     }
 
     /**
-     * Draw a solid PNG of the given size and return where it was written.
+     * Draw a solid PNG of the given size and return its path.
      */
     private function png(int $width, int $height): string
     {
@@ -62,8 +58,8 @@ class SquareJpegTest extends TestCase
     #[Test]
     public function it_crops_a_widescreen_image_to_a_square_at_the_full_side()
     {
-        // 1280x720 is YouTube's best thumbnail, so this is the case that
-        // matters most: the centre 720x720 of the frame, enlarged to 1400.
+        // 1280x720 is YouTube's largest thumbnail, so this is the most common
+        // input.
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
@@ -89,9 +85,8 @@ class SquareJpegTest extends TestCase
     #[Test]
     public function it_enlarges_an_image_smaller_than_the_given_side()
     {
-        // Apple Podcasts wants artwork of at least 1400 pixels square and is
-        // liable to ignore anything smaller, so even a thumbnail this far under
-        // the minimum is stretched rather than stored as it arrived.
+        // Apple Podcasts requires artwork of at least 1400 pixels square and
+        // may ignore anything smaller.
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
@@ -117,8 +112,7 @@ class SquareJpegTest extends TestCase
     public function it_handles_an_odd_number_of_pixels()
     {
         // A square with an odd side can't be split into 2x2 chroma blocks, and
-        // some encoders refuse it outright. Real thumbnails do come in odd
-        // sizes, so make sure this one encodes rather than failing the job.
+        // some encoders reject it. Real thumbnails do come in odd sizes.
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
@@ -131,8 +125,8 @@ class SquareJpegTest extends TestCase
     #[Test]
     public function its_output_is_an_rgb_jpeg_with_no_alpha_channel()
     {
-        // Apple's spec is RGB; a JPEG that decodes as CMYK, or a PNG's alpha
-        // carried through, is artwork some clients won't render.
+        // Apple's spec requires RGB. Some clients won't render a CMYK JPEG or
+        // an image with an alpha channel.
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
@@ -143,8 +137,8 @@ class SquareJpegTest extends TestCase
         $this->assertNotFalse($image, "$path could not be read back as a JPEG.");
         $this->assertFalse(imageistruecolor($image) && imagecolortransparent($image) !== -1);
 
-        // JPEG has no alpha, so what matters is that the pixels came back as a
-        // recognisable colour rather than as a channel-swapped mess.
+        // The source colour should come back within JPEG's rounding, which
+        // rules out swapped channels.
         $colour = imagecolorsforindex($image, imagecolorat($image, 700, 700));
 
         $this->assertEqualsWithDelta(20, $colour['red'], 12);

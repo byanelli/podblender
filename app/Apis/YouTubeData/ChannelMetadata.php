@@ -8,23 +8,22 @@ readonly class ChannelMetadata
         public string $id,
         public string $name,
         /**
-         * The channel's "uploads" playlist, which holds every video it has
-         * published. Only present when the response asked for contentDetails.
+         * The channel's "uploads" playlist, which contains every video it has
+         * published. Only present when the request asked for contentDetails.
          */
         public ?string $uploadsPlaylistId = null,
         /**
-         * How many videos the channel has published, when the response asked
-         * for statistics. Lets a subscriber be warned what they're taking on
-         * before a full backfill.
+         * How many videos the channel has published. Only present when the
+         * request asked for statistics. Shown to a subscriber before a full
+         * backfill.
          */
         public ?int $videoCount = null,
     ) {}
 
     /**
-     * A channel's uploads playlist is its own id with the "UC" channel prefix
-     * swapped for "UU". YouTube documents this, and it means a channel can be
-     * listed exhaustively through playlistItems — unlike search.list, which
-     * stops returning pages after ~500 results.
+     * A channel's uploads playlist id is the channel id with the "UC" prefix
+     * replaced by "UU" (documented by YouTube). playlistItems lists the whole
+     * playlist, whereas search.list stops returning pages after ~500 results.
      */
     public function uploadsPlaylistId(): string
     {

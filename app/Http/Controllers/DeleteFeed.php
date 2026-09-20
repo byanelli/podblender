@@ -20,10 +20,8 @@ class DeleteFeed
 
         $feed->delete();
 
-        // A cover belongs to one feed and nothing else points at it, so it goes
-        // when the feed does. Deleted after the row rather than before, so a
-        // delete that fails part way through can't leave a feed on the
-        // dashboard whose picture is already gone.
+        // A cover belongs to one feed. It is deleted after the row, so a
+        // failed delete can't leave a feed whose cover file is missing.
         if ($coverPath !== null) {
             $storage->delete($coverPath);
         }

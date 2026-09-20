@@ -19,13 +19,11 @@ use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 
 /**
- * Fetches a clip's artwork, squares it off, and stores it beside the clip's
- * audio.
+ * Fetches a clip's artwork, crops it to a square, and stores it beside the
+ * clip's audio.
  *
- * Artwork is a nicety: an episode without it plays exactly as well as one with
- * it. So nothing here touches processing_state, and a failure — a 404, a
- * platform serving HTML where it promised a JPEG — leaves the clip's audio and
- * its place in the feed alone.
+ * Artwork is optional. This job never changes processing_state, so a failure
+ * here doesn't affect the clip's audio or its place in the feed.
  */
 class DownloadAndStoreThumbnail implements ShouldQueue
 {
@@ -54,9 +52,8 @@ class DownloadAndStoreThumbnail implements ShouldQueue
 
     public function handle(Http $http, Ffmpeg $ffmpeg, Filesystem $storage, LoggerInterface $logger): void
     {
-        // The same thumbnail may be queued twice — a backfill crossing a
-        // subscription update, say. Whatever we'd fetch the second time is the
-        // image we already have, so stop rather than re-fetch and re-store it.
+        // The same thumbnail can be queued twice, e.g. when a backfill overlaps
+        // a subscription update.
         if ($this->clip->thumbnail_path !== null) {
             $logger->info("Clip {$this->clip->id} already has a thumbnail; not downloading another");
 
@@ -70,9 +67,8 @@ class DownloadAndStoreThumbnail implements ShouldQueue
             $downloadPath = match (true) {
                 $this->source instanceof RemoteImageThumbnail => $this->downloadRemoteImage($http, $this->source),
 
-                // Later passes add sources that aren't a URL to fetch — a cover
-                // drawn for a narrated article, for one — and each gets its own
-                // arm here.
+                // Other ThumbnailSource types, such as a generated cover for a
+                // narrated article, each need an arm here.
                 default                                       => throw new \InvalidArgumentException(
                     'Unsupported thumbnail source: '.$this->source::class
                 ),
@@ -95,9 +91,8 @@ class DownloadAndStoreThumbnail implements ShouldQueue
             $this->clip->thumbnail_path = $thumbnailPath;
             $this->clip->save();
         } catch (\Throwable $e) {
-            // Say which clip and why on every attempt: by the time failed()
-            // runs, the interesting part — which of the three attempts failed
-            // differently — is gone.
+            // Log every attempt, since failed() only receives the last
+            // attempt's exception.
             $logger->warning(
                 "Couldn't download a thumbnail for clip {$this->clip->id}: {$e->getMessage()}"
             );
@@ -119,9 +114,8 @@ class DownloadAndStoreThumbnail implements ShouldQueue
     {
         $response = $http->timeout(30)->get($source->url)->throw();
 
-        // A platform that has lost an image tends to answer with a page saying
-        // so rather than an error, and handing that to ffmpeg gets a confusing
-        // decode failure instead of a clear one.
+        // Platforms often answer for a missing image with a 200 and an HTML
+        // page, which ffmpeg would report as an unclear decode failure.
         $contentType = (string) $response->header('Content-Type');
 
         if (! Str::startsWith($contentType, 'image/')) {
@@ -138,9 +132,8 @@ class DownloadAndStoreThumbnail implements ShouldQueue
     }
 
     /**
-     * Called once the retries are exhausted. thumbnail_path stays null, which
-     * is exactly what it means: this clip has no artwork, and the episode is
-     * served without any.
+     * Called once the retries are exhausted. thumbnail_path stays null, so the
+     * episode is served without artwork.
      */
     public function failed(?\Throwable $e): void
     {

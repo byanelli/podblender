@@ -5,9 +5,8 @@ namespace App\Articles;
 use RuntimeException;
 
 /**
- * The archive lookup was BLOCKED or errored, as opposed to the snapshot being
- * genuinely absent. Raised when Scrapfly fails, reports an unsuccessful scrape,
- * or archive.is answers with a blocking HTTP status. This is a retryable
- * condition — the snapshot may well exist; we just couldn't reach it.
+ * The archive lookup was blocked or failed: Scrapfly threw, reported an
+ * unsuccessful scrape, or archive.is returned an HTTP error status. The
+ * snapshot may still exist, so the lookup can be retried.
  */
 class ArchiveBlockedException extends RuntimeException {}

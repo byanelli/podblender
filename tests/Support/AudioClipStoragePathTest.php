@@ -52,8 +52,8 @@ class AudioClipStoragePathTest extends TestCase
     #[Test]
     public function it_appends_the_thumbnail_extension_to_a_path_that_has_none()
     {
-        // Clips created before storage paths were slugs are bare UUIDs, so
-        // there's no extension to swap out — only one to add.
+        // Older clips have a bare UUID as their storage path, with no
+        // extension to replace.
         $this->assertSame(
             'f556d3ed-fd1e-486c-aec8-8dfff0657cf6.jpg',
             AudioClipStoragePath::thumbnailFor('f556d3ed-fd1e-486c-aec8-8dfff0657cf6')

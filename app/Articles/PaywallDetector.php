@@ -6,17 +6,16 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Str;
 
 /**
- * Decides whether a directly-fetched page is gated or hollow, so the Reader
- * knows to retry through archive.is. Signals are layered strongest first: a
- * structured schema.org flag, then a word-count mismatch, then the fuzzy
- * last-resort checks on body length and paywall marker strings.
+ * Decides whether a fetched page is paywalled or missing its body, in which
+ * case the Reader tries the next fetch tier. Checks run most reliable first:
+ * the schema.org flag, then a word-count mismatch, then body length and
+ * paywall marker strings.
  */
 readonly class PaywallDetector
 {
     /**
-     * The fraction of the promised word count we must actually have extracted
-     * for the page to be considered whole. Below this, the body reads as
-     * truncated behind a wall.
+     * The minimum fraction of the declared word count that the extracted body
+     * must have. Below this the body is treated as truncated by a paywall.
      */
     private const WORD_COUNT_FLOOR_RATIO = 0.5;
 
@@ -26,17 +25,17 @@ readonly class PaywallDetector
     {
         $jsonLd = JsonLd::parse($html);
 
-        // 1. Structured, Google-standard, strongest signal.
+        // 1. The structured flag that Google specifies for paywalled content.
         if ($jsonLd->isAccessibleForFree() === false) {
             return true;
         }
 
-        // 2. The page declares a word count far larger than what we extracted.
+        // 2. The page declares a word count far larger than what was extracted.
         if ($this->wordCountFallsShort($jsonLd, $article)) {
             return true;
         }
 
-        // 3. Fuzzy last resort: too little body, or a paywall tell in the markup.
+        // 3. Least reliable: too little body, or a paywall marker in the markup.
         if (Str::length($article->text) < (int) $this->config->get('articles.min_body_length')) {
             return true;
         }

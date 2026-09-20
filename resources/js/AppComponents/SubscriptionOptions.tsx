@@ -5,16 +5,16 @@ import { Label } from '@/Components/ui/label';
 import { cn } from '@/lib/utils';
 
 /**
- * How far back a new subscription reaches. "Everything" is sent as the epoch,
- * which is what the backend reads as "the whole back catalogue".
+ * How far back a new subscription backfills. "Everything" is sent as the
+ * epoch, which is earlier than anything a source has published.
  */
 export type BackfillChoice = 'default' | 'everything' | 'since';
 
 export const EPOCH = '1970-01-01T00:00:00+00:00';
 
 /**
- * The value to send for a given choice: null leaves the backend to apply its
- * configured default window.
+ * The backfillSince value to send for a choice. On null, the backend applies
+ * its configured default.
  */
 export function backfillSinceFor(
     choice: BackfillChoice,
@@ -27,10 +27,9 @@ export function backfillSinceFor(
 }
 
 /**
- * How many of a source's clips a choice would pull in, as far as we can tell.
- * Only "everything" has a knowable answer — for the others it depends on dates
- * we'd have to ask the platform about — and even that is unknown when the
- * platform didn't report a count.
+ * How many clips a choice would backfill, or null when unknown. Only
+ * "everything" can be counted without the clips' dates, and only when the
+ * platform reported a count.
  */
 export function episodesImplied(
     choice: BackfillChoice,

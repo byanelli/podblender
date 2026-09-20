@@ -52,8 +52,8 @@ class PlatformsTest extends TestCase
     #[Test]
     public function it_resolves_subscription_urls_to_youtube_or_rss()
     {
-        // A clip URL that isn't YouTube means a web article; a SUBSCRIPTION
-        // URL that isn't YouTube can only mean a feed.
+        // A non-YouTube clip URL is a web article. A non-YouTube subscription
+        // URL is a feed.
         $this->assertEquals(
             PlatformType::YouTube,
             $this->platforms()->subscribableTypeForUrl('https://www.youtube.com/@channel'),

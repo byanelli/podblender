@@ -5,9 +5,8 @@ namespace App\Platforms\Exceptions;
 use App\Enums\PlatformType;
 
 /**
- * Thrown when something tries to subscribe to a platform that can't list its own clips (see SubscribablePlatform).
- * Reaching this is a programming error rather than something a user can trigger, so the message names the platform
- * plainly for the log.
+ * Thrown on an attempt to subscribe to a platform that isn't a SubscribablePlatform. This is a programming error that a
+ * user can't trigger, so the message is written for the log.
  */
 class PlatformNotSubscribableException extends \Exception
 {

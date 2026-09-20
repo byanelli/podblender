@@ -67,15 +67,13 @@ class ExtractorTest extends TestCase
     #[Test]
     public function it_credits_the_publisher_not_the_archive_the_snapshot_came_from()
     {
-        // A snapshot describes itself in its metadata, so both the JSON-LD
-        // publisher and og:site_name name the archive. Crediting the article to
-        // archive.ph is wrong in a way readers see: it's what the feed shows as
-        // the source. The URL is always the article's own, even here.
+        // In a snapshot, the JSON-LD publisher and og:site_name both name the
+        // archive. The feed displays the publisher as the article's source.
         $article = $this->extract('archive-snapshot', 'https://www.theatlantic.com/ideas/the-tunnel-under-the-old-quarter/');
 
         $this->assertEquals('theatlantic.com', $article->publisher);
 
-        // The rest of the snapshot's metadata is still the article's own.
+        // The snapshot's other metadata describes the article and is kept.
         $this->assertEquals('The Tunnel Under the Old Quarter', $article->title);
         $this->assertEquals(['Marta Chronicle'], $article->authors);
         $this->assertStringContainsString('Work on the tunnel began', $article->text);
@@ -84,8 +82,8 @@ class ExtractorTest extends TestCase
     #[Test]
     public function it_keeps_a_publisher_whose_name_merely_mentions_archives()
     {
-        // Only the archiving services themselves are rejected. A publication
-        // legitimately called "The Archive" must survive.
+        // Only the archiving services' names are rejected. A publication called
+        // "The Archive" is kept.
         $html = '<html><head><meta property="og:site_name" content="The Archive"></head>'
             .'<body><article><p>'.str_repeat('A perfectly ordinary article body. ', 40).'</p></article></body></html>';
 
@@ -105,8 +103,8 @@ class ExtractorTest extends TestCase
     #[Test]
     public function it_prefers_og_title_when_the_page_title_reflects_it_but_not_the_json_ld_headline()
     {
-        // Wikipedia fills schema.org headline with a short description; its own
-        // <title> ("Podcast - Wikipedia") reflects og:title, not the headline.
+        // Wikipedia puts a short description in the schema.org headline. Its
+        // <title> ("Podcast - Wikipedia") matches og:title.
         $article = $this->extract('wikipedia-headline', 'https://en.wikipedia.org/wiki/Podcast');
 
         $this->assertEquals('Podcast', $article->title);
@@ -131,8 +129,8 @@ class ExtractorTest extends TestCase
     #[Test]
     public function it_strips_only_the_trailing_site_name_when_the_title_equals_the_site_name()
     {
-        // The Wikipedia article about Wikipedia: "Wikipedia - Wikipedia" must
-        // become "Wikipedia", not empty — only the trailing occurrence is a suffix.
+        // The Wikipedia article about Wikipedia is titled "Wikipedia -
+        // Wikipedia". Stripping every occurrence would leave an empty title.
         $article = $this->extract('title-name-equals-topic', 'https://en.wikipedia.org/wiki/Wikipedia');
 
         $this->assertEquals('Wikipedia', $article->title);
@@ -145,13 +143,12 @@ class ExtractorTest extends TestCase
 
         $article = $this->extract('no-date', 'https://example.com/the-undated-almanac');
 
-        // The rest of the metadata still extracts from the JSON-LD...
+        // A missing date does not fail the rest of the extraction.
         $this->assertEquals('The Almanac That Forgot Its Own Date', $article->title);
         $this->assertEquals('The Timeless Register', $article->publisher);
         $this->assertEquals(['Morgan Undated'], $article->authors);
 
-        // ...but with no date in the JSON-LD or the meta tags, it falls back to
-        // "now" rather than failing the whole extraction.
+        // The fixture has no date in its JSON-LD or meta tags.
         $this->assertTrue($article->publicationDate->greaterThanOrEqualTo($before));
         $this->assertTrue($article->publicationDate->lessThanOrEqualTo(CarbonImmutable::now()->addMinute()));
     }

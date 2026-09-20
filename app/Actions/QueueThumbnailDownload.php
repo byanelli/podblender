@@ -8,8 +8,7 @@ use App\Platforms\Contracts\ThumbnailSource;
 use Illuminate\Contracts\Bus\Dispatcher;
 
 /**
- * Queues the download of a clip's artwork. Kept alongside QueueAudioClipDownload so that whatever queues a clip's
- * audio can queue its picture the same way, without knowing what either job needs.
+ * Queues the download of a clip's artwork. The counterpart of QueueAudioClipDownload.
  */
 readonly class QueueThumbnailDownload
 {

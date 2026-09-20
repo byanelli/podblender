@@ -50,9 +50,7 @@ class AudioClip extends Model
     protected $casts = [
         'processing_state' => ClipProcessingState::class,
 
-        // Without this, published_at is a string, and comparing it against a date — which is the whole point of the
-        // column — silently evaluates to false rather than failing. Note that the @property annotation above has
-        // always claimed this is a CarbonImmutable; now it is one.
+        // Uncast, published_at is a string, and comparing it against a date evaluates to false without an error.
         'published_at'     => 'datetime',
     ];
 
@@ -95,8 +93,8 @@ class AudioClip extends Model
     }
 
     /**
-     * The clip's public URL, used for the RSS enclosure. Always populated: a
-     * podcast client fetches it directly, whatever disk the file lives on.
+     * The clip's public URL, used for the RSS enclosure. Set on every disk,
+     * because podcast clients fetch the file directly.
      *
      * @return Attribute<string, never>
      */
@@ -106,8 +104,8 @@ class AudioClip extends Model
     }
 
     /**
-     * The same URL, but only when the browser can play it back in the feed
-     * page; null otherwise. {@see AudioPreview}
+     * The audio URL when the browser can play it on the feed page, otherwise
+     * null. {@see AudioPreview}
      *
      * @return Attribute<string|null, never>
      */
@@ -119,9 +117,8 @@ class AudioClip extends Model
     }
 
     /**
-     * The clip's artwork, or null for a clip that has none — a platform that
-     * offered no image, or a download that never succeeded. The feed page and
-     * the RSS item both leave the picture out rather than substitute one.
+     * The clip's artwork, or null if the platform offered no image or its
+     * download failed. The feed page and the RSS item then show no image.
      *
      * @return Attribute<string|null, never>
      */

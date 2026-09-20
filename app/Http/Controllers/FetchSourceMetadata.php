@@ -9,10 +9,9 @@ use App\Platforms\Platforms;
 use Illuminate\Contracts\Support\Responsable;
 
 /**
- * Look up what's at a subscription URL without subscribing to it, so someone can
- * be shown what they're about to take on — its name, whether it's a channel or a
- * playlist, and how many episodes it holds — before choosing how far back to
- * reach.
+ * Look up a subscription URL without subscribing to it. The form shows the
+ * source's name, type, and episode count before the user chooses how far back
+ * to backfill.
  */
 readonly class FetchSourceMetadata
 {

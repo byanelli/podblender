@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Config;
 /**
  * Decides whether stored audio can be previewed in the browser.
  *
- * In-browser playback requires the file to be served to the browser directly,
- * which only holds for local disks. On S3 (or any disk behind signing) the
- * plain storage URL 403s, so preview is gated to those disks. This decides
- * AudioClip::$preview_url only; the RSS enclosure uses $audio_url, which is
- * always populated.
+ * In-browser playback needs a storage URL the browser can fetch directly. On
+ * S3, or any disk that requires signed URLs, the plain storage URL returns
+ * 403, so preview is limited to local disks. This affects only
+ * AudioClip::$preview_url; the RSS enclosure uses $audio_url, which is always
+ * populated.
  */
 final class AudioPreview
 {

@@ -26,12 +26,11 @@ class OxylabsResidentialProxyConfigTest extends TestCase
     {
         $url = $this->makeConfig()->getUrlForDownload();
 
-        // Without a session, Oxylabs hands out a different address on every request, and a download that fetches its
-        // metadata and its media from two addresses is refused.
+        // Without a session, Oxylabs uses a different address for every request, and a download whose metadata and
+        // media requests come from two addresses is refused.
         $this->assertMatchesRegularExpression('/-sessid-\w+-/', $url);
 
-        // Their default session is 10 minutes. Long downloads outlive that, and an address that changes midway is
-        // exactly what the session is there to prevent.
+        // Oxylabs's default session is 10 minutes, which is shorter than a long download.
         $this->assertStringContainsString('-sesstime-60:', $url);
 
         $this->assertStringStartsWith('http://customer-someuser-cc-US-sessid-', $url);
@@ -47,8 +46,7 @@ class OxylabsResidentialProxyConfigTest extends TestCase
             ->map(fn () => $config->getUrlForDownload())
             ->map(fn (string $url) => preg_match('/-sessid-(\w+)-/', $url, $m) ? $m[1] : null);
 
-        // Downloading everything from one address is what gets us blocked, so consecutive downloads must ask for
-        // different ones.
+        // Downloading everything from one address gets that address blocked, so each download requests a new one.
         $this->assertCount(5, $sessions->unique(), 'Two downloads were given the same session, and so the same IP.');
     }
 
@@ -60,14 +58,14 @@ class OxylabsResidentialProxyConfigTest extends TestCase
         $config->set('services.oxylabs.residential.user', 'someuser');
         $config->set('services.oxylabs.residential.country', 'US');
 
-        // Oxylabs generates passwords, and they routinely contain characters that mean something inside a URL.
+        // Oxylabs generates the passwords, and they often contain characters reserved in URLs.
         $config->set('services.oxylabs.residential.password', 'pa+ss:word@example');
 
         $url = $this->app->make(OxylabsResidentialProxyConfig::class)->getUrlForDownload();
 
         $this->assertStringContainsString('pa%2Bss%3Aword%40example', $url);
 
-        // The host has to survive an @ in the password.
+        // An unescaped @ in the password would change the host.
         $this->assertStringEndsWith('@pr.oxylabs.io:7777', $url);
     }
 
@@ -82,8 +80,7 @@ class OxylabsResidentialProxyConfigTest extends TestCase
             'no password'    => ['someuser', null, false],
             'no user'        => [null, 'somepassword', false],
             'neither'        => [null, null, false],
-            // An account that was half-filled-in is not an account. Empty strings are what a .env with bare
-            // "OXYLABS_USERNAME=" produces, which is likelier than the key being absent altogether.
+            // A bare "OXYLABS_USERNAME=" in .env produces an empty string, which is more likely than a missing key.
             'empty strings'  => ['', '', false],
             'empty password' => ['someuser', '', false],
         ];
@@ -104,8 +101,8 @@ class OxylabsResidentialProxyConfigTest extends TestCase
         $config->set('services.oxylabs.residential.user', null);
         $config->set('services.oxylabs.residential.password', null);
 
-        // Better than a TypeError from somewhere inside the username, which reads like a bug in this class rather
-        // than a machine that never had an Oxylabs account.
+        // The message names the missing env variable. A TypeError from building the username would look like a bug
+        // in this class.
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('OXYLABS_USERNAME');
 
@@ -115,8 +112,7 @@ class OxylabsResidentialProxyConfigTest extends TestCase
     #[Test]
     public function it_leaves_tls_alone()
     {
-        // Oxylabs tunnels with CONNECT, so we can still verify YouTube's certificate and shouldn't be turning that
-        // check off.
+        // Oxylabs tunnels with CONNECT, so YouTube's certificate can still be verified.
         $this->assertFalse($this->makeConfig()->requiresInsecureTls());
     }
 }

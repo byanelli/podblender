@@ -17,12 +17,10 @@ class SchemaTest extends TestCase
         $first = Feed::factory()->create();
         $second = Feed::factory()->create();
 
-        // Inserting without supplying an id works and hands out ascending keys.
         $this->assertGreaterThan($first->id, $second->id);
 
-        // A real AUTOINCREMENT key never reuses an id, even after the highest row is deleted. A plain single-column
-        // integer primary key on SQLite is only a rowid alias, which would hand the freed id straight back — the
-        // accident the migration exists to turn into a proper auto-increment key on every driver.
+        // An AUTOINCREMENT key never reuses an id, even after the highest row is deleted. On SQLite, a plain integer
+        // primary key is a rowid alias, which would reuse the freed id.
         $highest = $second->id;
         $second->delete();
 
@@ -40,8 +38,7 @@ class SchemaTest extends TestCase
             'title'           => $title,
         ]);
 
-        // The column was string(255); FindOrCreateAudioClip writes titles up to 497 characters. A 400-character title
-        // must survive the round trip intact rather than being cut to 255.
+        // FindOrCreateAudioClip writes titles of up to 500 characters, so the column must store more than 255.
         $this->assertEquals($title, $clip->fresh()->title);
     }
 }

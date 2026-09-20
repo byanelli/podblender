@@ -19,7 +19,7 @@ use Tests\TestCase;
 class DownloadAndStoreThumbnailTest extends TestCase
 {
     /**
-     * Every temporary file the faked crop saw, input and output alike.
+     * The input and output paths of every faked crop.
      *
      * @var array<int, string>
      */
@@ -33,9 +33,8 @@ class DownloadAndStoreThumbnailTest extends TestCase
             $this->temporaryImages[] = $path;
         };
 
-        // A crop that copies its input, so what gets stored is what was
-        // downloaded, and that notes both paths so a test can check they were
-        // tidied away afterwards.
+        // The fake crop copies its input, so the stored bytes are the downloaded
+        // bytes. It records both paths so a test can check they were deleted.
         $this->app->bind(Ffmpeg::class, fn () => new readonly class($record) implements Ffmpeg
         {
             public function __construct(private \Closure $record) {}
@@ -104,7 +103,7 @@ class DownloadAndStoreThumbnailTest extends TestCase
 
         $clip = $clip->fresh();
 
-        // The image lands beside the audio, under the same name.
+        // The image is stored next to the audio, under the same name.
         $this->assertEquals('some-channel-some-video-abc123.jpg', $clip->thumbnail_path);
         $this->assertEquals(
             AudioClipStoragePath::thumbnailFor($clip->storage_path),
@@ -139,9 +138,8 @@ class DownloadAndStoreThumbnailTest extends TestCase
         $clip->thumbnail_path = 'already-there.jpg';
         $clip->save();
 
-        // Re-dispatching is a normal thing to do — a backfill crossing a
-        // subscription update — and the image we already have is the image
-        // we'd fetch, so nothing should go out at all.
+        // The job can be dispatched twice for one clip, e.g. when a backfill
+        // overlaps a subscription update.
         $this->runJob($clip);
 
         Http::assertNothingSent();
@@ -151,8 +149,8 @@ class DownloadAndStoreThumbnailTest extends TestCase
     #[Test]
     public function it_refuses_a_response_that_is_not_an_image(): void
     {
-        // A platform that has lost an image tends to answer with a page saying
-        // so rather than with an error.
+        // A platform missing an image often responds with a 200 HTML page
+        // rather than an error status.
         Http::fake(['*' => Http::response('<html>not found</html>', headers: ['Content-Type' => 'text/html'])]);
 
         Storage::fake();
@@ -185,8 +183,8 @@ class DownloadAndStoreThumbnailTest extends TestCase
             // expected
         }
 
-        // Artwork is a nicety. A clip whose thumbnail won't download still has
-        // its audio, its place in the feed, and its own processing state.
+        // A failed thumbnail download must not change the clip's processing
+        // state.
         $clip = $clip->fresh();
 
         $this->assertNull($clip->thumbnail_path);
@@ -201,8 +199,8 @@ class DownloadAndStoreThumbnailTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
 
-        // Later passes add sources that aren't a URL to fetch. Until one is
-        // handled here, saying so is better than storing nothing quietly.
+        // A source type the job doesn't handle throws rather than storing
+        // nothing silently.
         $this->runJob($this->clip(), new readonly class implements ThumbnailSource {});
     }
 

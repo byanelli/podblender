@@ -6,11 +6,9 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 /**
- * Parses the schema.org JSON-LD blocks out of a page and exposes the fields the
- * extractor and the paywall detector both need. A page may carry several
- * <script type="application/ld+json"> blocks, each of which may be a single
- * node, an array of nodes, or an object with an "@graph" array of nodes; this
- * flattens all of that into one list and finds the Article node.
+ * Parses a page's schema.org JSON-LD for the Extractor and the
+ * PaywallDetector. A page may have several <script type="application/ld+json">
+ * blocks, all of which are flattened into one list of nodes.
  */
 readonly class JsonLd
 {
@@ -76,10 +74,9 @@ readonly class JsonLd
     }
 
     /**
-     * The strongest paywall signal: schema.org's isAccessibleForFree flag,
-     * either on the Article node itself or on any of its hasPart sections.
-     * Returns false when the page declares itself gated, true when it declares
-     * itself free, and null when it says nothing.
+     * schema.org's isAccessibleForFree flag, read from the Article node and its
+     * hasPart sections. False if any of them is marked paywalled; otherwise the
+     * Article node's value, or null when it has none.
      */
     public function isAccessibleForFree(): ?bool
     {

@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('audio_clips', function (Blueprint $table) {
-            // Where the clip's square episode artwork is stored, on the same
-            // disk as its audio. Null until the thumbnail job has stored one —
-            // and for good, for a clip whose platform offered no artwork.
+            // Path to the clip's square artwork, on the same disk as its
+            // audio. Null until the thumbnail job stores one, and permanently
+            // null when the platform has no artwork for the clip.
             $table->string('thumbnail_path')->nullable();
         });
     }

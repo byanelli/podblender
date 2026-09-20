@@ -1,11 +1,9 @@
 import { cn } from '@/lib/utils';
 
 /**
- * Podblender brand mark: a chunky, friendly countertop blender — cream jug with
- * measurement ticks, a teal lid and base, an amber power button, and a swirl of
- * teal "blend" inside. Filled cartoon style with thick ink outlines; colors come
- * from theme tokens (fill-primary / fill-card / stroke-foreground) so it stays on
- * palette and works down to 32px in the nav or as a favicon.
+ * Podblender logo: a countertop blender. Colors come from theme tokens
+ * (fill-primary / fill-card / stroke-foreground). Legible down to 32px, for the
+ * nav and the favicon.
  */
 export default function ApplicationLogo({ className }: { className?: string }) {
     return (

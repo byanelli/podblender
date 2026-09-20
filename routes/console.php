@@ -3,7 +3,6 @@
 use App\Jobs\UpdateAllSubscriptions;
 use Illuminate\Support\Facades\Schedule;
 
-// Keep every subscription's clips flowing in. Nothing else dispatches UpdateAllSubscriptions, so without this line a
-// subscription is filled once when it's created and then never updated again. Every two hours is the cadence chosen
-// for how fresh a podcast feed needs to be against how gently we have to treat the platforms we download from.
+// The only place UpdateAllSubscriptions is dispatched. Without it, a subscription is filled once at creation and never
+// updated. Two hours keeps feeds current while limiting requests to the platforms.
 Schedule::job(new UpdateAllSubscriptions)->everyTwoHours();

@@ -27,8 +27,7 @@ class OpenAiClientTest extends TestCase
     #[Test]
     public function it_converts_text_to_speech()
     {
-        // Short, single-segment input — segmentation itself is covered
-        // separately by SegmentsTextTest.
+        // A single segment. SegmentsTextTest covers segmentation.
         $text = 'Have a wonderful day!';
 
         $this->app->bind(OpenAiClientContract::class, fn () => OpenAI::fake([

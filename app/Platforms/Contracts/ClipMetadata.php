@@ -20,14 +20,12 @@ readonly class ClipMetadata implements Arrayable
         public DateTimeInterface $publishedAt,
         public SourceMetadata $source,
         /**
-         * The platform's conservative guess at how long a single download of
-         * this clip takes, in seconds — pessimistic about bandwidth, pacing, and
-         * narration rate, before any retries. The download job turns this into a
-         * timeout by adding a buffer and multiplying by the expected attempts.
+         * A conservative estimate of one download attempt, in seconds. The
+         * download job derives its timeout from it.
          */
         public ?int $estimatedDownloadTime = null,
         /**
-         * Where the clip's artwork comes from, when the platform offers one.
+         * The source of the clip's artwork, if the platform has any.
          * {@see ThumbnailSource}
          */
         public ?ThumbnailSource $thumbnail = null,

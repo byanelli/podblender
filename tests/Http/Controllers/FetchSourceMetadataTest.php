@@ -16,8 +16,8 @@ class FetchSourceMetadataTest extends TestCase
     #[Test]
     public function it_previews_a_source_before_anyone_subscribes_to_it()
     {
-        // The point of this endpoint: show what a subscription would involve —
-        // how many episodes, and by whom — while the form is still open.
+        // The subscription form uses this endpoint to show the source's author
+        // and episode count before the user confirms.
         $this->fakePlatform(sourceMetadata: new SourceMetadata(
             name: 'Select Lectures',
             canonicalUrl: 'https://youtube.com/playlist?list=PLabc',

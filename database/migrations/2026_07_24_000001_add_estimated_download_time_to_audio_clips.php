@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('audio_clips', function (Blueprint $table) {
-            // The platform's conservative guess at one download's wall-clock
-            // time, used by DownloadAndStoreAudioClip to size its timeout.
-            // Null for clips created before the platform reported an estimate.
+            // The platform's estimate of one download's duration in seconds.
+            // DownloadAndStoreAudioClip derives its timeout from it. Null when
+            // the platform gave no estimate.
             $table->unsignedInteger('estimated_download_time')->nullable();
         });
     }

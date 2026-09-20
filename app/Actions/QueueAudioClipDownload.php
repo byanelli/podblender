@@ -7,8 +7,8 @@ use App\Models\AudioClip;
 use Illuminate\Contracts\Bus\Dispatcher;
 
 /**
- * Queues the download of a clip's audio. Both the first attempt, when the clip is created, and a retry after a failed
- * download go through here, so that the job's throttling middleware and timeout behave the same way either time.
+ * Queues the download of a clip's audio. Used both when a clip is created and when a failed download is retried, so
+ * the job is constructed the same way in each case.
  */
 readonly class QueueAudioClipDownload
 {

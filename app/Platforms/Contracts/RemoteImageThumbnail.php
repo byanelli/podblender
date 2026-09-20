@@ -6,7 +6,7 @@ use BYanelli\Roma\Response\IsArrayable;
 use Illuminate\Contracts\Support\Arrayable;
 
 /**
- * Artwork the platform already hosts: fetch this URL and use what comes back.
+ * Artwork hosted by the platform, fetched from this URL.
  *
  * @implements Arrayable<string, mixed>
  */

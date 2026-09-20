@@ -10,9 +10,9 @@ use Illuminate\Contracts\Config\Repository as Config;
 use League\Uri\Uri;
 
 /**
- * Orchestrates the fetch → extract → paywall-check → maybe-retry-via-archive
- * pipeline and caches the result. This is the entry point the Web platform
- * calls; everything else in App\Articles is an implementation detail behind it.
+ * Fetches a page, extracts the article, retries through the archives when it
+ * is paywalled, and caches the result. The Web platform calls this class;
+ * everything else in App\Articles is an implementation detail of it.
  */
 readonly class Reader implements ReaderContract
 {
@@ -28,11 +28,10 @@ readonly class Reader implements ReaderContract
 
     public function read(string $url): Article
     {
-        // Two normalizations from the same URL: the www-STRIPPED form is the
-        // article's identity (cache key + hard-paywall-domain check), while the
-        // www-PRESERVED form is what archive.is is actually indexed by (NYT is
-        // published as www.nytimes.com), so the archive lookup must use it or it
-        // misses.
+        // $url has "www." removed and is the cache key and the input to the
+        // hard-paywall-domain check. $canonical keeps "www." because archive.is
+        // indexes pages by their published URL (NYT is www.nytimes.com), and a
+        // lookup without it finds nothing.
         $canonical = $this->removeUtmCodesFromUrl($this->ensureSchemeIsHttps($url));
         $url = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($url));
 
@@ -44,17 +43,15 @@ readonly class Reader implements ReaderContract
     }
 
     /**
-     * Three fetch tiers, cheapest first, each archive tier re-validated by the
-     * PaywallDetector and falling through when it comes back gated or absent:
+     * Three fetch tiers, cheapest first:
      *
-     *   1. Direct (free) — skipped for a hard-paywall domain, which never serves
-     *      a logged-out reader a usable page. Returned only if not gated.
-     *   2. Wayback (free) — web.archive.org is not Cloudflare-fronted, but its
-     *      snapshot is often the SAME paywalled capture, so accept it only when
-     *      the detector clears it; a miss or a gated snapshot falls through.
-     *   3. archive.is (paid, ~55 Scrapfly credits) — the terminal backstop. Its
-     *      snapshots are user-submitted un-paywalled captures, so its result is
-     *      accepted as-is: there is nowhere left to fall.
+     *   1. Direct (free). Skipped for a hard-paywall domain, which never serves
+     *      a usable page to a logged-out reader. Used only if not paywalled.
+     *   2. Wayback (free). Its snapshot is often a capture of the paywalled
+     *      page, so it is used only if the PaywallDetector passes it.
+     *   3. archive.is (paid, ~55 Scrapfly credits). Its snapshots are
+     *      user-submitted captures without the paywall, and it is the last
+     *      tier, so its result is not checked.
      */
     private function fetchAndExtract(string $url, string $canonical): Article
     {
@@ -66,7 +63,7 @@ readonly class Reader implements ReaderContract
             }
         }
 
-        // Wayback keys on the published (www-preserved) URL, same as archive.is.
+        // Wayback indexes pages by the published URL, as archive.is does.
         $wayback = $this->tryWaybackTier($url, $canonical);
 
         if ($wayback !== null) {
@@ -77,10 +74,9 @@ readonly class Reader implements ReaderContract
     }
 
     /**
-     * Attempt the free Wayback tier: fetch the snapshot, extract it, and return
-     * the Article only if the detector clears it. Returns null — meaning "fall
-     * through to archive.is" — for BOTH a missing snapshot (the exception) and a
-     * snapshot that is still gated or hollow. A Wayback miss never escapes.
+     * Returns the Article from the Wayback snapshot, or null when there is no
+     * snapshot or the snapshot is still paywalled. Null means the caller should
+     * continue to archive.is.
      */
     private function tryWaybackTier(string $url, string $canonical): ?Article
     {

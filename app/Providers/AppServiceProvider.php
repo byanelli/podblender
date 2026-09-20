@@ -71,13 +71,10 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Which residential proxy implementation this install uses, decided by config rather than by editing this file.
-     * Both providers cost money and need an account, so an install has at most one of them, and the app only ever
-     * reads the credentials of the one named here.
+     * The residential proxy implementation named in config. Only that provider's credentials are read.
      *
-     * An unrecognised name is an error and not a reason to fall back to the default: a typo in
-     * RESIDENTIAL_PROXY_PROVIDER would otherwise leave the app quietly using an account the operator didn't pick,
-     * which shows up much later as a bill or a download that keeps failing.
+     * An unrecognised name throws. Falling back to a default would let a typo in RESIDENTIAL_PROXY_PROVIDER select a
+     * provider account the operator didn't choose.
      *
      * @return class-string<ResidentialProxyConfig>
      */
@@ -97,9 +94,8 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the limiter that App\Jobs\DownloadAndStoreAudioClip uses to leave a gap between one download and the
-     * next. One download per N minutes, where N is configurable because the right value is whatever YouTube is
-     * tolerating this month.
+     * Register the rate limiter used by App\Jobs\DownloadAndStoreAudioClip: one download per N minutes. N is
+     * configurable because the rate YouTube tolerates changes over time.
      */
     private function registerDownloadRateLimiter(): void
     {

@@ -65,7 +65,7 @@ class AllowedRegistrationEmailTest extends TestCase
 
     /**
      * Re-evaluates config/auth.php with ALLOWED_REGISTRATION_EMAILS set to
-     * $value, so the parsing that lives in the config file itself is covered.
+     * $value, because the list is parsed in the config file.
      *
      * @return array<int, string>
      */

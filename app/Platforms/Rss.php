@@ -18,10 +18,9 @@ use Illuminate\Http\Client\Factory;
 use League\Uri\Uri;
 
 /**
- * An RSS/Atom feed of web articles. Extends Web because a feed item IS a web
- * article — reading, narrating, and downloading a clip are inherited verbatim —
- * and adds the subscription side: resolving a source URL to its feed (with
- * autodiscovery from an HTML page) and polling that feed for new items.
+ * An RSS/Atom feed of web articles. A feed item is a web article, so reading,
+ * narrating and downloading a clip are inherited from Web. This class adds
+ * subscriptions: resolving a source URL to its feed and listing new items.
  */
 readonly class Rss extends Web implements SubscribablePlatform
 {
@@ -40,10 +39,9 @@ readonly class Rss extends Web implements SubscribablePlatform
     }
 
     /**
-     * Resolve a subscription URL to its feed. The URL may already be the feed;
-     * when it's an ordinary page instead, follow the page's autodiscovery link.
-     * The canonical URL returned here is the FEED's URL — it becomes the
-     * source's platform_url, which is what UpdateSubscription later polls.
+     * Resolves a subscription URL to its feed, following an HTML page's
+     * autodiscovery link if needed. The canonical URL returned is the feed's,
+     * since it becomes the platform_url that UpdateSubscription polls.
      */
     public function getSourceMetadata(string $sourceUrl): SourceMetadata
     {
@@ -79,10 +77,8 @@ readonly class Rss extends Web implements SubscribablePlatform
     }
 
     /**
-     * Build a clip from a feed item, straight from the feed's own metadata —
-     * publisher-authored and item-specific, so polling never costs an article
-     * page fetch. The page is only ever read later, when the download job
-     * narrates the clip.
+     * Uses only the feed's metadata, so polling fetches no article pages. The
+     * page is read when the download job narrates the clip.
      */
     private function clipMetadataFor(FeedItem $item, SourceMetadata $source): ClipMetadata
     {

@@ -22,9 +22,8 @@ class FetcherTest extends TestCase
     {
         parent::setUp();
 
-        // Stub the residential proxy with a fixed URL so we can assert exactly
-        // that the Wayback hops are proxied, rather than fighting the real
-        // config's random session id.
+        // The real config puts a random session id in the proxy URL. A fixed
+        // URL lets the Wayback tests assert the exact proxy used.
         $this->app->bind(ResidentialProxyConfig::class, fn () => new readonly class implements ResidentialProxyConfig
         {
             public function isConfigured(): bool
@@ -71,8 +70,8 @@ class FetcherTest extends TestCase
     }
 
     /**
-     * Route Scrapfly calls by their target `url` query param: a bare 5-char
-     * archive code is the snapshot; anything else is the listing.
+     * Route Scrapfly calls by their target `url` query param. A bare 5-char
+     * archive code is the snapshot request, and anything else is the listing.
      *
      * @param  callable|PromiseInterface  $listing
      * @param  callable|PromiseInterface  $snapshot
@@ -149,12 +148,11 @@ class FetcherTest extends TestCase
 
         $this->assertEquals('<html>wayback body</html>', $body);
 
-        // Both Wayback hops go out through the residential proxy — production runs
-        // from a datacenter IP archive.org rate-limits and blocks.
+        // Both Wayback requests are proxied, because archive.org rate-limits and
+        // blocks production's datacenter IP.
         $this->assertCount(2, $proxied);
         $this->assertSame([self::PROXY_URL, self::PROXY_URL], $proxied);
 
-        // The availability API is asked about the requested URL, on archive.org.
         Http::assertSent(function (Request $request) {
             $query = [];
             parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
@@ -163,8 +161,8 @@ class FetcherTest extends TestCase
                 && ($query['url'] ?? null) === 'https://www.example.com/x';
         });
 
-        // The snapshot is fetched raw: web.archive.org, the response timestamp,
-        // the "id_" (toolbar-free) modifier, and the original URL.
+        // The "id_" modifier after the timestamp returns the page without the
+        // Wayback toolbar.
         Http::assertSent(fn (Request $request) => $request->url()
             === 'https://web.archive.org/web/20260115184700id_/https://www.example.com/x'
             && $request->hasHeader('User-Agent', config('articles.user_agent')));
@@ -206,7 +204,7 @@ class FetcherTest extends TestCase
 
         $this->assertEquals('<html>snapshot body</html>', $body);
 
-        // Step 1: the listing is scraped via ASP, JS render OFF, at {base}/{url}.
+        // Step 1: the listing at {base}/{url}, with ASP on and JS rendering off.
         Http::assertSent(function (Request $request) {
             $query = [];
             parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
@@ -216,8 +214,8 @@ class FetcherTest extends TestCase
                 && ($query['url'] ?? null) === 'https://archive.ph/https://www.nytimes.com/some-article';
         });
 
-        // Step 2: the NEWEST snapshot (CLBwm @ 18:47 in the fixture) is scraped
-        // with JS render ON.
+        // Step 2: the newest snapshot (CLBwm at 18:47 in the fixture), with JS
+        // rendering on.
         Http::assertSent(function (Request $request) {
             $query = [];
             parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);

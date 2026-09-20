@@ -44,8 +44,7 @@ class ShowMetadataTest extends TestCase
                 'title'                 => $title,
                 'description'           => $description,
                 'canonicalUrl'          => $url,
-                // roma serializes DateTimeInterface with the ATOM format by default (see IsArrayable::normalizeValue),
-                // e.g. 2026-07-16T12:34:56+00:00.
+                // Roma serializes DateTimeInterface as ATOM by default (see IsArrayable::normalizeValue).
                 'publishedAt'           => $publishedAt->format(DateTimeInterface::ATOM),
                 'source'                => [
                     'name'         => $sourceName,
@@ -90,8 +89,7 @@ class ShowMetadataTest extends TestCase
 
         $response = $this->actingAs($user)->post('api/fetch-metadata', ['url' => $url]);
 
-        // The thumbnail is a nested object like the source is, so it survives
-        // the trip to the client rather than serializing as an empty value.
+        // The thumbnail must serialize as a nested object, not an empty value.
         $response->assertJsonPath('metadata.thumbnail', ['url' => $thumbnailUrl]);
     }
 }

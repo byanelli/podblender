@@ -18,40 +18,34 @@ use Ramsey\Uuid\Uuid;
  * From GitHub: "yt-dlp is a feature-rich command-line audio/video downloader with support for thousands of sites. The
  * project is a fork of youtube-dl based on the now inactive youtube-dlc."
  *
- * A note on getting YouTube downloads to succeed, since it's the whole reason this class looks the way it does.
- * YouTube decides whether to serve a request based on three things, roughly in order of how much they matter:
+ * YouTube decides whether to serve a request based on three things, roughly in order of importance:
  *
  *   1. Whether the request carries a valid proof-of-origin token (see scripts/install-bgutil-pot.php).
- *   2. Whether the reputation of the IP it comes from looks like a person's. Datacenter ranges, which includes every
- *      commercial VPN endpoint, are flagged regardless of everything else, which is why we prefer to make requests
- *      directly from the host and fall back to a residential proxy rather than routing through a VPN.
- *   3. Whether the requests arrive in a burst. Hence the pacing below and in App\Jobs\DownloadAndStoreAudioClip.
+ *   2. The reputation of the source IP. Datacenter ranges, which include every commercial VPN endpoint, are flagged
+ *      regardless of the rest, so requests go directly from the host first and through a residential proxy second.
+ *   3. Whether the requests arrive in a burst. See the pacing below and in App\Jobs\DownloadAndStoreAudioClip.
  *
- * When YouTube refuses an address outright it says so ("Sign in to confirm you're not a bot"), and the refusal holds
- * for hours, so this class treats it as an answer rather than a hiccup: the direct attempt isn't retried, and the
- * block is remembered in the cache so that every later download skips straight to the residential proxy until the
- * flag expires.
+ * An outright refusal ("Sign in to confirm you're not a bot") lasts for hours. The direct attempt is not retried, and
+ * the block is cached so that later downloads go to the residential proxy until the cache entry expires.
  */
 readonly class Client
 {
     const int DOWNLOAD_TIMEOUT = 1800;
 
     /**
-     * Seconds to wait between the individual requests yt-dlp makes while extracting a single video. Pacing *between*
-     * videos is the job's responsibility, not ours: it's the layer that knows what else is queued up.
+     * Seconds to wait between the individual requests yt-dlp makes while extracting a single video. Pacing between
+     * videos is done by the job (App\Jobs\DownloadAndStoreAudioClip).
      */
     const string SLEEP_BETWEEN_REQUESTS = '1.5';
 
     /**
-     * Where we remember that YouTube is refusing this host's address, so the next download doesn't have to find out
-     * the slow way.
+     * Cache key for the flag that YouTube is refusing this host's address.
      */
     const string DIRECT_BLOCKED_CACHE_KEY = 'yt-dlp:direct-blocked';
 
     /**
-     * Phrases that mean "YouTube doesn't believe this address belongs to a person". Matched case-insensitively
-     * against yt-dlp's error output. yt-dlp writes the apostrophe as a curly one, but not everywhere and not in
-     * every version, so both forms are listed; add to this list as new wordings turn up.
+     * Phrases in yt-dlp's error output that indicate YouTube refused the source address. Matched case-insensitively.
+     * yt-dlp writes the apostrophe as a curly one in some places and versions, so both forms are listed.
      *
      * @var array<int, string>
      */
@@ -93,11 +87,10 @@ readonly class Client
     }
 
     /**
-     * Arguments that every call to yt-dlp needs. They're only meaningful to the YouTube extractor, but they're
-     * harmless elsewhere, so there's no need to vary them per platform.
+     * Arguments for every call to yt-dlp. They matter only to the YouTube extractor and are harmless elsewhere.
      *
-     * Note that all three paths are absolute. yt-dlp discovers Deno and the token provider on the PATH, and we can't
-     * assume the queue worker's PATH contains a directory inside this project, so we tell it exactly where to look.
+     * All three paths are absolute: yt-dlp otherwise looks for Deno and the token provider on the PATH, and the queue
+     * worker's PATH may not include this project's directories.
      *
      * @return array<int, string>
      */
@@ -108,7 +101,7 @@ readonly class Client
             // to a limited set of formats.
             "--js-runtimes=deno:{$this->getVendoredPath('bin/deno')}",
 
-            // Load the proof-of-origin token provider plugin, and tell it where its executable lives.
+            // Load the proof-of-origin token provider plugin and give it the path to its executable.
             "--plugin-dirs={$this->getVendoredPath('yt-dlp-plugins')}",
             "--extractor-args=youtubepot-bgutilcli:cli_path={$this->getVendoredPath('bin/bgutil-pot')}",
 
@@ -131,8 +124,8 @@ readonly class Client
     }
 
     /**
-     * Note that this asks the proxy for a URL each time it's called, which is once per download attempt. That's what
-     * gives a rotating pool one address per download rather than one per request, which a download can't survive.
+     * Requests a proxy URL on each call, which is once per download attempt. With a rotating pool this gives one
+     * address per download; a download fails if the address changes between its requests.
      *
      * @return array<int, string>
      */
@@ -153,8 +146,8 @@ readonly class Client
     }
 
     /**
-     * Whether YouTube refused the request because of where it came from, rather than because of anything about the
-     * video. Note that "confirm your age" is a different refusal with a different answer, and mustn't match here.
+     * Whether YouTube refused the request because of its source address. "Confirm your age" is a different refusal
+     * and must not match here.
      */
     private function downloadFailedDueToBotWall(ProcessResult $result): bool
     {
@@ -162,8 +155,8 @@ readonly class Client
     }
 
     /**
-     * Download the audio at $url, optionally by way of a proxy. Passing no proxy means talking to YouTube directly
-     * from this host, which is the preferable case: a residential connection is the most credible address we have.
+     * Download the audio at $url, optionally through a proxy. Without a proxy the request goes to YouTube directly
+     * from this host.
      *
      * @throws ProcessFailedException
      * @throws MembersOnlyContentException
@@ -198,9 +191,9 @@ readonly class Client
     }
 
     /**
-     * $retryOnBotWall is false for the direct attempt and true for the proxied one. A bot wall is a verdict on the
-     * address the request came from, so trying again from this host's single address just spends the backoff to be
-     * told the same thing; a rotating residential pool, on the other hand, hands out a fresh address per attempt.
+     * $retryOnBotWall is false for the direct attempt and true for the proxied one. A bot wall applies to the source
+     * address, so a retry from this host's single address will fail again, while a rotating residential pool uses a
+     * new address per attempt.
      *
      * @throws ProcessFailedException
      * @throws MembersOnlyContentException
@@ -226,8 +219,8 @@ readonly class Client
     }
 
     /**
-     * Whether we've already been told that YouTube won't serve this host's address. The flag expires on its own, so
-     * a block that lifts early costs us nothing worse than one wasted attempt once it does.
+     * Whether YouTube is known to be refusing this host's address. The flag expires, so a block that outlasts it costs
+     * one failed direct attempt.
      */
     private function directDownloadsAreBlocked(): bool
     {
@@ -277,8 +270,7 @@ readonly class Client
                 "Not downloading $url directly: YouTube is refusing this host's address until the block expires"
             );
 
-            // Nothing to fall back to, and we already know what a direct attempt would say, so don't spend a yt-dlp
-            // run on being told again.
+            // No proxy to fall back to, and a direct attempt is known to fail, so skip the yt-dlp run.
             if (! $this->residentialProxy->isConfigured()) {
                 $this->logger->error(
                     "Can't download $url: YouTube is refusing this host's address and no residential proxy is "
@@ -294,7 +286,6 @@ readonly class Client
         }
 
         try {
-            // Try to run the download using exponential backoff directly from this host.
             $this->retryWithExponentialBackoff(
                 fn () => $this->runDownload($url, $outputPath),
                 retryOnBotWall: false,
@@ -302,8 +293,7 @@ readonly class Client
 
             $this->logger->info("Successfully downloaded $url directly");
         } catch (BotWallException $e) {
-            // Remember the refusal either way: it holds for hours, and the next download shouldn't have to spend an
-            // attempt discovering it.
+            // Cache the refusal whether or not a proxy is configured. It lasts for hours.
             $this->rememberDirectDownloadsAreBlocked();
 
             if (! $this->residentialProxy->isConfigured()) {
@@ -321,8 +311,7 @@ readonly class Client
 
             $this->downloadThroughResidentialProxy($url, $outputPath);
         } catch (ProcessFailedException $e) {
-            // The proxy is an optional extra, and an install without an account for it has nothing to fall back to.
-            // Report the direct failure as the real one rather than dressing it up as a proxy problem.
+            // The proxy is optional. Without one, rethrow the direct failure.
             if (! $this->residentialProxy->isConfigured()) {
                 $this->logger->error(
                     "Failed to download $url directly, and no residential proxy is configured to fall back to"

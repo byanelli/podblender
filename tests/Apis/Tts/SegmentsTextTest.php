@@ -35,8 +35,8 @@ class SegmentsTextTest extends TestCase
     #[Test]
     public function it_splits_on_word_boundaries_and_never_drops_a_word()
     {
-        // 10-char words; a 25-char budget fits two words plus the joining space
-        // ("aaaaaaaaaa bbbbbbbbbb" = 21), but a third would overflow.
+        // A 25-char budget fits two 10-char words and the space between them
+        // (21 chars), but not a third word.
         $words = ['aaaaaaaaaa', 'bbbbbbbbbb', 'cccccccccc', 'dddddddddd'];
         $segments = $this->segmenter->split(implode(' ', $words), 25);
 
@@ -45,7 +45,7 @@ class SegmentsTextTest extends TestCase
             $segments
         );
 
-        // The word the old implementation dropped at a boundary survives.
+        // No word is dropped at a segment boundary.
         $this->assertEquals(implode(' ', $words), implode(' ', $segments));
     }
 

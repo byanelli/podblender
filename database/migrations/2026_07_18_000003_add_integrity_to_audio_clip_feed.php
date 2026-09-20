@@ -6,13 +6,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * audio_clip_feed was created as two bare integer columns with no constraints: nothing stopped the same clip being
- * attached to the same feed twice (a duplicate episode in the RSS), and deleting a clip or feed left orphaned pivot
- * rows behind. This adds the unique pairing and the cascade-deleting foreign keys the table should have had.
+ * audio_clip_feed had no constraints, so a clip could be attached to a feed twice (a duplicate episode in the RSS), and
+ * deleting a clip or feed left its pivot rows. This adds a unique index on the pair and cascading foreign keys.
  *
- * The table is rebuilt rather than altered in place. SQLite can't add a foreign key to an existing table at all, and
- * deduping an unkeyed pivot on MySQL is awkward; copying the rows into a fresh table through a GROUP BY does both the
- * dedupe and the constraint-adding in one portable step, on every driver.
+ * The table is rebuilt because SQLite can't add a foreign key to an existing table. Copying through a GROUP BY also
+ * removes duplicates on every driver.
  */
 return new class extends Migration
 {
@@ -28,11 +26,8 @@ return new class extends Migration
             $table->foreign('feed_id')->references('id')->on('feeds')->cascadeOnDelete();
         });
 
-        // Copy the rows across, collapsing any duplicate (clip, feed) pairing to a single row. Existing prod data may
-        // hold duplicates from before the unique index existed; MIN(published_at) keeps the earliest date the pairing
-        // was ever presented at, so a surviving row is never newer than what was there before. Rows pointing at a feed
-        // or clip that no longer exists — the orphans the old delete-on-error behavior left behind — are dropped here
-        // rather than copied: the new foreign keys would reject them anyway, and they reference nothing.
+        // Copy one row per (clip, feed) pair, with the earliest published_at among its duplicates. Rows whose clip or
+        // feed has been deleted are skipped, since the new foreign keys would reject them.
         DB::table('audio_clip_feed_rebuild')->insertUsing(
             ['audio_clip_id', 'feed_id', 'published_at'],
             DB::table('audio_clip_feed')

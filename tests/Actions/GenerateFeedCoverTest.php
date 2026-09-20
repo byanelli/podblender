@@ -38,8 +38,8 @@ class GenerateFeedCoverTest extends TestCase
         Storage::fake();
         $this->fakeCoverGenerator();
 
-        // The fake generator writes into the system temp directory, the same
-        // place the real one does, so whatever is left behind shows up here.
+        // The fake generator writes to the system temp directory, as the real
+        // one does, so a file left behind appears in this listing.
         $before = glob(sys_get_temp_dir().'/*.jpg') ?: [];
 
         $this->generate($this->feed('Lectures'));
@@ -50,8 +50,8 @@ class GenerateFeedCoverTest extends TestCase
     #[Test]
     public function regenerating_gives_a_new_path_and_removes_the_old_file()
     {
-        // Podcast apps cache artwork by URL, so a redrawn cover has to arrive
-        // under a name they've never seen.
+        // Podcast apps cache artwork by URL, so a redrawn cover needs a new
+        // path.
         $storage = Storage::fake();
         $this->fakeCoverGenerator();
 

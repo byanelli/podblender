@@ -101,7 +101,7 @@ class DownloadAndStoreAudioClipTest extends TestCase
         $this->assertEquals($downloadContents, $storage->get($clip->storage_path));
         $this->assertFileDoesNotExist($downloadPath);
 
-        // Success is terminal: the feed should hear about it so the UI stops showing the clip as processing.
+        // The broadcast is how the UI stops showing the clip as processing.
         Event::assertDispatched(FinishedProcessingClip::class);
     }
 
@@ -118,8 +118,7 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         dispatch(new DownloadAndStoreAudioClip($clip));
 
-        // Unavailable is terminal — retrying would only ask again and get the same answer — so the state sticks and
-        // the feed is told, but the clip is never deleted.
+        // Unavailable is terminal because a retry would fail the same way. The clip is kept, not deleted.
         $this->assertModelExists($clip);
         $this->assertEquals(ClipProcessingState::Unavailable, $clip->fresh()->processing_state);
         Event::assertDispatched(FinishedProcessingClip::class);
@@ -136,13 +135,13 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         $this->fakeFfmpeg();
 
-        // A generic storage failure stands in for any transient error (a rate limit, a proxy timeout).
+        // A storage failure represents any transient error, such as a rate limit or a proxy timeout.
         $this->fakeStorageThatThrowsExceptionOnPut();
 
         $clip = $this->clipAttachedToFeed();
 
-        // Run handle() directly: the point of this path is that it throws and is *retried*, which the sync queue can't
-        // model (it would call failed() immediately). The exception propagating is what tells the queue to retry.
+        // handle() is called directly because the sync queue doesn't retry: it would call failed() immediately. A thrown
+        // exception is what makes a real queue retry the job.
         try {
             $this->app->call([new DownloadAndStoreAudioClip($clip), 'handle']);
             $this->fail('Expected the transient error to propagate so the job is retried.');
@@ -150,8 +149,8 @@ class DownloadAndStoreAudioClipTest extends TestCase
             // expected
         }
 
-        // The clip survives, stays Processing (the UI should keep waiting), and nothing is broadcast: this isn't a
-        // terminal outcome. The temp file is still cleaned up.
+        // The outcome isn't terminal, so the clip stays Processing and nothing is broadcast. The temp file is still
+        // deleted.
         $this->assertModelExists($clip);
         $this->assertEquals(ClipProcessingState::Processing, $clip->fresh()->processing_state);
         $this->assertFileDoesNotExist($downloadPath);
@@ -165,8 +164,7 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         $clip = $this->clipAttachedToFeed();
 
-        // failed() is what the queue calls once the retries are used up. That's the terminal failure: record it and
-        // tell the feed so the UI stops showing the clip as processing.
+        // The queue calls failed() once the retries are exhausted.
         (new DownloadAndStoreAudioClip($clip))->failed(new RuntimeException('download failed for good'));
 
         $this->assertModelExists($clip);

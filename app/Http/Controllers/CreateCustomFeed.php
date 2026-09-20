@@ -20,9 +20,8 @@ class CreateCustomFeed
             'name' => $request->name,
         ]);
 
-        // Drawn here rather than queued: it takes a fraction of a second, and
-        // someone who copies the RSS link straight away should find artwork
-        // already waiting. It never throws, so the feed exists either way.
+        // Runs inline because it takes a fraction of a second, and the RSS
+        // link may be copied straight away. Never throws.
         $generateCover($feed);
     }
 }

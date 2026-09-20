@@ -28,16 +28,14 @@ readonly class RetryClip
             Response::HTTP_UNPROCESSABLE_ENTITY
         );
 
-        // Only a download that failed after exhausting its retries can be tried again. Unavailable is the platform
-        // telling us the content is gone for good, so there is nothing to retry; Processing and Processed aren't
-        // failures at all, and re-queueing either would either duplicate work in flight or throw away good audio.
+        // Only a Failed clip can be retried. Unavailable content is permanently gone, and re-queueing a Processing or
+        // Processed clip would duplicate a running download or replace good audio.
         abort_unless(
             $clip->processing_state === ClipProcessingState::Failed,
             Response::HTTP_CONFLICT
         );
 
-        // Back to Processing, so the feed page shows the clip as in flight again and the RSS keeps leaving it out
-        // until the download succeeds.
+        // The feed page shows a Processing clip as in progress, and the RSS leaves it out.
         $clip->processing_state = ClipProcessingState::Processing;
         $clip->save();
 

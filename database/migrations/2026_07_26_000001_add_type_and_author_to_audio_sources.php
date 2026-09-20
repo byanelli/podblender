@@ -11,18 +11,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('audio_sources', function (Blueprint $table) {
-            // Every source that exists today is a channel; playlists are new.
+            // Every existing source is a channel.
             $table->string('type')->default(AudioSourceType::Channel->value);
 
-            // Who publishes the source. Always set, even for a channel, where
-            // it repeats the channel's own name: a feed asking who published it
-            // shouldn't have to know what type of source it came from. A
-            // playlist is named for its contents ("Select Lectures"), so it
-            // records the channel that owns it instead.
+            // Who publishes the source. Set for every type so callers don't
+            // branch on it: a channel repeats its name, and a playlist records
+            // the name of its channel.
             $table->string('author_name')->default('');
         });
 
-        // Existing sources are all channels, which author themselves.
+        // Existing sources are all channels, so the author is the source's name.
         DB::table('audio_sources')->update([
             'author_name' => DB::raw('name'),
         ]);

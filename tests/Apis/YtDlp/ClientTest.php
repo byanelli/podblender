@@ -20,12 +20,12 @@ class ClientTest extends TestCase
 {
     private const URL = 'https://youtube.com/watch?v=wp4i5g490wg7u';
 
-    /** What yt-dlp says when YouTube won't serve the address a request came from. Note the curly apostrophe. */
+    /** yt-dlp's error when YouTube refuses the requesting address. Note the curly apostrophe. */
     private const BOT_WALL_ERROR = 'ERROR: [youtube] Sign in to confirm you’re not a bot. Use --cookies-from-browser.';
 
     /**
-     * Match the download yt-dlp runs when it goes straight to YouTube. The absence of a proxy argument is the thing
-     * being matched here: it's what sits between the pacing arguments and the audio ones on the direct path.
+     * Matches a direct download. The proxy argument goes between the pacing arguments and the audio arguments, so
+     * these two are adjacent only when there is no proxy.
      */
     private const DIRECT_DOWNLOAD = "*'--sleep-requests=1.5' '--extract-audio'*";
 
@@ -35,8 +35,7 @@ class ClientTest extends TestCase
     {
         parent::setUp();
 
-        // The block on direct downloads is remembered in the cache, and the array store outlives a single resolve of
-        // the client, so each test has to start out not knowing about one.
+        // The block on direct downloads is cached, so each test starts with none recorded.
         Cache::flush();
     }
 
@@ -46,7 +45,7 @@ class ClientTest extends TestCase
     }
 
     /**
-     * Assert how many yt-dlp runs went straight to YouTube rather than through the proxy.
+     * Assert how many yt-dlp runs were not proxied.
      */
     private function assertDirectDownloadsRan(int $times): void
     {
@@ -68,10 +67,9 @@ class ClientTest extends TestCase
     }
 
     /**
-     * Assert that a command yt-dlp was run with can actually get past YouTube. Without a JavaScript runtime and a
-     * proof-of-origin token provider, yt-dlp doesn't fail outright: it quietly falls back to whatever formats it can
-     * still reach, until the day it can't reach any. That's a regression worth catching in a test rather than in a
-     * podcast feed that stopped updating.
+     * Assert that the command includes a JavaScript runtime and the proof-of-origin token provider. Without them
+     * yt-dlp still exits successfully but can only download a reduced set of formats, so production would not show
+     * the regression until no formats were left.
      */
     private function assertCommandCanReachYouTube(array $command): void
     {
@@ -113,8 +111,7 @@ class ClientTest extends TestCase
 
         $this->assertFileExists($file);
 
-        // A residential connection is the most credible address we have, so a download should only ever be proxied
-        // after going directly has already failed.
+        // A download is proxied only after a direct attempt has failed.
         Process::assertRan(function (PendingProcess $process) {
             $this->assertCommandCanReachYouTube($process->command);
 
@@ -130,7 +127,7 @@ class ClientTest extends TestCase
     #[Test]
     public function it_falls_back_to_the_residential_proxy_when_downloading_directly_fails()
     {
-        // The client backs off between attempts, which we don't want to actually wait for.
+        // The client backs off between attempts.
         Sleep::fake();
 
         $file = '';
@@ -172,14 +169,12 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        // The direct failure is the real one and should surface as itself, rather than becoming an error about
-        // building a proxy URL out of credentials that were never going to be there.
+        // The direct failure is thrown, and not an error about building a proxy URL from missing credentials.
         $this->expectException(ProcessFailedException::class);
 
         try {
             $client->downloadAudio(self::URL);
         } finally {
-            // And it must not have tried to go through a proxy it hasn't got.
             Process::assertNotRan(fn (PendingProcess $process) => collect($process->command)
                 ->contains(fn (string $a) => Str::startsWith($a, '--proxy=')));
         }
@@ -208,13 +203,12 @@ class ClientTest extends TestCase
         try {
             $client->downloadAudio(self::URL);
         } catch (ProcessFailedException) {
-            // Expected: this test is about how it retried, not that it failed.
+            // Expected. The assertions below are about the retries.
         }
 
         $this->assertNotEmpty($sessions, 'Nothing was downloaded through the proxy.');
 
-        // Retrying a download that a proxy just failed to make is only worth doing from a different address, and
-        // asking for a new proxy URL per attempt is what gets us one.
+        // Each attempt requests a new proxy URL, and a new session id gives a different address.
         $this->assertSameSize(
             $sessions,
             array_unique($sessions),
@@ -258,8 +252,7 @@ class ClientTest extends TestCase
 
         $this->assertFileExists($file);
 
-        // A bot wall is a verdict on this host's address, not a hiccup, so a second and third attempt from the same
-        // address would only spend the backoff to be told the same thing.
+        // A bot wall applies to the host's address, so retrying from the same address will fail.
         $this->assertDirectDownloadsRan(1);
 
         $this->assertTrue(
@@ -308,7 +301,7 @@ class ClientTest extends TestCase
 
         $this->assertDirectDownloadsRan(1);
 
-        // A block that has lifted should cost us one wasted attempt to find out, and no more than that.
+        // Travel past the block's expiry.
         $this->travel((int) config('services.ytdlp.direct_block_minutes') + 1)->minutes();
 
         $client->downloadAudio(self::URL);
@@ -336,8 +329,7 @@ class ClientTest extends TestCase
             // Expected.
         }
 
-        // Having nothing to fall back to doesn't make the refusal any less worth remembering: the next download would
-        // otherwise wait through the same failure.
+        // The block is cached even with no proxy, so the next download fails without running yt-dlp.
         $this->assertTrue(Cache::has(Client::DIRECT_BLOCKED_CACHE_KEY));
     }
 
@@ -358,8 +350,7 @@ class ClientTest extends TestCase
         try {
             $client->downloadAudio(self::URL);
         } finally {
-            // We know what the run would say, and a download that takes minutes to fail is worse than one that fails
-            // at once.
+            // The outcome is already known, so the download fails at once and not after minutes of attempts.
             Process::assertNothingRan();
         }
     }
@@ -377,10 +368,10 @@ class ClientTest extends TestCase
         try {
             $client->downloadAudio(self::URL);
         } catch (ProcessFailedException) {
-            // Expected: this test is about how many attempts it made, not that it failed.
+            // Expected. The assertion below is about the number of attempts.
         }
 
-        // The pool hands out a fresh address per attempt, so a refusal of one address says nothing about the next.
+        // Each proxied attempt uses a different address, so a refusal of one does not predict the next.
         Process::assertRanTimes(fn (PendingProcess $process) => $this->isProxied($process), 3);
     }
 
@@ -403,16 +394,15 @@ class ClientTest extends TestCase
             $this->assertNotInstanceOf(BotWallException::class, $e);
         }
 
-        // An age check is an ordinary failure: it gets the ordinary backoff, and it isn't remembered as a block.
+        // An age check is retried with backoff like any other failure and is not cached as a block.
         $this->assertDirectDownloadsRan(3);
 
         $this->assertFalse(Cache::has(Client::DIRECT_BLOCKED_CACHE_KEY));
     }
 
     /**
-     * An install with no residential proxy account, which is most of them: a proxy costs money and needs signing up
-     * for. Every provider's credentials are cleared, not just the one selected by default, so these tests keep
-     * meaning "there is no proxy" whichever provider the config names.
+     * Simulate an install with no residential proxy account. Every provider's credentials are cleared, so the tests
+     * don't depend on which provider the config selects.
      */
     private function withoutAResidentialProxy(): void
     {

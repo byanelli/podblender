@@ -18,8 +18,8 @@ class CreateCustomFeedTest extends TestCase
     {
         parent::setUp();
 
-        // Every feed gets a cover drawn as it is created, and no test here
-        // looks at the picture, so nothing has to be drawn for real.
+        // Creating a feed draws a cover. No test here inspects the image, so
+        // the generator is faked.
         Storage::fake();
         $this->fakeCoverGenerator();
     }

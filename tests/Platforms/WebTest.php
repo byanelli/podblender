@@ -51,8 +51,8 @@ class WebTest extends TestCase
 
         $metadata = $web->getClipMetadata('https://theopenpress.com/harvest-festival');
 
-        // Narration dominates the download, and only the backend can price it,
-        // so the estimate is whatever it says plus the fetch overhead.
+        // The estimate is the TTS backend's narration estimate plus 30s of
+        // fetch overhead.
         $this->assertEquals($narration + 30, $metadata->estimatedDownloadTime);
     }
 
@@ -65,9 +65,9 @@ class WebTest extends TestCase
         /** @var Client $tts */
         $tts = $this->app->make(Client::class);
 
-        // The real backend, not the fake: an article needing several poolfuls of
-        // narration must be budgeted more time than one that fits in a single
-        // request, or long articles get a timeout sized for short ones.
+        // Uses the real backend. An article that needs many TTS requests must
+        // get a larger estimate than one that fits in a single request,
+        // because the job timeout is derived from the estimate.
         $this->assertGreaterThan(
             $tts->estimateNarrationTime($short),
             $tts->estimateNarrationTime($long),

@@ -24,7 +24,7 @@ class HomeTest extends TestCase
             AudioClip::factory()->count(2)->create(['audio_source_id' => $source->id])
         );
 
-        // Another user's feed must not leak into this dashboard.
+        // Another user's feed, which must not appear on this dashboard.
         Feed::factory()->create(['user_id' => $user->id + 1]);
 
         $this->actingAs($user)

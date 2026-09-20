@@ -31,8 +31,7 @@ class AudioClipFactory extends Factory
             'storage_path'     => $this->faker->uuid,
             'processing_state' => ClipProcessingState::Processing,
 
-            // A clip always gets this from the platform's metadata, so a clip without one isn't a realistic clip to
-            // test against. Deliberately not the same as created_at, which is the point: the two dates differ.
+            // Always set from the platform's metadata in production. Differs from created_at so tests can tell them apart.
             'published_at'     => $this->faker->dateTimeBetween('-2 years', '-1 day'),
         ];
     }

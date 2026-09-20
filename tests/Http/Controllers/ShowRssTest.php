@@ -35,8 +35,8 @@ class ShowRssTest extends TestCase
         ])
             ->load('audioSource');
 
-        // The date a feed presents a clip at lives on the pivot, and is deliberately not the clip's own publication
-        // date here: the two differ for any clip added to a feed by hand, and this feed should report its own.
+        // The pivot date differs from the clip's publication date, as it does for any clip added by hand. The feed
+        // should report the pivot date.
         $feed->audioClips()->attach($clip, [
             'published_at' => $publishedAt = CarbonImmutable::parse('2025-03-04 05:06:07'),
         ]);
@@ -49,7 +49,7 @@ class ShowRssTest extends TestCase
         $this->assertStringContainsString('<link>'.url("rss/{$feed->uuid}").'</link>', $response);
         $this->assertStringContainsString("<description>{$feed->description}</description>", $response);
         $this->assertStringContainsString("<itunes:email>{$feed->user->email}</itunes:email>", $response);
-        // A hand-built feed has no publisher of its own, so it's credited to its owner.
+        // A feed with no subscription has no publisher, so it's credited to its user.
         $this->assertStringContainsString("<itunes:author>{$h($feed->user->name)}</itunes:author>", $response);
         $this->assertStringContainsString("<title>{$h($clip->title)}</title>", $response);
         $this->assertStringContainsString("<link>{$clip->platform_url}</link>", $response);
@@ -64,9 +64,8 @@ class ShowRssTest extends TestCase
     #[Test]
     public function it_declares_the_feed_as_rss_xml()
     {
-        // A bare view goes out as text/html. The podcast specs and the feed
-        // validators expect application/rss+xml, and a strict client is
-        // entitled to hold us to that.
+        // A bare view is sent as text/html. The podcast specs and the feed
+        // validators expect application/rss+xml.
         /** @var Feed $feed */
         $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id]);
 
@@ -78,8 +77,8 @@ class ShowRssTest extends TestCase
     #[Test]
     public function it_shows_enclosure_urls_when_browser_preview_is_disabled()
     {
-        // Browser preview is a feed-page convenience; podcast clients fetch the
-        // enclosure themselves, so turning preview off must not empty the feed.
+        // Podcast clients fetch the enclosure directly, so disabling browser
+        // preview must not remove it from the feed.
         Config::set('audio-preview.enabled', false);
 
         /** @var Feed $feed */
@@ -140,8 +139,8 @@ class ShowRssTest extends TestCase
 
         $body = $this->get("rss/{$feed->uuid}")->content();
 
-        // An <itunes:image> with an empty href is worse than none at all: some
-        // clients show a broken image where the channel's own would stand in.
+        // Given an empty href, some clients show a broken image instead of
+        // falling back to the channel's image.
         $item = Str::between($body, '<item>', '</item>');
 
         $this->assertStringNotContainsString('<itunes:image', $item);
@@ -160,8 +159,7 @@ class ShowRssTest extends TestCase
 
         $this->assertNotEmpty($feed->cover_url);
 
-        // itunes:image is what the podcast apps read; <image> is what a plain
-        // RSS reader reads. Both carry the same picture.
+        // Podcast apps read itunes:image. Plain RSS readers read <image>.
         $this->assertStringContainsString("<itunes:image href=\"{$feed->cover_url}\"/>", $body);
         $this->assertStringContainsString("<url>{$feed->cover_url}</url>", $body);
         $this->assertStringContainsString('<title>'.htmlentities($feed->name).'</title>', $body);
@@ -181,8 +179,7 @@ class ShowRssTest extends TestCase
 
         $body = $this->get("rss/{$feed->uuid}")->content();
 
-        // Same reasoning as the episode artwork: an href pointing at nothing is
-        // worse than no tag at all.
+        // As with episode artwork, an empty href is worse than no tag.
         $channel = Str::before($body, '<item>');
 
         $this->assertStringNotContainsString('<itunes:image', $channel);
@@ -213,9 +210,8 @@ class ShowRssTest extends TestCase
 
         $body = $this->get("rss/{$feed->uuid}")->content();
 
-        // A podcast app has to be able to parse the feed, so it must be valid
-        // XML — a feed that's not (e.g. a literal "\n" corrupting the prolog)
-        // is rejected by every subscription client.
+        // Subscription clients reject a feed that isn't valid XML, e.g. one with
+        // a literal "\n" corrupting the prolog.
         $previous = libxml_use_internal_errors(true);
         $xml = simplexml_load_string($body);
         $errors = libxml_get_errors();
@@ -229,10 +225,9 @@ class ShowRssTest extends TestCase
     #[Test]
     public function enclosure_urls_follow_the_request_host_not_app_url()
     {
-        // A feed requested through the ngrok tunnel must point its episode
-        // audio at the tunnel host, not at APP_URL (the local machine).
-        // Enclosure URLs are rooted per-request by the public disk's relative
-        // url + url().
+        // A feed requested through the ngrok tunnel must use the tunnel host in
+        // its enclosure URLs, not APP_URL (the local machine). The public disk's
+        // url is relative, and url() resolves it against the request.
         /** @var Feed $feed */
         $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id])
             ->load('user');
@@ -249,8 +244,7 @@ class ShowRssTest extends TestCase
         $feed->audioClips()->attach($clip);
         $feed->load('audioClipsFinishedProcessing');
 
-        // Render as if the request came in through a public tunnel, so the
-        // request root (which url() absolutizes against) is the tunnel host.
+        // Render as if the request came in through a public tunnel.
         $request = Request::create("https://tunnel.example.test/rss/{$feed->uuid}", 'GET', [], [], [], [
             'HTTPS'     => 'on',
             'HTTP_HOST' => 'tunnel.example.test',
@@ -265,7 +259,7 @@ class ShowRssTest extends TestCase
     }
 
     /**
-     * A feed subscribed to $source, holding one processed clip published by
+     * A feed subscribed to $source, with one processed clip published by
      * $clipSource (which for a playlist need not be the source subscribed to).
      */
     private function subscribedFeed(AudioSource $source, ?AudioSource $clipSource = null): Feed
@@ -292,8 +286,8 @@ class ShowRssTest extends TestCase
     #[Test]
     public function it_credits_a_subscribed_feed_to_the_channel_rather_than_the_user()
     {
-        // The podcast is published by the channel; the podblender user merely
-        // set the feed up, and a listener seeing their name would be confused.
+        // The channel publishes the podcast. The podblender user only set the
+        // feed up, and their name would confuse a listener.
         /** @var AudioSource $channel */
         $channel = AudioSource::factory()->create([
             'name' => 'Lecture Channel',
@@ -311,8 +305,8 @@ class ShowRssTest extends TestCase
     #[Test]
     public function it_credits_a_playlist_feed_to_the_channel_that_owns_it()
     {
-        // A playlist's name describes its contents, not a person, so crediting
-        // "Select Lectures" as the author would read as nonsense.
+        // A playlist's name describes its contents, so it isn't used as the
+        // author.
         /** @var AudioSource $playlist */
         $playlist = AudioSource::factory()->create([
             'name'        => 'Select Lectures',
@@ -344,8 +338,8 @@ class ShowRssTest extends TestCase
 
         $response = $this->get("rss/{$feed->uuid}")->content();
 
-        // The channel is credited to the playlist's owner, the episode to
-        // whoever actually uploaded it.
+        // The feed is credited to the playlist's owner, the episode to its
+        // uploader.
         $this->assertStringContainsString('<itunes:author>Lecture Channel</itunes:author>', $response);
         $this->assertStringContainsString('<itunes:author>A Guest Speaker</itunes:author>', $response);
     }
@@ -359,8 +353,7 @@ class ShowRssTest extends TestCase
         /** @var AudioSource $source */
         $source = AudioSource::factory()->create();
 
-        // Create the clips in the opposite order to how they should come out, so that emitting them in insert order
-        // (the bug) would fail this test.
+        // Created oldest first, so emitting the clips in insert order would fail this test.
         /** @var AudioClip $older */
         $older = AudioClip::factory()->create([
             'audio_source_id'  => $source->id,
@@ -375,7 +368,7 @@ class ShowRssTest extends TestCase
             'processing_state' => ClipProcessingState::Processed,
         ]);
 
-        // The pivot date, not the clip's own publication date, is what the feed orders by.
+        // The feed orders by the pivot date, not the clip's publication date.
         $feed->audioClips()->attach($older, [
             'published_at' => CarbonImmutable::parse('2025-01-01 00:00:00'),
         ]);
@@ -388,7 +381,6 @@ class ShowRssTest extends TestCase
         $this->assertStringContainsString($newerTitle, $response);
         $this->assertStringContainsString($olderTitle, $response);
 
-        // Newest first: the newer episode's title appears before the older one's in the RSS body.
         $this->assertLessThan(
             strpos($response, $olderTitle),
             strpos($response, $newerTitle),
