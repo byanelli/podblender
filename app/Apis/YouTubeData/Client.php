@@ -229,10 +229,13 @@ readonly class Client implements Contracts\Client
         $videos = [];
         $nextPageToken = null;
 
+        // A channel's uploads playlist ("UU" prefix) is ordered newest first;
+        // any other playlist is in playlist position order.
+        $orderedNewestFirst = str_starts_with($playlistId, 'UU');
+
         // playlistItems has no server-side date filter (it accepts
-        // publishedAfter and ignores it), so the cutoff is applied here. Items
-        // arrive newest-first, so paging stops at the first item older than
-        // the cutoff.
+        // publishedAfter and ignores it), so the cutoff is applied here. Each
+        // page of 50 costs 1 quota unit.
         do {
             $page = $this->apiGet('playlistItems', array_filter([
                 'playlistId' => $playlistId,
@@ -250,7 +253,12 @@ readonly class Client implements Contracts\Client
                 }
 
                 if ($video->publishedAt < $publishedAfter) {
-                    return $videos;
+                    // Every later item of an uploads playlist is older too.
+                    if ($orderedNewestFirst) {
+                        return $videos;
+                    }
+
+                    continue;
                 }
 
                 $videos[] = $video;

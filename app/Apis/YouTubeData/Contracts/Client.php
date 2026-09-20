@@ -30,12 +30,13 @@ interface Client
     public function getAllVideoMetadataForChannel(string $channelId, ?DateTimeInterface $publishedAfter = null): array;
 
     /**
-     * Every video in a playlist published on or after $publishedAfter, newest
-     * first.
+     * Every video in a playlist published on or after $publishedAfter, in the
+     * playlist's own order.
      *
      * playlistItems accepts publishedAfter and ignores it, so the cutoff is
-     * applied client-side. Items arrive newest-first, so paging stops at the
-     * cutoff.
+     * applied client-side. A channel's uploads playlist is ordered newest
+     * first, so paging stops at the cutoff; any other playlist is paged in
+     * full and filtered.
      *
      * @return array<int, VideoMetadata>
      */

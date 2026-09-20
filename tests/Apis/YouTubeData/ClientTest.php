@@ -333,11 +333,12 @@ class ClientTest extends TestCase
     }
 
     #[Test]
-    public function it_stops_paging_a_playlist_once_it_passes_the_cutoff()
+    public function it_stops_paging_an_uploads_playlist_once_it_passes_the_cutoff()
     {
         // playlistItems accepts publishedAfter but ignores it, so the client
-        // applies the cutoff while paging. Items are newest first, so every
-        // item after the first one past the cutoff is older too.
+        // applies the cutoff while paging. An uploads playlist ("UU" prefix) is
+        // newest first, so every item after the first one past the cutoff is
+        // older too.
         Http::fakeSequence()
             ->push($this->playlistItemsPage([
                 ['id' => 'v1', 'title' => 'Recent', 'videoPublishedAt' => '2026-06-01T00:00:00Z'],
@@ -350,13 +351,38 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $videos = $client->getAllVideoMetadataForPlaylist('PLabc', CarbonImmutable::parse('2026-01-01T00:00:00Z'));
+        $videos = $client->getAllVideoMetadataForPlaylist('UUabc', CarbonImmutable::parse('2026-01-01T00:00:00Z'));
 
         $this->assertCount(1, $videos);
         $this->assertEquals('Recent', $videos[0]->title);
 
         // The second page was not requested.
         Http::assertSentCount(1);
+    }
+
+    #[Test]
+    public function it_pages_a_curated_playlist_in_full_and_filters_by_the_cutoff()
+    {
+        // A curated playlist is in playlist position order, so a recent video
+        // can come after an older one, including on a later page.
+        Http::fakeSequence()
+            ->push($this->playlistItemsPage([
+                ['id' => 'v1', 'title' => 'Too old', 'videoPublishedAt' => '2020-01-01T00:00:00Z'],
+                ['id' => 'v2', 'title' => 'Recent', 'videoPublishedAt' => '2026-06-01T00:00:00Z'],
+            ], nextPageToken: 'page2'))
+            ->push($this->playlistItemsPage([
+                ['id' => 'v3', 'title' => 'Also old', 'videoPublishedAt' => '2019-01-01T00:00:00Z'],
+                ['id' => 'v4', 'title' => 'Also recent', 'videoPublishedAt' => '2026-07-01T00:00:00Z'],
+            ]));
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $videos = $client->getAllVideoMetadataForPlaylist('PLabc', CarbonImmutable::parse('2026-01-01T00:00:00Z'));
+
+        $this->assertEquals(['Recent', 'Also recent'], collect($videos)->pluck('title')->all());
+
+        Http::assertSentCount(2);
     }
 
     #[Test]
