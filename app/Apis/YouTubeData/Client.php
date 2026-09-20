@@ -303,7 +303,7 @@ readonly class Client implements Contracts\Client
      */
     private function getVideoMetadataFromResponseObject(
         array $video,
-        // YouTube HTML-encodes titles in search responses but not in video responses.
+        // YouTube HTML-encodes titles in some responses but not others.
         bool $decodeTitle = false,
     ): VideoMetadata {
         // In a video response the id is a string; in a search response it's inside an object.
