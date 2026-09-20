@@ -5,11 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * audio_clips.title and audio_clips.description were both string(255), but FindOrCreateAudioClip truncates titles at
- * 497 characters and descriptions at 997 before saving them. On MySQL/Postgres that overflows the column and either
- * throws or silently truncates; SQLite ignores the declared length, which is why it hasn't bitten us in tests. Widen
- * the columns to match what the code actually writes: a title comfortably over 500, and a description with no practical
- * ceiling.
+ * FindOrCreateAudioClip writes titles of up to 497 characters and descriptions of up to 997, but both columns were
+ * string(255). MySQL and Postgres throw or truncate on overflow; SQLite ignores the declared length, so tests passed.
  */
 return new class extends Migration
 {

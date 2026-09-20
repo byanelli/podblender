@@ -6,27 +6,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * The feeds table was created with integer('id')->primary() rather than an auto-incrementing key. On MySQL and
- * Postgres that produces a plain primary key with no default, so inserting a feed without supplying an id fails. It
- * only ever worked because SQLite makes any single-column INTEGER primary key an alias for the rowid, which does
- * auto-increment — an accident of the test driver, not a property of the schema. This makes the key a real
- * auto-increment primary key everywhere.
+ * feeds.id was created with integer('id')->primary(), which has no default on MySQL and Postgres, so inserting a feed
+ * without an id fails there. It worked on SQLite because a single-column INTEGER primary key is an alias for the
+ * rowid, which auto-increments.
  */
 return new class extends Migration
 {
     public function up(): void
     {
         if (DB::getDriverName() === 'sqlite') {
-            // SQLite can't ALTER a primary key in place, so rebuild the table with an AUTOINCREMENT key and copy the
-            // rows across, preserving their existing ids. (Functionally SQLite already auto-increments this column via
-            // the rowid alias; the rebuild is what makes the declared schema say so.)
+            // SQLite can't ALTER a primary key in place, so rebuild the table and copy the rows with their ids.
             $this->rebuildForSqlite();
 
             return;
         }
 
-        // MySQL and Postgres support modifying the column in place. increments() gives us the unsigned
-        // auto-incrementing primary key the table should have had from the start.
+        // MySQL and Postgres can modify the column in place.
         Schema::table('feeds', function (Blueprint $table) {
             $table->increments('id')->change();
         });
@@ -34,15 +29,13 @@ return new class extends Migration
 
     public function down(): void
     {
-        // The previous shape (a plain, non-auto-incrementing integer primary key) was a bug; there's nothing worth
-        // restoring it to, so this is a no-op.
+        // No-op: the previous key was a bug and isn't restored.
     }
 
     private function rebuildForSqlite(): void
     {
         Schema::create('feeds_rebuild', function (Blueprint $table) {
-            // The full current shape of feeds, assembled from every migration that has touched it, with id now a
-            // proper auto-incrementing primary key.
+            // Every feeds column from the migrations before this one, with id auto-incrementing.
             $table->increments('id');
             $table->string('name');
             $table->dateTime('created_at')->nullable();

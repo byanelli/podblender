@@ -10,24 +10,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('feeds', function (Blueprint $table) {
-            // How far back the subscriber asked us to reach. Until now this
-            // shared subscribed_at, which was written as "a month ago" rather
-            // than when they actually subscribed — so the column recorded the
-            // backfill window and lied about its own name.
+            // The earliest publication date to backfill from. This was stored
+            // in subscribed_at, which was set to a month before subscribing.
             $table->timestamp('backfill_since')->nullable();
 
-            // Whether to keep collecting episodes published from now on. Off
-            // means the feed captures the source as it stands and is then left
-            // alone; two subscribers to the same source can differ on this.
+            // Whether to add episodes published after subscribing. Set per
+            // feed, so two subscribers to the same source can differ.
             $table->boolean('tracks_new_episodes')->default(true);
 
-            // When a subscription that isn't tracking new episodes finished its
-            // one and only fill. Set means "done, don't sweep me again".
+            // When a feed that doesn't track new episodes finished its single
+            // fill. Once set, the feed is not updated again.
             $table->timestamp('subscription_filled_at')->nullable();
         });
 
-        // Preserve what subscribed_at actually meant, then let it mean what it
-        // says: existing rows hold a backfill window in it.
+        // Existing rows have the backfill date in subscribed_at. Move it, and
+        // set subscribed_at to the feed's creation date.
         DB::table('feeds')
             ->whereNotNull('subscribed_at')
             ->update([
@@ -38,8 +35,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Put the backfill window back where it used to live, so the old code
-        // still finds it.
+        // Move the backfill date back into subscribed_at.
         DB::table('feeds')
             ->whereNotNull('backfill_since')
             ->update(['subscribed_at' => DB::raw('backfill_since')]);

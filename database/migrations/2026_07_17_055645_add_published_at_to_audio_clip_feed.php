@@ -6,9 +6,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * The date a clip is presented as published belongs to the pairing of a clip and a feed rather than to the clip: the
- * same clip can sit in a subscription, where it should keep the date the platform published it, and in a hand-made
- * feed, where the day it was added is what makes it turn up as a new episode instead of years down the listing.
+ * A clip's published date is recorded per feed. In a subscription feed it is the platform's publication date; in a
+ * hand-made feed it is the day the clip was added, so the clip is listed as a new episode.
  */
 return new class extends Migration
 {
@@ -18,10 +17,8 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
         });
 
-        // Give the rows that already exist a date, so that no existing feed loses its ordering. Feeds with a
-        // subscription take the clip's publication date. The rest are hand-made, and want the date the clip was added
-        // to them, which was never recorded; the date the clip was created is the closest thing available, and for a
-        // hand-made feed a clip is usually created by being added to it.
+        // Backfill existing rows so feeds keep their ordering. Subscription feeds take the clip's publication date.
+        // Hand-made feeds take the clip's created_at, because the date a clip was added to a feed was never recorded.
         $subscriptionFeedIds = DB::table('feeds')->whereNotNull('subscription_id')->pluck('id')->all();
 
         foreach (DB::table('audio_clips')->get(['id', 'published_at', 'created_at']) as $clip) {
