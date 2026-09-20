@@ -21,7 +21,7 @@ use Ramsey\Uuid\Uuid;
  * generate, and an unstreamed response leaves the connection idle long enough
  * to be closed mid-response (cURL 56, "unexpected eof while reading"). With
  * streaming, the API sends audio-delta events continuously. The flag only
- * changes the server's behaviour, so no streaming Guzzle handler is needed and
+ * changes the server's behavior, so no streaming Guzzle handler is needed and
  * the requests can go through a pool.
  *
  * Segments are sent CONCURRENCY at a time; a three-segment article measured
@@ -39,7 +39,7 @@ readonly class GeminiClient implements ClientContract
     private const SEGMENT_LENGTH = 1500;
 
     /**
-     * How many segments to narrate at once. Downloads are serialised (see
+     * How many segments to narrate at once. Downloads run one at a time (see
      * DownloadAndStoreAudioClip's WithoutOverlapping middleware), so this is
      * also the most requests in flight with Gemini at any time. Three ran in
      * parallel without being rate limited. Published limits are per account,
