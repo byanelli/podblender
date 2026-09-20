@@ -16,7 +16,7 @@ interface Client
     public function pcmToMp3(string $pcm, int $sampleRate): string;
 
     /**
-     * Crop an image to a centred square and re-encode it as a JPEG exactly
+     * Crop an image to a centered square and re-encode it as a JPEG exactly
      * $maxSide on a side, returning the path to the new file.
      *
      * Smaller sources are enlarged as well as larger ones scaled down, because

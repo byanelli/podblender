@@ -34,7 +34,7 @@ class DownloadAndStoreThumbnail implements ShouldQueue
     public int $timeout = 120;
 
     /**
-     * A queued job's payload is PHP-serialised, so $source has to be made of
+     * A queued job's payload is PHP-serialized, so $source has to be made of
      * plain values. {@see ThumbnailSource}
      */
     public function __construct(

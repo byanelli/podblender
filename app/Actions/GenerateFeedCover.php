@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
  * previous cover.
  *
  * Apple Podcasts and other directories treat a show without cover art as
- * incomplete, and podcast apps show a grey square. Users aren't asked for a
+ * incomplete, and podcast apps show a gray square. Users aren't asked for a
  * picture when they create a feed.
  *
  * If feeds later support uploaded artwork, the check for it belongs at the top

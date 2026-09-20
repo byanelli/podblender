@@ -213,7 +213,7 @@ export default function NewFeedCard({
                         That's {episodes.toLocaleString()} episodes
                     </AlertTitle>
                     <AlertDescription>
-                        They're downloaded one at a time, so a back catalogue
+                        They're downloaded one at a time, so a back catalog
                         this size will take a while to fill in. Episodes appear
                         in the feed as they finish.
                     </AlertDescription>

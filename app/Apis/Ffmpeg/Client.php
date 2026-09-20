@@ -137,7 +137,7 @@ readonly class Client implements ClientContract
     }
 
     /**
-     * Crop an image to a centred square and re-encode it as a JPEG $maxSide on a
+     * Crop an image to a centered square and re-encode it as a JPEG $maxSide on a
      * side. Returns the path to the new file.
      *
      * Smaller images are enlarged: Apple Podcasts requires artwork between 1400

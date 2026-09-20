@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 /**
  * Builds a readable storage path for an audio clip, like
  * "the-daily-ai-notes-3f9k2a.mp3", so downloads and RSS enclosure URLs are
- * recognisable. The random token keeps paths unique when two clips share an
+ * recognizable. The random token keeps paths unique when two clips share an
  * author and title.
  */
 final class AudioClipStoragePath

@@ -137,13 +137,13 @@ class SquareJpegTest extends TestCase
         $this->assertNotFalse($image, "$path could not be read back as a JPEG.");
         $this->assertFalse(imageistruecolor($image) && imagecolortransparent($image) !== -1);
 
-        // The source colour should come back within JPEG's rounding, which
+        // The source color should come back within JPEG's rounding, which
         // rules out swapped channels.
-        $colour = imagecolorsforindex($image, imagecolorat($image, 700, 700));
+        $color = imagecolorsforindex($image, imagecolorat($image, 700, 700));
 
-        $this->assertEqualsWithDelta(20, $colour['red'], 12);
-        $this->assertEqualsWithDelta(120, $colour['green'], 12);
-        $this->assertEqualsWithDelta(200, $colour['blue'], 12);
-        $this->assertSame(0, $colour['alpha']);
+        $this->assertEqualsWithDelta(20, $color['red'], 12);
+        $this->assertEqualsWithDelta(120, $color['green'], 12);
+        $this->assertEqualsWithDelta(200, $color['blue'], 12);
+        $this->assertSame(0, $color['alpha']);
     }
 }

@@ -126,7 +126,7 @@ return [
     |     ALLOWED_REGISTRATION_EMAILS="me@example.com, you@example.com"
     |
     | Leaving it empty (the default) keeps registration open to anyone. The
-    | list is normalised here -- split, trimmed, lowercased, empties dropped --
+    | list is normalized here -- split, trimmed, lowercased, empties dropped --
     | so the rest of the app only ever sees an array of lowercase addresses.
     |
     */

@@ -26,7 +26,7 @@ class AllowedRegistrationEmail implements ValidationRule
             return;
         }
 
-        if (! is_string($value) || ! in_array($this->normalise($value), $allowed, true)) {
+        if (! is_string($value) || ! in_array($this->normalize($value), $allowed, true)) {
             $fail('Registration is limited to approved email addresses.');
         }
     }
@@ -49,15 +49,15 @@ class AllowedRegistrationEmail implements ValidationRule
                 continue;
             }
 
-            if (($normalised = $this->normalise($email)) !== '') {
-                $emails[] = $normalised;
+            if (($normalized = $this->normalize($email)) !== '') {
+                $emails[] = $normalized;
             }
         }
 
         return $emails;
     }
 
-    private function normalise(string $email): string
+    private function normalize(string $email): string
     {
         return mb_strtolower(trim($email));
     }

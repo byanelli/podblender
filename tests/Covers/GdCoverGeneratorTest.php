@@ -63,7 +63,7 @@ class GdCoverGeneratorTest extends TestCase
     #[Test]
     public function it_draws_a_square_rgb_jpeg_for_a_title_with_emoji()
     {
-        // GD can't draw colour emoji, so they're dropped.
+        // GD can't draw color emoji, so they're dropped.
         $this->assertIsAppleSizedJpeg($this->generate('🎧 Deep Work 🚀', 0));
     }
 
@@ -91,7 +91,7 @@ class GdCoverGeneratorTest extends TestCase
     #[Test]
     public function the_same_variant_always_gives_the_same_gradient()
     {
-        // The corner is background for any title, so its colour identifies the
+        // The corner is background for any title, so its color identifies the
         // gradient.
         $this->assertSame(
             $this->corner($this->generate('Lectures', 7)),
@@ -163,9 +163,9 @@ class GdCoverGeneratorTest extends TestCase
 
         for ($y = 0; $y < GdCoverGenerator::SIDE; $y += 8) {
             for ($x = 0; $x < GdCoverGenerator::SIDE; $x += 8) {
-                $colour = imagecolorat($image, $x, $y);
+                $color = imagecolorat($image, $x, $y);
 
-                if (min(($colour >> 16) & 255, ($colour >> 8) & 255, $colour & 255) > 238) {
+                if (min(($color >> 16) & 255, ($color >> 8) & 255, $color & 255) > 238) {
                     $white++;
                 }
             }

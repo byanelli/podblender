@@ -8,7 +8,7 @@ use Ramsey\Uuid\Uuid;
 
 /**
  * Draws a feed's show artwork with PHP's GD extension: a blue-green gradient
- * with the feed's name centred on it in white, over a hard offset shadow.
+ * with the feed's name centered on it in white, over a hard offset shadow.
  *
  * Needs only GD and FreeType, which are installed locally and on the server.
  * Drawing a cover takes about 80 milliseconds, so it runs during the request
@@ -34,12 +34,12 @@ final class GdCoverGenerator implements CoverGenerator
     private const string FONT = 'fonts/Baloo2-ExtraBold.ttf';
 
     /**
-     * The five backgrounds, as [start colour, end colour, angle]. They are sRGB
+     * The five backgrounds, as [start color, end color, angle]. They are sRGB
      * conversions of the .clip-placeholder-1 to -5 gradients in
      * resources/css/app.css, which are in oklch. GD only takes RGB.
      *
      * The angle follows CSS: degrees clockwise from straight up, pointing from
-     * the start colour towards the end colour.
+     * the start color towards the end color.
      *
      * The fifth pair differs from .clip-placeholder-5, whose pale mint end
      * gives white text too little contrast. Its light end is darker here and
@@ -67,7 +67,7 @@ final class GdCoverGenerator implements CoverGenerator
 
     private const float TEXT_HEIGHT = 0.70;
 
-    /** How far above centre the title is drawn, as a fraction of the square. */
+    /** How far above center the title is drawn, as a fraction of the square. */
     private const float OPTICAL_LIFT = 0.02;
 
     /**
@@ -85,7 +85,7 @@ final class GdCoverGenerator implements CoverGenerator
     /**
      * Characters removed before measuring: pictographs and emoji, their
      * joiners and variation selectors, and the private use area. GD draws one
-     * font in one colour, so a colour emoji renders as an empty box or as
+     * font in one color, so a color emoji renders as an empty box or as
      * nothing, and its width still shifts the rest of the title.
      */
     private const string UNDRAWABLE = '/[\x{1F000}-\x{1FAFF}\x{2190}-\x{2BFF}\x{FE00}-\x{FE0F}'
@@ -137,14 +137,14 @@ final class GdCoverGenerator implements CoverGenerator
         $dx = sin($radians);
         $dy = -cos($radians);
         $half = (abs($dx) + abs($dy)) * self::GRADIENT_CANVAS / 2;
-        $centre = self::GRADIENT_CANVAS / 2;
+        $center = self::GRADIENT_CANVAS / 2;
 
         for ($y = 0; $y < self::GRADIENT_CANVAS; $y++) {
             for ($x = 0; $x < self::GRADIENT_CANVAS; $x++) {
-                $along = ((($x - $centre) * $dx + ($y - $centre) * $dy) / $half + 1) / 2;
+                $along = ((($x - $center) * $dx + ($y - $center) * $dy) / $half + 1) / 2;
                 $along = max(0.0, min(1.0, $along));
 
-                imagesetpixel($small, $x, $y, $this->colour(
+                imagesetpixel($small, $x, $y, $this->color(
                     $small,
                     (int) round($from[0] + ($to[0] - $from[0]) * $along),
                     (int) round($from[1] + ($to[1] - $from[1]) * $along),
@@ -166,7 +166,7 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * Draw the title centred on the square.
+     * Draw the title centered on the square.
      */
     private function drawTitle(GdImage $image, string $title): void
     {
@@ -178,13 +178,13 @@ final class GdCoverGenerator implements CoverGenerator
 
         [$lines, $size] = $this->fit($title);
 
-        $ink = $this->colour($image, 16, 42, 48);
-        $white = $this->colour($image, 255, 255, 255);
+        $ink = $this->color($image, 16, 42, 48);
+        $white = $this->color($image, 255, 255, 255);
         $shadow = max(5, (int) round($size * 0.05));
         $lineHeight = $this->lineHeight($size);
 
-        // Centre on the glyphs' bounding boxes. Baloo 2's baseline is low in
-        // its em box (see the underline stroke in app.css), so centring on em
+        // Center on the glyphs' bounding boxes. Baloo 2's baseline is low in
+        // its em box (see the underline stroke in app.css), so centering on em
         // boxes puts the title visibly low.
         $ascent = -$this->boundingBox($size, $lines[0])[5];
         $descent = $this->boundingBox($size, $lines[array_key_last($lines)])[1];
@@ -192,7 +192,7 @@ final class GdCoverGenerator implements CoverGenerator
 
         // Two corrections. The shadow extends below and to the right of each
         // glyph, so the text is shifted half a shadow up and left. Text at
-        // the measured centre also looks low, so it is raised by OPTICAL_LIFT.
+        // the measured center also looks low, so it is raised by OPTICAL_LIFT.
         $lift = $shadow / 2 + self::SIDE * self::OPTICAL_LIFT;
         $baseline = (int) round((self::SIDE - $blockHeight) / 2 + $ascent - $lift);
 
@@ -409,24 +409,24 @@ final class GdCoverGenerator implements CoverGenerator
     }
 
     /**
-     * Allocate a colour, clamped to the range GD accepts. GD returns false when
-     * allocation fails, and drawing with false gives an arbitrary colour, so
+     * Allocate a color, clamped to the range GD accepts. GD returns false when
+     * allocation fails, and drawing with false gives an arbitrary color, so
      * this throws.
      */
-    private function colour(GdImage $image, int $red, int $green, int $blue): int
+    private function color(GdImage $image, int $red, int $green, int $blue): int
     {
-        $colour = imagecolorallocate(
+        $color = imagecolorallocate(
             $image,
             max(0, min(255, $red)),
             max(0, min(255, $green)),
             max(0, min(255, $blue)),
         );
 
-        if ($colour === false) {
-            throw new \RuntimeException("Couldn't allocate the colour {$red},{$green},{$blue}");
+        if ($color === false) {
+            throw new \RuntimeException("Couldn't allocate the color {$red},{$green},{$blue}");
         }
 
-        return $colour;
+        return $color;
     }
 
     /**

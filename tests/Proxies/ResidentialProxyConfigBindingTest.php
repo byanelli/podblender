@@ -56,6 +56,6 @@ class ResidentialProxyConfigBindingTest extends TestCase
             return;
         }
 
-        $this->fail('An unrecognised provider resolved to something instead of failing.');
+        $this->fail('An unrecognized provider resolved to something instead of failing.');
     }
 }
