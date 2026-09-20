@@ -6,7 +6,6 @@ use App\Apis\Scrapfly\Contracts\Client as ClientContract;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 
 /**
@@ -40,7 +39,7 @@ readonly class Client implements ClientContract
         for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
             try {
                 return $this->toResult($this->request($url, $renderJs), $url);
-            } catch (ConnectionException|RequestException) {
+            } catch (ConnectionException) {
                 // The message contains the full URL, including the API key.
                 // Don't log it or chain the exception.
                 if ($attempt >= self::MAX_ATTEMPTS) {
