@@ -31,11 +31,9 @@ readonly class Client implements ClientContract
             ->newPendingProcess()
             ->timeout($timeout)
             ->path($this->getVendorBinPath())
-            // -y: overwrite the output without asking. Every output path here is
-            // a UUID we just generated, so there's nothing to protect — and if
-            // one does exist, ffmpeg's default is to prompt, read EOF from our
-            // non-interactive stdin, and exit *successfully* having written
-            // nothing, leaving whatever was already there.
+            // -y: overwrite the output without asking. Without it, if the output
+            // exists, ffmpeg prompts, reads EOF from the non-interactive stdin,
+            // and exits 0 having written nothing.
             ->run(array_merge(['./ffmpeg', '-y'], $args));
     }
 
@@ -48,17 +46,15 @@ readonly class Client implements ClientContract
     }
 
     /**
-     * Run ffmpeg and insist it actually wrote audio to $outputPath.
+     * Run ffmpeg and throw unless it wrote audio to $outputPath.
      *
-     * ffmpeg has been observed to exit 0 having written nothing, which is worse
-     * than an error: silence is silently concatenated into the finished episode,
-     * or a clip is stored that plays for zero seconds. Treat it as the failure
-     * it is, so the job retries.
+     * ffmpeg has been observed to exit 0 having written nothing. Undetected,
+     * that leaves a segment out of the finished episode or stores a clip that
+     * plays for zero seconds. Throwing makes the job retry.
      *
-     * Checking the file is non-empty isn't enough — encoding no samples still
-     * produces a small but valid header-only MP3 — so this asks ffmpeg how long
-     * the result actually is. That's a second process per output, which is
-     * cheap next to the encode it's verifying.
+     * A non-empty file isn't sufficient, because encoding no samples still
+     * produces a valid header-only MP3, so the check is on the duration ffmpeg
+     * reports for the output.
      *
      * @param  array<int, string>  $args
      */
@@ -73,9 +69,8 @@ readonly class Client implements ClientContract
             : null;
 
         if (($duration ?? 0.0) <= 0.0) {
-            // Include the whole of ffmpeg's output. It's only a few kilobytes,
-            // this is rare and awkward to reproduce, and the log line is the
-            // only evidence we'll get of why it happened — so don't trim it.
+            // Include all of ffmpeg's output: it's a few kilobytes, the failure
+            // is rare and hard to reproduce, and the log is the only record.
             throw new \RuntimeException(
                 "ffmpeg exited successfully but wrote no audio to $outputPath.\n".
                 'Command: '.implode(' ', $args)."\n".
@@ -108,8 +103,8 @@ readonly class Client implements ClientContract
 
     /**
      * Encode a raw, headerless PCM file (signed 16-bit little-endian, mono) to
-     * MP3. Gemini's TTS returns audio as bare PCM samples with no container, so
-     * ffmpeg has to be told the format explicitly rather than sniffing it.
+     * MP3. Gemini's TTS returns bare PCM samples with no container, so the
+     * input format is passed to ffmpeg explicitly.
      */
     public function pcmToMp3(string $pcm, int $sampleRate): string
     {
@@ -125,14 +120,12 @@ readonly class Client implements ClientContract
             '-i',
             $pcm,
             // ffmpeg's default MP3 encode is ~32 kb/s, which sounds terrible.
-            // Encode at a floor of 128 kb/s instead.
             '-b:a',
             '128k',
-            // These segments get concatenated byte-wise by combineMp3s(), so
-            // anything that isn't an audio frame ends up spliced into the middle
-            // of the finished episode, where decoders report it as a missing
-            // header and skip it. Leave out the Xing/LAME header and the ID3
-            // tag; the combined file gets its own when it's written.
+            // combineMp3s() concatenates these segments byte-wise, so a
+            // Xing/LAME header or ID3 tag would end up mid-file, where decoders
+            // report a missing header and skip it. Omit both; ffmpeg writes
+            // them for the combined file.
             '-write_xing',
             '0',
             '-id3v2_version',
@@ -144,29 +137,15 @@ readonly class Client implements ClientContract
     }
 
     /**
-     * Crop an image to a square and re-encode it as a JPEG exactly $maxSide on
-     * a side, returning the path to the new file.
+     * Crop an image to a centred square and re-encode it as a JPEG $maxSide on a
+     * side. Returns the path to the new file.
      *
-     * Podcast artwork is square, and what platforms hand us usually isn't — a
-     * YouTube thumbnail is 16:9 — so take the centre of the frame, then scale
-     * that square to $maxSide whether it started larger or smaller.
+     * Smaller images are enlarged: Apple Podcasts requires artwork between 1400
+     * and 3000 pixels square, and YouTube's largest thumbnail is 1280x720.
+     * Lanczos enlarges more sharply than ffmpeg's default bicubic.
      *
-     * This used to refuse to enlarge, on the grounds that stretching a small
-     * thumbnail only makes it blurry and heavy. Apple Podcasts settled the
-     * argument the other way: its artwork has to be between 1400 and 3000
-     * pixels square, and YouTube's best thumbnail is 1280x720, so every image
-     * we stored came out at 720 and was under the minimum. A 720 image enlarged
-     * to 1400 looks soft but is accepted; a 720 image is liable to be ignored,
-     * and an episode shows no artwork at all.
-     *
-     * lanczos is what makes the enlargement bearable — ffmpeg's default
-     * bicubic is softer still on the way up.
-     *
-     * Any format ffmpeg can decode is accepted (JPEG, PNG, WebP); the single
-     * -frames:v 1 keeps an animated input to its first frame. The output stays
-     * a plain JPEG: ffmpeg converts whatever the input's pixel format was to
-     * the yuvj the mjpeg encoder takes, so an input with an alpha channel
-     * loses it here rather than producing something a podcast client can't read.
+     * -frames:v 1 takes the first frame of an animated input. An alpha channel is
+     * dropped in the conversion to JPEG.
      */
     public function imageToSquareJpeg(string $inputPath, int $maxSide = 1400): string
     {
@@ -180,8 +159,7 @@ readonly class Client implements ClientContract
             '-frames:v',
             '1',
             // 2 is ffmpeg's near-best JPEG quality. Artwork is displayed at a
-            // few hundred pixels, and the file rides along with an episode, so
-            // there's no reason to spend the bytes on 1.
+            // few hundred pixels, so 1 isn't worth the extra bytes.
             '-q:v',
             '2',
             $outputPath,
@@ -191,12 +169,10 @@ readonly class Client implements ClientContract
     }
 
     /**
-     * Run ffmpeg and insist it actually wrote something to $outputPath.
+     * Run ffmpeg and throw unless it wrote a non-empty file to $outputPath.
      *
-     * The same silent failure runProducingAudio() guards against — exiting 0
-     * having written nothing — applies to an image, minus the duration check
-     * that doesn't mean anything for a single frame. An empty or missing file
-     * is the whole of what can go wrong here.
+     * Handles the same failure as runProducingAudio() (exit 0, nothing
+     * written), without the duration check, which doesn't apply to an image.
      *
      * @param  array<int, string>  $args
      */
@@ -227,19 +203,17 @@ readonly class Client implements ClientContract
     }
 
     /**
-     * The duration ffmpeg reports for a file, or null if it didn't report one
-     * (an unreadable or audio-less file).
+     * The duration ffmpeg reports for a file, in seconds, or null if it didn't
+     * report one (an unreadable or audio-less file).
      *
-     * Returns seconds as a float, keeping the fractional part that getDuration()
-     * truncates: this is what the post-encode check tests, and a short segment
-     * lasting under a second is still audio we mustn't reject. Separate from
-     * getDuration() so that check can treat "no duration" as a result rather
-     * than an exception it would have to catch.
+     * Keeps the fractional part that getDuration() truncates, because the
+     * post-encode check must accept a segment shorter than a second. Returns
+     * null instead of throwing so that check needs no catch block.
      */
     private function getPreciseDurationOrNull(string $path): ?float
     {
-        // We use "run" instead of "runSuccessfully" and parse the error output because ffmpeg throws an error without
-        // any decoder set. Here we're only interested in the metadata it prints at the end of its run.
+        // Uses run(), not runSuccessfully(): with no output file ffmpeg exits with an error, but it still prints the
+        // input's metadata to stderr, which is parsed below.
         $result = $this->run(5, ['-i', $path]);
 
         foreach (explode("\n", $result->errorOutput()) as $line) {

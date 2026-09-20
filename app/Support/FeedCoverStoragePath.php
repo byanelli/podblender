@@ -9,14 +9,12 @@ use Illuminate\Support\Str;
  * Builds a storage path for a feed's show artwork, like
  * "covers/long-reads-for-the-commute-3f9k2a.jpg".
  *
- * The random token is not only there to keep names apart. Podcast apps cache
- * show artwork by its URL and are slow to look again, so a feed whose cover is
- * redrawn has to publish it under a name it has never used before — otherwise
- * listeners keep seeing the old picture.
+ * Podcast apps cache show artwork by URL and rarely refetch it, so a
+ * regenerated cover needs a new path or listeners keep seeing the old image.
+ * The random token provides that, as well as keeping paths unique.
  *
- * Covers sit in their own folder rather than beside the clips, because clip
- * audio and clip artwork are named after the clip's slug and a feed's slug
- * could match one of them.
+ * Covers go in their own folder because a feed's slug could match a clip's,
+ * and clip audio and artwork are stored under the clip's slug.
  */
 final class FeedCoverStoragePath
 {

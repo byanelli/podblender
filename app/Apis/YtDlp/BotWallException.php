@@ -6,18 +6,17 @@ use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Process\FakeProcessResult;
 
 /**
- * YouTube refused the download with "Sign in to confirm you're not a bot", which is what it says when it doesn't
- * believe the address the request came from belongs to a person.
+ * YouTube refused the download with "Sign in to confirm you're not a bot", its response to a source address with a
+ * poor reputation.
  *
- * It extends ProcessFailedException so that everything already catching a failed yt-dlp run keeps catching this, and
- * so that the output that identified the wall travels with the exception.
+ * Extends ProcessFailedException so that code catching a failed yt-dlp run also catches this, and so the exception
+ * includes the output that identified the refusal.
  */
 class BotWallException extends ProcessFailedException
 {
     /**
-     * For the one case where we know the wall is up and don't run yt-dlp at all. The parent needs a ProcessResult to
-     * build its message from, and FakeProcessResult is the framework's implementation that doesn't need a process
-     * behind it, so it's the honest way to say "this is what the run we skipped would have told you".
+     * For when the block is already known and yt-dlp isn't run. The parent requires a ProcessResult, and
+     * FakeProcessResult is the framework's implementation that needs no process.
      */
     public static function withoutRunningYtDlp(string $url): self
     {

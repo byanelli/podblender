@@ -28,13 +28,12 @@ class BackfillAudioClipStoragePaths extends Command
                 }
 
                 if ($storage->exists($clip->storage_path)) {
-                    // A file exists, so physically move it to the new path. A local move is a rename, not a copy, so
-                    // this stays cheap even for the large files these clips tend to be.
+                    // On a local disk a move is a rename, so it is cheap even for large files.
                     $storage->move($clip->storage_path, $newPath);
                     $renamed++;
                 } else {
-                    // No file on disk yet (a clip still processing or failed before download). Nothing to move; the
-                    // download job stores to the clip's storage_path at runtime, so updating the record is enough.
+                    // No file yet: the clip is still processing or its download failed. The download job reads
+                    // storage_path when it runs, so updating the record is enough.
                     $recordOnly++;
                 }
 

@@ -9,21 +9,17 @@ use Laminas\Feed\Reader\Reader;
 use League\Uri\Uri;
 
 /**
- * Thin adapter over laminas-feed: raw XML in, ParsedFeed/FeedItem out. The
- * library absorbs the wilderness of feed formats (RSS 0.9x/1.0/2.0, Atom,
- * dc: fallbacks, encodings); this class normalizes its loosely-typed output
- * into value objects so the rest of the app never touches laminas types.
+ * Adapter over laminas-feed, which handles the feed formats (RSS 0.9x/1.0/2.0,
+ * Atom, dc: fallbacks, encodings). Converts its loosely-typed output into
+ * ParsedFeed and FeedItem so the rest of the app uses no laminas types.
  */
 class FeedParser
 {
     private const array FEED_MIME_TYPES = ['application/rss+xml', 'application/atom+xml'];
 
     /**
-     * Is this body a feed at all? Cheap structural sniff — well-formed XML
-     * whose root element is one of the three feed vocabularies — used by
-     * getSourceMetadata to decide between parsing and autodiscovery. An
-     * (X)HTML page fails this either by not being well-formed XML or by
-     * having an <html> root.
+     * Whether the body is well-formed XML with an rss, feed or RDF root. An
+     * (X)HTML page is either not well-formed or has an <html> root.
      */
     public function isFeed(string $body): bool
     {
@@ -44,9 +40,8 @@ class FeedParser
     }
 
     /**
-     * Parse a feed into its valid items. An entry missing its link, title, or
-     * publication date is silently dropped — we won't fetch an article page
-     * just to reconstruct metadata the feed was supposed to supply.
+     * Parses a feed into its valid items. An entry with no link, title or
+     * publication date is dropped.
      *
      * @throws ExceptionInterface when the body isn't a parseable feed
      */
@@ -82,10 +77,9 @@ class FeedParser
     }
 
     /**
-     * Find the feed an HTML page advertises: the standard autodiscovery
-     * <link rel="alternate" type="application/rss+xml|atom+xml" href="..."> in
-     * its head. Returns the absolute feed URL, or null when the page
-     * advertises none.
+     * The absolute URL of the feed in an HTML page's autodiscovery tag,
+     * <link rel="alternate" type="application/rss+xml|atom+xml" href="...">,
+     * or null if the page has none.
      */
     public function discoverFeedUrl(string $html, string $pageUrl): ?string
     {
@@ -118,8 +112,8 @@ class FeedParser
     }
 
     /**
-     * Feed descriptions are routinely HTML (or a whole article body); a clip
-     * description wants a line of plain text.
+     * Reduces a feed description, which is often HTML or a whole article body,
+     * to plain text on one line.
      */
     private function summarize(?string $value): ?string
     {
@@ -137,7 +131,7 @@ class FeedParser
         try {
             $date = $entry->getDateCreated() ?? $entry->getDateModified();
         } catch (\Exception) {
-            // laminas throws on a malformed date; a bad date is no date.
+            // laminas throws on a malformed date.
             return null;
         }
 

@@ -9,10 +9,9 @@ use Illuminate\Translation\PotentiallyTranslatedString;
 /**
  * Restricts registration to the addresses in config('auth.allowed_registration_emails').
  *
- * An empty allowlist means this deployment is open to anyone, so the rule lets
- * everything through. Otherwise both the allowlist and the submitted address
- * are trimmed and lowercased before they're compared, so casing and stray
- * whitespace never decide whether someone gets in.
+ * An empty allowlist means registration is open, so every address passes.
+ * Otherwise the allowlist and the submitted address are trimmed and lowercased
+ * before comparison.
  */
 class AllowedRegistrationEmail implements ValidationRule
 {

@@ -3,9 +3,8 @@
 namespace App\Platforms\Contracts;
 
 /**
- * A platform whose sources can be subscribed to: one that can list the clips a source has published, so that new clips
- * turn up in a feed on their own. Not every platform supports this (an arbitrary web page has no such notion), which is
- * why it's a separate contract from Platform.
+ * A platform that can list the clips a source has published, which is what a subscription needs. Separate from
+ * Platform because some platforms can't: an arbitrary web page has no list of clips.
  */
 interface SubscribablePlatform extends Platform
 {

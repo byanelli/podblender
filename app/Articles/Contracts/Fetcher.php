@@ -16,10 +16,9 @@ interface Fetcher
     public function fetchDirect(string $url): string;
 
     /**
-     * Retrieve the raw Wayback Machine snapshot of the URL: ask the availability
-     * API for the closest capture, then GET its "id_" (toolbar-free) HTML. Free
-     * and Cloudflare-free (plain Guzzle, no Scrapfly), but best-effort — the
-     * snapshot may itself be the paywalled capture, so the caller re-validates it.
+     * Retrieve the closest Wayback Machine snapshot of the URL as raw HTML,
+     * without Wayback's toolbar. Uses no Scrapfly credits. The snapshot may be a
+     * capture of the paywalled page, so the caller must check it.
      *
      * @throws WaybackSnapshotNotFoundException when no snapshot exists or the
      *                                          snapshot fetch fails
@@ -27,10 +26,10 @@ interface Fetcher
     public function fetchFromWayback(string $url): string;
 
     /**
-     * Retrieve the newest archive.is snapshot of the URL via Scrapfly's ASP:
-     * fetch the snapshot listing, parse the newest snapshot, and return its HTML.
+     * Retrieve the HTML of the newest archive.is snapshot of the URL through
+     * Scrapfly's ASP.
      *
-     * @throws ArchiveSnapshotNotFoundException when the listing holds no snapshot
+     * @throws ArchiveSnapshotNotFoundException when the listing has no snapshot
      * @throws ArchiveBlockedException when the archive is blocked or errors
      */
     public function fetchFromArchive(string $url): string;

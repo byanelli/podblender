@@ -25,8 +25,7 @@ readonly class ShowFeed
 
         $feed->load([
             'subscription',
-            // Newest episode first, in the order the feed itself presents them, so that this page and the podcast app
-            // reading the RSS agree about what's at the top.
+            // Same order as the RSS: newest first by the pivot date.
             'audioClips' => function (BelongsToMany $q) {
                 return $q->orderByPivot('published_at', 'desc');
             },

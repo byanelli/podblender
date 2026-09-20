@@ -3,8 +3,8 @@
 namespace App\Platforms\Exceptions;
 
 /**
- * The operation a PlatformException occurred during. The verb is what distinguishes one user-facing message from
- * another ("Error downloading from..." vs "Error getting metadata from...").
+ * The operation a PlatformException occurred during. The verb goes in the user-facing message ("Error downloading
+ * from...", "Error getting metadata from...").
  */
 enum PlatformOperation
 {

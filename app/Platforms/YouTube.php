@@ -46,10 +46,10 @@ readonly class YouTube implements SubscribablePlatform
     }
 
     /**
-     * A conservative guess at one download's wall-clock time. yt-dlp pulls the
-     * audio track (~160 kbps) and paces its own requests, so assume a slow
-     * connection (2 Mbps usable) plus fixed overhead, and lean on the flat
-     * default when the API didn't report a duration.
+     * A conservative estimate of one download's wall-clock time, in seconds.
+     * yt-dlp downloads the audio track (~160 kbps) and throttles its requests,
+     * so this assumes 2 Mbps plus fixed overhead. Null when the API reported
+     * no duration.
      */
     private function estimateDownloadTime(VideoMetadata $video): ?int
     {
@@ -134,13 +134,12 @@ readonly class YouTube implements SubscribablePlatform
     }
 
     /**
-     * List a source's clips through its playlist of videos.
+     * Lists a source's clips through its playlist. A channel is listed through
+     * its "uploads" playlist, so channels and playlists share one code path.
      *
-     * A channel is listed through its "uploads" playlist rather than through
-     * search.list, which stops paging after roughly 500 results: an 864-video
-     * channel returned 303 videos that way and all 864 this way, for 18 quota
-     * units instead of 700. That also means one code path serves channels and
-     * playlists alike, since a channel is a playlist as far as the API cares.
+     * search.list stops paging after roughly 500 results. For an 864-video
+     * channel it returned 303 videos for 700 quota units; the uploads playlist
+     * returned all 864 for 18.
      */
     public function getMetadataForAllClipsPublishedSince(string $sourceUrl, \DateTimeInterface $publicationTime): array
     {
@@ -153,8 +152,8 @@ readonly class YouTube implements SubscribablePlatform
     }
 
     /**
-     * The playlist to page for a subscription's clips: a playlist source is
-     * itself one, and a channel source is served by its uploads playlist.
+     * The playlist that lists a source's clips: the playlist itself, or a
+     * channel's uploads playlist.
      */
     private function getPlaylistIdFromSourceUrl(string $sourceUrl): string
     {
@@ -170,9 +169,8 @@ readonly class YouTube implements SubscribablePlatform
     }
 
     /**
-     * The playlist id in a URL, if it names one: either /playlist?list=... or a
-     * watch URL carrying a list= parameter. Null for anything else, which is
-     * what distinguishes a playlist source from a channel.
+     * The playlist id from /playlist?list=... or from a watch URL with a list=
+     * parameter. Null otherwise, in which case the source is a channel.
      */
     private function getPlaylistIdFromUrl(string $url): ?string
     {
@@ -226,9 +224,8 @@ readonly class YouTube implements SubscribablePlatform
     }
 
     /**
-     * A playlist is its own source, but not its own author: it's named for what
-     * it collects ("Select Lectures"), so the channel that owns it is what gets
-     * credited in the feed.
+     * The author is the playlist's channel, because a playlist title names a
+     * collection ("Select Lectures").
      */
     private function convertPlaylistMetadataToSourceMetadata(PlaylistMetadata $playlist): SourceMetadata
     {

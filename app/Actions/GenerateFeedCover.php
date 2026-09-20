@@ -9,16 +9,15 @@ use Illuminate\Contracts\Filesystem\Filesystem;
 use Psr\Log\LoggerInterface;
 
 /**
- * Draws a feed's show artwork from its name and stores it, replacing whatever
- * the feed had before.
+ * Generates a feed's cover art from its name and stores it, replacing any
+ * previous cover.
  *
- * Every podcast needs cover art: Apple Podcasts and the other directories treat
- * a show without it as incomplete, and a listener's app shows a grey square. No
- * one is asked to supply a picture when they make a feed, so the app draws one.
+ * Apple Podcasts and other directories treat a show without cover art as
+ * incomplete, and podcast apps show a grey square. Users aren't asked for a
+ * picture when they create a feed.
  *
- * This is the single place that decides a feed should get a drawn cover. When
- * feeds can carry an uploaded picture of their own, the check for "this feed
- * has its own artwork, leave it alone" belongs at the top of __invoke().
+ * If feeds later support uploaded artwork, the check for it belongs at the top
+ * of __invoke().
  */
 readonly class GenerateFeedCover
 {
@@ -34,8 +33,7 @@ readonly class GenerateFeedCover
         $handle = null;
 
         try {
-            // The feed id, not its name: a feed that gets renamed keeps the
-            // background its owner already knows it by.
+            // The feed id selects the background, so a renamed feed keeps it.
             $temporaryPath = $this->generator->generate($feed->name, $feed->id);
 
             $handle = fopen($temporaryPath, 'r');
@@ -55,15 +53,14 @@ readonly class GenerateFeedCover
             $feed->cover_path = $path;
             $feed->save();
 
-            // Only once the feed points at the new file: if saving fails, the
-            // feed still has a cover a listener can fetch.
+            // Delete only after the save, so a failed save leaves the feed
+            // with a cover that still exists.
             if ($previousPath !== null) {
                 $this->storage->delete($previousPath);
             }
         } catch (\Throwable $e) {
-            // Artwork is a nicety. A feed without it still collects clips and
-            // still plays, so nothing here is allowed to stop a feed being
-            // made — say what went wrong and leave cover_path as it was.
+            // A feed works without artwork, so a failure here must not stop
+            // the feed being created. cover_path is left unchanged.
             $this->logger->warning(
                 "Couldn't generate a cover for feed {$feed->id}: {$e->getMessage()}"
             );

@@ -119,10 +119,8 @@ readonly class Client implements Contracts\Client
     /**
      * The single item a by-id lookup asked for.
      *
-     * YouTube reports "no such thing" as a 200 with an empty items list rather
-     * than as an error, so reading items[0] on a wrong, private, or deleted id
-     * fails somewhere further along with a message about arrays. Turn it into
-     * the error it is, naming what wasn't found.
+     * For a wrong, private, or deleted id, YouTube returns a 200 with an empty
+     * items list. Throw a ResourceNotFoundException naming the resource.
      *
      * @param  array<string, mixed>  $response
      * @return array<string, mixed>
@@ -233,8 +231,8 @@ readonly class Client implements Contracts\Client
 
         // playlistItems has no server-side date filter (it accepts
         // publishedAfter and ignores it), so the cutoff is applied here. Items
-        // arrive newest-first, so the first one older than the cutoff means
-        // every remaining page is older too and we can stop paging.
+        // arrive newest-first, so paging stops at the first item older than
+        // the cutoff.
         do {
             $page = $this->apiGet('playlistItems', array_filter([
                 'playlistId' => $playlistId,
@@ -246,9 +244,7 @@ readonly class Client implements Contracts\Client
             foreach ($page['items'] as $item) {
                 $video = $this->getVideoMetadataFromPlaylistItem($item);
 
-                // Deleted and private videos stay in the playlist as items we
-                // can't do anything with; they have no publication date and
-                // wouldn't be downloadable anyway.
+                // A deleted or private video.
                 if ($video === null) {
                     continue;
                 }
@@ -270,13 +266,10 @@ readonly class Client implements Contracts\Client
      * Build a video's metadata from its playlist entry, or null if the entry
      * doesn't describe a usable video.
      *
-     * Two fields here are easy to confuse. The date is contentDetails'
-     * videoPublishedAt — when the video was published — NOT snippet's
-     * publishedAt, which is when it was added to the playlist: ordering a feed
-     * by the latter would send an old video to the top of a podcast app the day
-     * someone adds it to a playlist. Likewise the channel is the video's OWN
-     * uploader (videoOwnerChannel*), not the playlist's owner, so a playlist
-     * collecting several channels credits each episode correctly.
+     * The date is contentDetails.videoPublishedAt, when the video was
+     * published. snippet.publishedAt is when it was added to the playlist, and
+     * would put an old video at the top of a feed. The channel is the video's
+     * uploader (videoOwnerChannel*); snippet.channel* is the playlist's owner.
      *
      * @param  array<string, mixed>  $item
      */
@@ -286,8 +279,8 @@ readonly class Client implements Contracts\Client
         $publishedAt = $item['contentDetails']['videoPublishedAt'] ?? null;
         $videoId = $item['contentDetails']['videoId'] ?? null;
 
-        // A private or deleted video keeps its slot in the playlist but loses
-        // its publication date, and there's nothing to download.
+        // A private or deleted video remains in the playlist without a
+        // publication date.
         if (! is_string($publishedAt) || ! is_string($videoId)) {
             return null;
         }
@@ -310,11 +303,10 @@ readonly class Client implements Contracts\Client
      */
     private function getVideoMetadataFromResponseObject(
         array $video,
-        // YouTube HTML-encodes titles in some responses but not others!?
+        // YouTube HTML-encodes titles in search responses but not in video responses.
         bool $decodeTitle = false,
     ): VideoMetadata {
-        // For single video responses, id is stored directly as a string; for search responses, it's inside an
-        // object.
+        // In a video response the id is a string; in a search response it's inside an object.
         $id = is_array($video['id']) ? $video['id']['videoId'] : $video['id'];
 
         $snippet = $video['snippet'];
@@ -338,11 +330,9 @@ readonly class Client implements Contracts\Client
      * none.
      *
      * snippet.thumbnails maps a size name ("default", "medium", "high",
-     * "standard", "maxres") to a {url, width, height} object, and which sizes
-     * are present varies from video to video — maxres especially is often
-     * missing. So pick by reported width rather than by asking for one size,
-     * and fall back to the names' own ascending order for the occasional entry
-     * that omits its dimensions.
+     * "standard", "maxres") to a {url, width, height} object. Which sizes are
+     * present varies by video, and maxres is often missing. Entries are ranked
+     * by reported width, then by size name for entries without dimensions.
      *
      * @param  array<string, mixed>  $snippet
      */
@@ -393,9 +383,8 @@ readonly class Client implements Contracts\Client
         try {
             $interval = new \DateInterval($duration);
 
-            // DateInterval doesn't normalise into a single field, so sum the
-            // units. (%a total-days is unreliable for durations created from a
-            // string, so build the total explicitly.)
+            // DateInterval has no total-seconds field, and %a (total days) is
+            // unreliable for an interval created from a string, so sum the units.
             return ($interval->d * 86400)
                 + ($interval->h * 3600)
                 + ($interval->i * 60)

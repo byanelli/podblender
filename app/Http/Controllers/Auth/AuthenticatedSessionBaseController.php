@@ -28,8 +28,8 @@ class AuthenticatedSessionBaseController
      * Handle an incoming authentication request.
      *
      * Resolving the LoginRequest validates the input and runs its #[Guard],
-     * which rate-limits and authenticates the credentials — so by the time this
-     * body runs the user is authenticated.
+     * which rate-limits and authenticates the credentials, so the user is
+     * already authenticated when this method runs.
      */
     public function store(#[RomaRequest] LoginRequest $request, Request $httpRequest): RedirectResponse
     {

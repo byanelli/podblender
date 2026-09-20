@@ -3,12 +3,10 @@
 namespace App\Platforms\Contracts;
 
 /**
- * Where a clip's artwork comes from. Each platform says this in its own terms —
- * YouTube hands us a URL to fetch, and a narrated article will want a cover we
- * draw ourselves — so the metadata carries the source rather than a finished
- * image, and DownloadAndStoreThumbnail decides what to do with each type.
+ * The source of a clip's artwork, which differs by platform: YouTube gives a
+ * URL to fetch. DownloadAndStoreThumbnail handles each type.
  *
- * A source is put on a queued job's payload, so keep every implementation to
- * plain values that survive PHP serialisation.
+ * A source is serialised into a queued job's payload, so implementations
+ * contain only plain values.
  */
 interface ThumbnailSource {}

@@ -8,10 +8,9 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 /**
  * Joins a clip to a feed it appears in.
  *
- * published_at is the date this clip is presented as published *in this feed*, which is what the RSS feed reports as
- * its pubDate and what podcast players order episodes by. It isn't a property of the clip: a lecture published two
- * years ago is two years old in a subscription to the channel, but brand new in a feed someone just added it to by
- * hand.
+ * published_at is the date the clip is published in this feed. The RSS reports it as the pubDate, and podcast players
+ * order episodes by it. It can differ from the clip's publication date: a two-year-old lecture added to a feed by hand
+ * today is published in that feed today.
  *
  * @property ?CarbonImmutable $published_at
  */

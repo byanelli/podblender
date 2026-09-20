@@ -5,16 +5,15 @@ namespace App\Covers\Contracts;
 interface CoverGenerator
 {
     /**
-     * Draw square show artwork carrying $title and return the path of a
-     * temporary file holding it. The result is a JPEG large enough for Apple
-     * Podcasts, which will not accept artwork under 1400 pixels square.
+     * Draw square show artwork with $title on it and return the path of a
+     * temporary JPEG. Apple Podcasts rejects artwork under 1400 pixels square,
+     * so the image is at least that size.
      *
-     * The caller owns the file that comes back: it has to store the bytes
-     * somewhere and then delete the temporary copy.
+     * The caller must store the file's contents and delete the temporary file.
      *
-     * $variant picks the background out of a small fixed set. Pass something
-     * that doesn't change for a given feed — its id — so a feed drawn twice
-     * keeps the background its owner has already seen.
+     * $variant selects the background from a small fixed set. Pass a value
+     * that is stable for a feed, such as its id, so a redrawn cover keeps its
+     * background.
      */
     public function generate(string $title, int $variant): string;
 }

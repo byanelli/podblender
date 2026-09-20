@@ -10,9 +10,9 @@ use OpenAI\Responses\Audio\SpeechStreamResponse;
 use Ramsey\Uuid\Uuid;
 
 /**
- * Text-to-speech backed by OpenAI's tts-1 model. Retained behind the shared
- * Tts contract but currently unbound — GeminiClient is the active backend. Its
- * streamed responses are already MP3, so segments go straight to the concat.
+ * Text-to-speech backed by OpenAI's tts-1 model. Not bound in the container;
+ * GeminiClient is the active backend. Responses are already MP3, so segments
+ * are concatenated without transcoding.
  */
 readonly class OpenAiClient implements TtsClientContract
 {
@@ -68,8 +68,8 @@ readonly class OpenAiClient implements TtsClientContract
 
             $combined = $this->ffmpeg->combineMp3s($mp3s);
 
-            // Clean up the intermediates — but never the combined result, which
-            // with a single segment IS one of the segment files.
+            // Delete the intermediates. With a single segment the combined
+            // result is one of them, so it is excluded.
             collect($mp3s)
                 ->reject(fn ($mp3) => $mp3 === $combined)
                 ->each(fn ($mp3) => unlink($mp3));
@@ -83,16 +83,15 @@ readonly class OpenAiClient implements TtsClientContract
     }
 
     /**
-     * Segments are narrated one after another here, so cost is simply the
-     * segment count. This backend is currently unbound, so the per-segment
-     * figure is an unmeasured guess held deliberately high; measure it before
-     * relying on it.
+     * Seconds to narrate one segment. Segments are narrated sequentially. This
+     * figure is an unmeasured, deliberately high guess; measure it before
+     * binding this backend.
      */
     private const SECONDS_PER_SEGMENT = 120;
 
     /**
-     * Adding a segment to the concatenation. Unlike Gemini there's no transcode
-     * — the API already returns MP3 — so this is only the concat's share.
+     * Seconds to concatenate one segment. The API returns MP3, so there is no
+     * transcode.
      */
     private const FFMPEG_SECONDS_PER_SEGMENT = 1;
 

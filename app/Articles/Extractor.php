@@ -11,11 +11,10 @@ use Illuminate\Support\Str;
 use League\Uri\Uri;
 
 /**
- * Turns a URL and its raw HTML into an Article. Each field is produced by its
- * own cascade over the same HTML — the body and the metadata are extracted
- * independently, and within each the first source that yields a usable value
- * wins. The order is: schema.org JSON-LD, then OpenGraph/meta tags, then the
- * slug/host heuristics ported from the retired extraction API as a last resort.
+ * Turns a URL and its raw HTML into an Article. The body and each metadata
+ * field are extracted independently, and the first source with a usable value
+ * is used. The order is schema.org JSON-LD, then OpenGraph/meta tags, then
+ * heuristics on the URL's slug and host.
  */
 readonly class Extractor
 {
@@ -36,10 +35,9 @@ readonly class Extractor
             text: $this->extractBody($node, $readability),
         );
 
-        // Extension point: a future LLM backstop rung would go here — when this
-        // cascade yields junk (e.g. a title equal to the slug and a body under
-        // the minimum length), hand the raw HTML to an LLM to extract the
-        // article. Deferred by the owner; do not build it inline.
+        // Deferred: when the result is unusable (e.g. a title equal to the slug
+        // and a body under the minimum length), pass the raw HTML to an LLM
+        // here. Do not build it inline.
     }
 
     // ----- Body -------------------------------------------------------------
@@ -49,7 +47,7 @@ readonly class Extractor
      */
     private function extractBody(?array $node, ?Readability $readability): string
     {
-        // Some publishers (e.g. CNN) ship the entire body in JSON-LD.
+        // Some publishers (e.g. CNN) put the entire body in JSON-LD.
         $articleBody = $node['articleBody'] ?? null;
 
         if (is_string($articleBody) && trim($articleBody) !== '') {
@@ -57,7 +55,7 @@ readonly class Extractor
         }
 
         if ($readability !== null && ($content = $readability->getContent()) !== null) {
-            // Readability returns HTML; narration wants plain text.
+            // Readability returns HTML; narration needs plain text.
             return $this->normalizeWhitespace(strip_tags($content));
         }
 
@@ -85,12 +83,10 @@ readonly class Extractor
             }
         }
 
-        // Prefer og:title over the JSON-LD headline when the page's own <title>
-        // reflects the og:title but NOT the headline. That mismatch is the tell of
-        // a site (Wikipedia is the classic case) whose schema.org headline holds a
-        // short description rather than the article title. Gated on og:title being
-        // present and corroborated, so a site with a generic <title> and a good
-        // headline (and no og:title) still keeps its headline.
+        // Use og:title instead of the JSON-LD headline when the <title> contains
+        // the og:title but not the headline. Some sites (e.g. Wikipedia) put a
+        // short description in the schema.org headline. In every other case the
+        // headline is used.
         if ($headline !== null && $ogTitle !== null && $pageTitle !== null
             && $this->reflectedIn($ogTitle, $pageTitle)
             && ! $this->reflectedIn($headline, $pageTitle)) {
@@ -110,9 +106,8 @@ readonly class Extractor
         }
 
         if ($pageTitle !== null) {
-            // The raw <title> usually carries the site name (" - Wikipedia",
-            // " | The Guardian"). Strip it by matching a known site name at
-            // either end, so we never have to guess which side it's on.
+            // The raw <title> usually includes the site name (" - Wikipedia",
+            // " | The Guardian"), which can be at either end.
             return $this->stripSiteName($pageTitle, $this->siteNameCandidates($url, $node, $meta));
         }
 
@@ -131,8 +126,8 @@ readonly class Extractor
     }
 
     /**
-     * Is $needle present in $haystack, ignoring case and whitespace runs? Used to
-     * ask whether a page's <title> actually contains a candidate title.
+     * Whether $haystack contains $needle, ignoring case and runs of whitespace.
+     * Used to test whether a page's <title> contains a candidate title.
      */
     private function reflectedIn(string $needle, string $haystack): bool
     {
@@ -144,8 +139,8 @@ readonly class Extractor
     }
 
     /**
-     * The names a site might tack onto its <title>, best first: the OpenGraph
-     * site name, the JSON-LD publisher, then the bare host as a weak fallback.
+     * Names a site might add to its <title>, most reliable first: the OpenGraph
+     * site name, the JSON-LD publisher, then the host without "www.".
      *
      * @param  array<string, mixed>|null  $node
      * @param  array<string, string>  $meta
@@ -169,10 +164,8 @@ readonly class Extractor
     }
 
     /**
-     * Remove a leading or trailing "<separator> Site Name" (or "Site Name
-     * <separator>") from a page title. Anchoring on a known site name rather than
-     * on position handles the rare site that leads with its name, and never
-     * strips the title down to nothing.
+     * Remove a trailing "<separator> Site Name" or a leading "Site Name
+     * <separator>" from a page title. Never returns an empty title.
      *
      * @param  array<int, string>  $names
      */
@@ -227,19 +220,18 @@ readonly class Extractor
             }
         }
 
-        // The URL is always the article's own, even when the HTML came from an
-        // archive, so its host is the one publisher signal a snapshot can't
-        // corrupt.
+        // The URL is the article's even when the HTML came from an archive, so
+        // its host never names the archive.
         return $this->getPublisherFromUrl($url);
     }
 
     /**
-     * Does this name belong to an archiving service rather than a publisher?
+     * Whether this name belongs to an archiving service.
      *
-     * A snapshot carries the archive's own og:site_name and JSON-LD publisher,
-     * which would otherwise outrank the article's URL and credit the article to
-     * archive.ph. The mirrors are interchangeable front doors to one service, so
-     * match the family rather than whichever host we happened to fetch from.
+     * A snapshot's og:site_name and JSON-LD publisher name the archive, and both
+     * are checked before the article's URL, so without this test the article
+     * would be credited to archive.ph. The archive.today mirrors are one
+     * service, so every mirror is matched regardless of which one was fetched.
      */
     private function namesAnArchive(string $name): bool
     {
@@ -255,8 +247,8 @@ readonly class Extractor
     }
 
     /**
-     * Names an archived page may claim as its publisher. Bare hosts only: a
-     * publisher legitimately called "The Archive" must not be caught here.
+     * Names an archived page may give as its publisher. Only exact hosts and
+     * service names, so a publisher called "The Archive" doesn't match.
      */
     private const ARCHIVE_NAMES = [
         'archive.ph',
@@ -296,7 +288,7 @@ readonly class Extractor
             }
         }
 
-        // Nothing said when it was published; treat it as now rather than fail.
+        // No publication date found; use the current time.
         return CarbonImmutable::now();
     }
 
@@ -319,8 +311,8 @@ readonly class Extractor
             $authors = [$meta['article:author']];
         }
 
-        // Ported behavior: an author expressed as a profile URL becomes a
-        // display name derived from its slug.
+        // An author given as a profile URL becomes a display name derived from
+        // its slug.
         return array_values(array_map(
             fn (string $author) => $this->isUrl($author) ? $this->getNameFromSlug($author) : trim($author),
             array_filter($authors, fn (string $a) => trim($a) !== ''),
@@ -337,8 +329,7 @@ readonly class Extractor
         }
 
         // author may be a single string, a single object {name}, or a list of
-        // either. Wrap a lone associative object so it isn't iterated field by
-        // field.
+        // either. Wrap a single object so it isn't iterated field by field.
         $entries = (is_array($author) && ! array_is_list($author)) ? [$author] : Arr::wrap($author);
 
         $authors = [];
@@ -356,7 +347,7 @@ readonly class Extractor
         return $authors;
     }
 
-    // ----- Heuristics (ported verbatim in spirit from the old extraction API) --
+    // ----- Heuristics -------------------------------------------------------
 
     private function getPublisherFromUrl(string $url): string
     {
@@ -381,7 +372,7 @@ readonly class Extractor
         return Str::startsWith($url, ['http://', 'https://']);
     }
 
-    // ----- Plumbing ---------------------------------------------------------
+    // ----- Helpers ----------------------------------------------------------
 
     private function readability(string $url, string $html): ?Readability
     {

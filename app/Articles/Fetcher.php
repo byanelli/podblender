@@ -15,17 +15,17 @@ use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\PendingRequest;
 
 /**
- * Retrieves the raw HTML for an article. A free, direct Guzzle GET for open
- * pages; a two-step Scrapfly flow for gated ones.
+ * Retrieves the raw HTML for an article. Open pages use a free, direct GET;
+ * paywalled ones use a two-step Scrapfly flow.
  *
- * archive.is sits behind Cloudflare and serves an interactive CAPTCHA to a raw
- * HTTP client, so the archive path goes through Scrapfly's ASP (the only thing
- * proven to clear it). Resolving a URL to its snapshot HTML is two Scrapfly
- * calls, and BOTH SPEND CREDITS:
- *   1. the snapshot listing ({base}/{url}, render_js off, ~25 credits), which we
- *      parse for the newest snapshot; then
- *   2. that snapshot ({snapshot-url}, render_js on, ~30 credits) — the archived
- *      article HTML the Extractor consumes.
+ * archive.is is behind Cloudflare and serves an interactive CAPTCHA to a plain
+ * HTTP client, so the archive path goes through Scrapfly's ASP, the only method
+ * found to pass it. Resolving a URL to its snapshot HTML takes two Scrapfly
+ * calls, and both spend credits:
+ *   1. the snapshot listing ({base}/{url}, render_js off, ~25 credits), parsed
+ *      for the newest snapshot; then
+ *   2. that snapshot ({snapshot-url}, render_js on, ~30 credits), the archived
+ *      article HTML passed to the Extractor.
  */
 readonly class Fetcher implements FetcherContract
 {
@@ -47,16 +47,17 @@ readonly class Fetcher implements FetcherContract
     }
 
     /**
-     * The cheap middle tier. web.archive.org isn't Cloudflare-CAPTCHA'd like
-     * archive.is, so it needs no Scrapfly — but production runs from a datacenter
-     * IP that archive.org rate-limits and blocks, so both hops go through the
-     * residential proxy (cheap bandwidth, not Scrapfly credits). Two hops:
-     *   1. the availability API tells us the closest snapshot's timestamp; and
-     *   2. we GET that snapshot in raw "id_" form (Wayback's injected toolbar
-     *      stripped) so the Extractor sees the original archived markup.
+     * The middle tier, tried before archive.is. web.archive.org has no
+     * Cloudflare CAPTCHA, so it needs no Scrapfly. archive.org does rate-limit
+     * and block the datacenter IP production runs from, so both requests go
+     * through the residential proxy, which costs bandwidth but no Scrapfly
+     * credits:
+     *   1. the availability API returns the closest snapshot's timestamp; and
+     *   2. that snapshot is fetched in raw "id_" form, without Wayback's
+     *      injected toolbar, so the Extractor gets the original markup.
      *
-     * A miss or any hiccup becomes WaybackSnapshotNotFoundException so the Reader
-     * can fall through to archive.is — a Wayback stumble must never fail a read.
+     * Any failure becomes WaybackSnapshotNotFoundException so the Reader can
+     * continue to archive.is.
      */
     public function fetchFromWayback(string $url): string
     {
@@ -72,17 +73,16 @@ readonly class Fetcher implements FetcherContract
                 ->throw()
                 ->body();
         } catch (\Throwable $e) {
-            // Wayback is best-effort; archive.is is the backstop. A snapshot-fetch
-            // error must not escalate — degrade it to a "no snapshot" miss.
+            // Report a failed snapshot fetch as a missing snapshot so the Reader
+            // continues to archive.is.
             throw new WaybackSnapshotNotFoundException('Wayback snapshot fetch failed: '.$e->getMessage());
         }
     }
 
     /**
-     * Hit the availability API and return the closest snapshot's timestamp, or
-     * null when there is none. An API-level hiccup is treated as "no snapshot"
-     * too, so the whole read degrades to the archive.is backstop rather than
-     * failing on a free tier.
+     * Return the closest snapshot's timestamp from the availability API, or null
+     * when there is none. An API error also returns null, so the read continues
+     * to archive.is.
      */
     private function waybackClosestTimestamp(string $url): ?string
     {
@@ -106,9 +106,8 @@ readonly class Fetcher implements FetcherContract
     }
 
     /**
-     * A Wayback-bound request, pinned to a residential exit address. archive.org
-     * doesn't challenge with a CAPTCHA, so unlike the archive.is path this needs
-     * no Scrapfly — just an IP that doesn't look like a datacenter.
+     * A request to archive.org through the residential proxy, because
+     * archive.org blocks datacenter IPs.
      */
     private function waybackRequest(): PendingRequest
     {
@@ -124,10 +123,10 @@ readonly class Fetcher implements FetcherContract
     }
 
     /**
-     * Build the raw snapshot URL. Availability answers on the bare host
-     * (archive.org), but snapshots are served from web.archive.org, so we derive
-     * the web host by prefixing "web." The "id_" after the timestamp is what
-     * suppresses Wayback's injected navigation toolbar.
+     * Build the raw snapshot URL. The availability API is on archive.org but
+     * snapshots are served from web.archive.org, so "web." is prefixed to the
+     * host. The "id_" after the timestamp suppresses Wayback's injected
+     * navigation toolbar.
      */
     private function waybackSnapshotUrl(string $timestamp, string $url): string
     {
@@ -144,8 +143,7 @@ readonly class Fetcher implements FetcherContract
     {
         $snapshotUrl = $this->newestSnapshotUrl($this->fetchListing($url));
 
-        // The snapshot page renders JS: the archived article body is what the
-        // Extractor needs. This is the ~30-credit half of the lookup.
+        // The ~30-credit call. render_js is on by default.
         return $this->scrape(
             $snapshotUrl,
             (bool) $this->config->get('articles.scrapfly_snapshot_render_js', true),
@@ -153,9 +151,9 @@ readonly class Fetcher implements FetcherContract
     }
 
     /**
-     * Step 1: the static snapshot listing. Cheaper (no JS render). A Scrapfly
-     * failure here is a BLOCK, not an absence — the listing may exist, we just
-     * couldn't retrieve it.
+     * Step 1: the static snapshot listing, which is cheaper because it needs no
+     * JS render. A Scrapfly failure here means blocked: the listing may exist
+     * but couldn't be retrieved.
      */
     private function fetchListing(string $url): string
     {
@@ -164,8 +162,8 @@ readonly class Fetcher implements FetcherContract
             (bool) $this->config->get('articles.scrapfly_listing_render_js', false),
         );
 
-        // archive.is answering with a blocking status is a retryable block, not
-        // proof the snapshot is missing.
+        // An error status from archive.is can be retried. It doesn't show that
+        // the snapshot is missing.
         if ($result->statusCode >= 400) {
             throw new ArchiveBlockedException(
                 "Archive listing blocked (HTTP {$result->statusCode}) for: $url"
@@ -180,8 +178,8 @@ readonly class Fetcher implements FetcherContract
         try {
             return $this->scrapfly->scrape($url, $renderJs);
         } catch (ScrapflyException $e) {
-            // Blocked, not absent: Scrapfly erred or reported failure. Distinct
-            // from an empty listing so the caller can retry later.
+            // A Scrapfly error is reported as blocked, which the caller can
+            // retry later, unlike an empty listing.
             throw new ArchiveBlockedException('Archive fetch was blocked: '.$e->getMessage());
         }
     }
@@ -189,13 +187,14 @@ readonly class Fetcher implements FetcherContract
     /**
      * Parse the newest snapshot URL out of an archive.today listing.
      *
-     * The listing renders each snapshot as an anchor to https://archive.<tld>/
-     * <5-char-code> whose text carries a date. A naive regex over the raw page
-     * also matches archive.is/https, /loadi, /searc (truncations of unrelated
-     * links), so we walk the DOM, keep only anchors whose href is EXACTLY a
-     * 5-char snapshot code AND that carry a parseable date, and pick the latest.
+     * Each snapshot in the listing is an anchor to https://archive.<tld>/
+     * <5-char-code> whose text includes a date. A regex over the raw page also
+     * matches archive.is/https, /loadi, /searc (truncations of unrelated links),
+     * so this queries the DOM and keeps only anchors whose href is exactly a
+     * 5-char snapshot code and whose text has a parseable date, then returns
+     * the latest.
      *
-     * @throws ArchiveSnapshotNotFoundException when the listing holds no snapshot rows
+     * @throws ArchiveSnapshotNotFoundException when the listing has no snapshot rows
      */
     private function newestSnapshotUrl(string $html): string
     {

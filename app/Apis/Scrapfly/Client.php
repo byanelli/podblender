@@ -10,16 +10,15 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 
 /**
- * Thin wrapper over the Scrapfly scrape API. Scrapfly's ASP is what reliably
- * clears archive.is's Cloudflare CAPTCHA and returns the real HTML.
+ * Client for the Scrapfly scrape API. Scrapfly's ASP passes archive.is's
+ * Cloudflare CAPTCHA and returns the page's HTML.
  *
- * Two behaviours matter here:
- *   - archive.is is SLOW through Scrapfly (~50-75s) and intermittently drops
- *     the TCP connection, so we use a generous timeout and retry connection
- *     failures a few times.
- *   - the API key rides in the query string, so a leaked cURL/Guzzle message
- *     would expose it. Every failure path rethrows a sanitized ScrapflyException
- *     whose message contains neither the URL nor the key.
+ *   - archive.is takes ~50-75s through Scrapfly and intermittently drops the
+ *     TCP connection, so the timeout is long and connection failures are
+ *     retried.
+ *   - The API key is in the query string, so cURL/Guzzle exception messages
+ *     contain it. Every failure path throws a ScrapflyException whose message
+ *     contains neither the URL nor the key.
  */
 readonly class Client implements ClientContract
 {
@@ -36,14 +35,14 @@ readonly class Client implements ClientContract
 
     public function scrape(string $url, bool $renderJs = false): ScrapflyResult
     {
-        // Retry only the transient connection drops; a Scrapfly-level failure
+        // Only connection failures are retried. A Scrapfly-level failure
         // (success=false / non-2xx) is deterministic and propagates immediately.
         for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
             try {
                 return $this->toResult($this->request($url, $renderJs), $url);
             } catch (ConnectionException|RequestException) {
-                // Swallow the message on purpose: it contains the full URL and
-                // therefore the API key. Never surface or chain it.
+                // The message contains the full URL, including the API key.
+                // Don't log it or chain the exception.
                 if ($attempt >= self::MAX_ATTEMPTS) {
                     throw new ScrapflyException(
                         'Scrapfly connection failed after '.self::MAX_ATTEMPTS.' attempts.'
@@ -52,7 +51,7 @@ readonly class Client implements ClientContract
             }
         }
 
-        // Unreachable: the loop either returns or throws, but keeps the analyser happy.
+        // Unreachable, but PHPStan requires a return or throw here.
         throw new ScrapflyException('Scrapfly request did not complete.');
     }
 
@@ -64,7 +63,7 @@ readonly class Client implements ClientContract
             ->get(self::ENDPOINT, [
                 'key'       => (string) $this->config->get('services.scrapfly.key'),
                 'url'       => $url,
-                // ASP clears Cloudflare/CAPTCHA. This is what costs the credits.
+                // ASP passes Cloudflare/CAPTCHA checks. It is what costs credits.
                 'asp'       => 'true',
                 'render_js' => $renderJs ? 'true' : 'false',
                 'country'   => (string) $this->config->get('articles.scrapfly_country', 'us'),
@@ -73,8 +72,7 @@ readonly class Client implements ClientContract
 
     private function toResult(Response $response, string $url): ScrapflyResult
     {
-        // A non-2xx from Scrapfly itself is a Scrapfly-level failure. Report the
-        // status only — never the URL, which carries the key.
+        // Report the status only. The URL contains the key.
         if ($response->failed()) {
             throw new ScrapflyException('Scrapfly API returned HTTP '.$response->status().'.');
         }

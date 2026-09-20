@@ -5,13 +5,11 @@ namespace App\Apis\Scrapfly;
 use RuntimeException;
 
 /**
- * A Scrapfly-level failure: the API errored, reported the scrape unsuccessful,
- * or dropped the connection past the retry budget.
+ * A Scrapfly-level failure: the API returned an error, reported the scrape
+ * unsuccessful, or the connection failed on every retry.
  *
- * SECURITY: the Scrapfly API key travels in the request query string, so the
- * underlying cURL/Guzzle exceptions echo the full URL — key included — in their
- * messages. This exception exists so the client can rethrow a message that
- * carries NEITHER the URL NOR the key. Never seed it with a leaking message or
- * chain a leaking previous exception.
+ * SECURITY: the Scrapfly API key is in the request query string, so cURL and
+ * Guzzle exception messages include it. Never construct this exception from
+ * such a message or pass one as $previous.
  */
 class ScrapflyException extends RuntimeException {}

@@ -18,24 +18,19 @@ readonly class Views
 
     public function home(User $user): Response
     {
-        /* @see resources/js/Pages/Dashboard.vue */
+        /* @see resources/js/Pages/Dashboard.tsx */
         return $this->inertiaPages->render('Dashboard', compact('user'));
     }
 
     public function feed(Feed $feed): Response
     {
-        /* @see resources/js/Pages/Feed.vue */
+        /* @see resources/js/Pages/Feed.tsx */
         return $this->inertiaPages->render('Feed', compact('feed'));
     }
 
     /**
-     * A feed's RSS, declared as XML rather than as a web page.
-     *
-     * The body has always been XML, but a bare view is sent as text/html,
-     * which is the default Laravel gives any rendered template. The podcast
-     * specs and the feed validators expect application/rss+xml, and a client
-     * is free to be strict about what it accepts, so send the type the body
-     * actually is rather than depend on clients being lenient.
+     * A feed's RSS. Laravel sends a rendered view as text/html by default;
+     * the podcast specs and feed validators expect application/rss+xml.
      */
     public function rss(Feed $feed): HttpResponse
     {

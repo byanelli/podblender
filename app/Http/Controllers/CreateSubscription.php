@@ -25,13 +25,10 @@ readonly class CreateSubscription
     ): void {
         $platformType = $platforms->subscribableTypeForUrl($request->url);
 
-        // Fetch the source metadata before opening the transaction: it's a network call to the platform, and holding a
-        // database transaction open across it would be pointless and slow.
+        // A network call, so it runs before the transaction opens.
         $metadata = $platforms->for($platformType)->getSourceMetadata($request->url);
 
-        // Find-or-create the source, create the feed, and queue its initial fill as one unit. If any step throws, we
-        // don't want a half-made subscription left behind — a feed with no source, or a source and feed with no job to
-        // fill them in.
+        // One transaction, so a failure can't leave a feed without a source or without the job that fills it.
         $feed = DB::transaction(function () use ($dispatcher, $findOrCreateAudioSource, $platformType, $metadata, $request, $user): Feed {
             $source = $findOrCreateAudioSource($platformType, $metadata);
 
@@ -39,10 +36,9 @@ readonly class CreateSubscription
             $feed = $user->feeds()->create([
                 'name'                => $request->name,
                 'subscription_id'     => $source->id,
-                // When they actually subscribed, which is not the same thing as how far back they asked us to reach.
                 'subscribed_at'       => now(),
-                // A new subscription reaches back over a configurable window (one month by default) so the platform's
-                // recent back catalogue shows up straight away rather than only clips published from now on.
+                // Defaults to a configured window (one month unless overridden), so a new feed starts with the
+                // source's recent clips.
                 'backfill_since'      => $request->backfillSince
                     ?? now()->subMonths(config('subscriptions.backfill_months')),
                 'tracks_new_episodes' => $request->tracksNewEpisodes,
@@ -53,9 +49,7 @@ readonly class CreateSubscription
             return $feed;
         });
 
-        // Drawn after the transaction has committed, not inside it: a rollback
-        // would leave a cover file on disk with no feed left to own it. It
-        // never throws, so the subscription stands either way.
+        // Runs after commit so a rollback can't leave a cover file with no feed. Never throws.
         $generateCover($feed);
     }
 }

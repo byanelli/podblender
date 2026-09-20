@@ -14,23 +14,19 @@ use Ramsey\Uuid\Uuid;
 /**
  * Text-to-speech backed by Gemini's TTS models over the Interactions API.
  *
- * Two things distinguish Gemini from OpenAI here. First, it returns headerless
- * raw PCM (signed 16-bit little-endian, mono) rather than MP3, so each segment
- * is decoded and transcoded before the segments are concatenated. Second, a
- * long narration generates for over a minute, and if the API produces the whole
- * response before sending anything the connection sits idle long enough to be
- * closed mid-response (cURL 56, "unexpected eof while reading"). Asking for a
- * streamed response fixes that: the API emits audio-delta events continuously,
- * so bytes keep arriving and the connection is never idle.
+ * Gemini returns headerless raw PCM (signed 16-bit little-endian, mono), so
+ * each segment is transcoded to MP3 before the segments are concatenated.
  *
- * Note that it's the 'stream' flag in the request *body* that does this — the
- * server behaves differently, which is what matters. No special Guzzle handler
- * is needed, so segments can be narrated concurrently through a request pool.
+ * Requests set 'stream' in the body. A long narration takes over a minute to
+ * generate, and an unstreamed response leaves the connection idle long enough
+ * to be closed mid-response (cURL 56, "unexpected eof while reading"). With
+ * streaming, the API sends audio-delta events continuously. The flag only
+ * changes the server's behaviour, so no streaming Guzzle handler is needed and
+ * the requests can go through a pool.
  *
- * Segments are independent requests, so they're sent a poolful at a time rather
- * than one after another; a three-segment article measured 2.78x faster this
- * way. They're transcoded as each pool returns, which also bounds how much
- * decoded audio is held in memory at once.
+ * Segments are sent CONCURRENCY at a time; a three-segment article measured
+ * 2.78x faster than sequential requests. Each batch is transcoded before the
+ * next is requested, which limits how much decoded audio is in memory.
  */
 readonly class GeminiClient implements ClientContract
 {
@@ -38,18 +34,16 @@ readonly class GeminiClient implements ClientContract
 
     private const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 
-    // ~1.5 minutes of audio per segment. Gemini caps input by tokens rather than
-    // characters, and warns that quality drifts past a few minutes of output, so
-    // this trades a few extra requests for reliable, good-sounding segments.
+    // Characters per segment, about 1.5 minutes of audio. Gemini limits input by
+    // tokens and warns that quality drifts past a few minutes of output.
     private const SEGMENT_LENGTH = 1500;
 
     /**
-     * How many segments to narrate at once. Downloads are serialised elsewhere
-     * (see DownloadAndStoreAudioClip's WithoutOverlapping middleware), so this
-     * also bounds how many requests we ever have in flight with Gemini at once.
-     * Three concurrent requests were verified to run in parallel without being
-     * rate limited; the published limits are account-specific, so raise this
-     * only against a real account's quota.
+     * How many segments to narrate at once. Downloads are serialised (see
+     * DownloadAndStoreAudioClip's WithoutOverlapping middleware), so this is
+     * also the most requests in flight with Gemini at any time. Three ran in
+     * parallel without being rate limited. Published limits are per account,
+     * so check the account's quota before raising this.
      */
     private const CONCURRENCY = 3;
 
@@ -73,8 +67,8 @@ readonly class GeminiClient implements ClientContract
         try {
             $segments = collect($this->segmentText($text, self::SEGMENT_LENGTH));
 
-            // Narrate a poolful at a time, transcoding each batch before
-            // requesting the next so the audio doesn't all pile up in memory.
+            // Transcode each batch before requesting the next, to limit the
+            // decoded audio in memory.
             foreach ($segments->chunk(self::CONCURRENCY) as $chunk) {
                 foreach ($this->requestAudioForSegments($chunk->values()->all()) as [$pcmBytes, $sampleRate]) {
                     $pcms[] = $pcm = $this->writePcmToFile($pcmBytes);
@@ -84,8 +78,8 @@ readonly class GeminiClient implements ClientContract
 
             $combined = $this->ffmpeg->combineMp3s($mp3s);
 
-            // Clean up the intermediates — but never the combined result, which
-            // with a single segment IS one of the segment files.
+            // Delete the intermediates. With a single segment the combined
+            // result is one of them, so it is excluded.
             collect($pcms)->merge($mp3s)
                 ->reject(fn ($path) => $path === $combined)
                 ->each(fn ($path) => @unlink($path));
@@ -99,32 +93,27 @@ readonly class GeminiClient implements ClientContract
     }
 
     /**
-     * How long one poolful of segments takes to narrate, whatever their size.
-     * Generation time tracks the segment budget far more than the text in it:
-     * measured 36.1s/43.1s/33.4s for segments of 1494/1005/1499 characters, and
-     * 40.6s and 50.3s for a one-pool and a two-pool article. Rounded up from
-     * those, since this feeds a timeout.
+     * Seconds to narrate one batch of segments. Generation time varies little
+     * with segment length: measured 36.1s/43.1s/33.4s for segments of
+     * 1494/1005/1499 characters, and 40.6s and 50.3s for a one-batch and a
+     * two-batch article. Rounded up because it is used for a timeout.
      */
     private const SECONDS_PER_POOL = 60;
 
     /**
-     * Transcoding a segment's PCM to MP3 and adding it to the concatenation.
-     * This is per segment, not a fixed cost: measured at a steady ~1.4s to
-     * transcode plus ~0.1s of concat per segment, from one segment up to twelve.
-     * Rounded up, since this feeds a timeout.
+     * Seconds to transcode one segment's PCM to MP3 and concatenate it.
+     * Measured at ~1.4s to transcode plus ~0.1s of concat per segment, for one
+     * to twelve segments. Rounded up because it is used for a timeout.
      */
     private const FFMPEG_SECONDS_PER_SEGMENT = 3;
 
     public function estimateNarrationTime(string $text): int
     {
-        // Count segments the way convertTextToSpeech() actually will, rather
-        // than estimating from length, so this stays right if the segmenter
-        // changes.
+        // Same segmentation as convertTextToSpeech().
         $segments = iterator_count($this->segmentText($text, self::SEGMENT_LENGTH));
 
-        // Narration is the dominant cost and runs CONCURRENCY segments at a
-        // time, so it's the number of pools that matters there. Transcoding is
-        // sequential, so it scales with every segment.
+        // Narration runs CONCURRENCY segments at a time, so its cost is per
+        // batch. Transcoding is sequential, so its cost is per segment.
         $pools = (int) ceil($segments / self::CONCURRENCY);
 
         return ($pools * self::SECONDS_PER_POOL)
@@ -159,23 +148,22 @@ readonly class GeminiClient implements ClientContract
             ->map(fn (string $segment, int $index) => $pool->as((string) $index)
                 ->timeout(300)
                 ->connectTimeout(10)
-                // Transient transport drops are worth a retry; the POST is idempotent.
+                // Retry transient transport failures. The POST is idempotent.
                 ->retry(3, 1000, throw: false)
                 ->withHeaders(['x-goog-api-key' => $apiKey])
                 ->post(self::ENDPOINT, $this->audioRequestBody($segment)))
             ->all(), concurrency: self::CONCURRENCY);
 
-        // Pool results are keyed by the index each request was registered under,
-        // so walking the segments in order reassembles the narration in order
-        // however the responses happened to settle.
+        // Pool results are keyed by segment index, so reading them in segment
+        // order gives the narration in order regardless of completion order.
         return collect($segments)
             ->keys()
             ->map(function (int $index) use ($responses) {
                 $response = $responses[$index] ?? null;
 
-                // A segment that failed every retry comes back as the exception
-                // rather than a response; rethrow it so the whole narration
-                // fails instead of silently losing that stretch of audio.
+                // A segment that failed every retry is returned as the
+                // exception. Rethrow it so the narration fails instead of
+                // omitting that segment.
                 if ($response instanceof \Throwable) {
                     throw $response;
                 }
@@ -189,9 +177,7 @@ readonly class GeminiClient implements ClientContract
     }
 
     /**
-     * The request body for one segment. 'stream' asks the API to send audio
-     * deltas as they're generated, so a long narration never leaves the
-     * connection idle long enough to be dropped.
+     * The request body for one segment. See the class comment for 'stream'.
      *
      * @return array<string, mixed>
      */
@@ -212,8 +198,8 @@ readonly class GeminiClient implements ClientContract
 
     /**
      * Parse a server-sent event body and concatenate its audio deltas into one
-     * PCM blob, returning [pcmBytes, sampleRate]. The narration is the sequence
-     * of step.delta events carrying an audio payload, one per "data: {json}" line.
+     * PCM blob, returning [pcmBytes, sampleRate]. The audio is in the step.delta
+     * events with an audio payload, one per "data: {json}" line.
      *
      * @return array{0: string, 1: int}
      */

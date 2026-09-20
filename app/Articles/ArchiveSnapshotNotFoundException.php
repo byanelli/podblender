@@ -5,8 +5,7 @@ namespace App\Articles;
 use RuntimeException;
 
 /**
- * The archive listing came back clean but held NO snapshot rows, so the URL has
- * genuinely never been archived. Distinct from ArchiveBlockedException: there is
- * nothing to retry for — the snapshot simply does not exist.
+ * The archive listing was retrieved but has no snapshot rows, so the URL has
+ * never been archived. Unlike ArchiveBlockedException, retrying won't help.
  */
 class ArchiveSnapshotNotFoundException extends RuntimeException {}

@@ -25,36 +25,31 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Names both the lock that keeps downloads from overlapping and the rate limiter that spaces them out. The limiter
-     * itself is registered in App\Providers\AppServiceProvider.
+     * Name of both the WithoutOverlapping lock and the rate limiter. The limiter is registered in
+     * App\Providers\AppServiceProvider.
      */
     public const string THROTTLE = 'audio-clip-downloads';
 
     /**
-     * Downloading is the one thing here that can get us blocked, so only a genuine failure should count against the
-     * job. A release from one of the middlewares below isn't an exception, so it never touches this counter: only a
-     * real error thrown out of handle() does. Three of those and we give up, having tried the download three times.
-     * See retryUntil() for why the attempt count can't do this job.
+     * The job fails after three exceptions thrown from handle(). A release by the middleware below is not an exception
+     * and doesn't count. See retryUntil() for why $tries isn't used.
      */
     public int $maxExceptions = 3;
 
     /**
-     * The smallest timeout we'll allow, so a short clip never regresses below a
-     * comfortably generous budget (the old fixed value).
+     * Minimum timeout, so a short clip still gets an hour.
      */
     private const TIMEOUT_FLOOR_SECONDS = 3600;
 
     /**
-     * Padding on top of the platform's download estimate, covering the parts of
-     * the job that aren't the download itself: storing the file, reading its
-     * duration, and writing to the database.
+     * Added to the platform's download estimate to cover the rest of the job:
+     * storing the file, reading its duration, and writing to the database.
      */
     private const BUFFER_SECONDS = 300;
 
     /**
-     * How many attempts to budget time for. A download usually fails
-     * transiently and gets retried (see $maxExceptions and backoff()), so the
-     * timeout has to fit more than a single attempt's worth of work.
+     * Number of download attempts the timeout allows time for. Failed downloads
+     * are retried (see $maxExceptions and backoff()).
      */
     private const EXPECTED_ATTEMPTS = 3;
 
@@ -62,12 +57,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
     public function __construct(private readonly AudioClip $clip)
     {
-        // Scale the timeout with the clip's expected download cost rather than
-        // a fixed ceiling: a long article or video legitimately needs more than
-        // an hour, and a fixed timeout would doom it. The platform estimates one
-        // download conservatively; we add a buffer for the non-download work and
-        // multiply by the attempts we expect to spend, floored so short clips
-        // keep the old generous budget.
+        // (platform's estimate for one download + buffer) x expected attempts,
+        // with a floor. A long article or video can need more than an hour.
         $this->timeout = $clip->estimated_download_time === null
             ? self::TIMEOUT_FLOOR_SECONDS
             : (int) max(
@@ -77,30 +68,27 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     }
 
     /**
-     * What YouTube reacts badly to is a burst of downloads, and subscribing to a channel can create a lot of clips at
-     * once. Horizon runs several worker processes, so without these two the backlog would go out as fast as the
-     * workers could pick it up: concurrently, and from one IP address.
-     */
-    /**
+     * A burst of downloads can get this host blocked by YouTube, and subscribing to a channel can create many clips at
+     * once. Horizon runs several worker processes, so without these middlewares the backlog would download
+     * concurrently from one IP address.
+     *
      * @return array<int, object>
      */
     public function middleware(): array
     {
         return [
-            // Never download two clips at the same time, no matter how many workers are free.
+            // One download at a time across all workers.
             (new WithoutOverlapping(self::THROTTLE))->releaseAfter(30)->expireAfter($this->timeout),
 
-            // Having serialized them, leave a gap between one download and the next.
+            // Space consecutive downloads apart.
             new RateLimited(self::THROTTLE),
         ];
     }
 
     /**
-     * Both middlewares above release the job back onto the queue rather than failing it, and a large backlog means a
-     * job may be released many times before its turn comes around. That makes the number of attempts a meaningless
-     * measure of whether this job is failing, so bound it by wall-clock time and let $maxExceptions bound the errors.
-     * Laravel ignores the attempt limit ($tries) entirely when this method is present, which is exactly what we want:
-     * releases keep the job alive for up to 12 hours, and only genuine exceptions — capped by $maxExceptions — end it.
+     * Both middlewares release the job back onto the queue, and with a large backlog a job may be released many times
+     * before it runs, so the attempt count doesn't indicate failure. When this method is present Laravel ignores
+     * $tries: releases keep the job alive for up to 12 hours, and only $maxExceptions exceptions fail it.
      */
     public function retryUntil(): CarbonImmutable
     {
@@ -108,8 +96,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     }
 
     /**
-     * Wait between genuine retries. A download usually fails because the platform is rate-limiting or briefly blocking
-     * us, and hammering it again immediately is the surest way to make that worse, so back off further each time.
+     * Delays between retries after an exception. A download usually fails because the platform is rate-limiting or
+     * briefly blocking this host, so each retry waits longer.
      *
      * @return array<int, int>
      */
@@ -130,53 +118,45 @@ class DownloadAndStoreAudioClip implements ShouldQueue
         $downloadPath = null;
 
         try {
-            // Load related feeds (we'll need these later to dispatch events).
+            // The feeds are needed later to dispatch events.
             $this->clip->load('feeds', 'audioSource');
 
             $platform = $platforms->for($this->clip->platform_type);
 
-            // Download the audio from the platform into a temporary file and open the downloaded file.
             $downloadPath = $platform->downloadAudio($this->clip->platform_url);
             $downloadHandle = fopen($downloadPath, 'r');
 
-            // Use ffmpeg to get the duration.
             $duration = $ffmpeg->getDuration($downloadPath);
 
             if (! $downloadHandle) {
                 throw new \Exception("Couldn't open $downloadPath as resource");
             }
 
-            // Store the file.
             $storageResult = $storage->put($this->clip->storage_path, $downloadHandle);
 
             if (! $storageResult) {
                 throw new \Exception("Couldn't store audio from $downloadPath");
             }
 
-            // Mark the clip as no longer processing and save the file size and duration in the database (for use in the
-            // RSS feed).
+            // The RSS feed needs the file size and duration.
             $this->clip->processing_state = ClipProcessingState::Processed;
             $this->clip->duration = $duration;
             $this->clip->size = $storage->size($this->clip->storage_path);
             $this->clip->save();
 
-            // Success is a terminal outcome the UI reacts to: the clip has appeared in the feed.
             $this->broadcastFinishedProcessing($events);
         } catch (ContentUnavailableException $e) {
-            // The platform told us this content is gone for good. That's terminal too — retrying would only ask again
-            // and get the same answer — so mark it and let the UI stop showing it as processing.
+            // The content is permanently unavailable, so don't retry. The broadcast stops the UI showing the clip as
+            // processing.
             $this->clip->processing_state = ClipProcessingState::Unavailable;
             $this->clip->save();
 
             $this->broadcastFinishedProcessing($events);
         }
-        // Any other exception is left to propagate. It's a transient failure — a rate limit, a proxy timeout — so the
-        // clip stays Processing and the job is retried (see $maxExceptions and backoff()). We deliberately don't
-        // broadcast here: the UI should keep showing "processing", because that's still true. Only when the retries
-        // are exhausted does failed() run, and that's where the clip is marked Failed and the UI told to stop waiting.
+        // Any other exception propagates so the job is retried (see $maxExceptions and backoff()). The clip stays
+        // Processing and nothing is broadcast until failed() runs.
         finally {
-            // Whether the download succeeded or failed, delete the temporary file. Never delete the clip: a failed
-            // download is worth retrying, and throwing the record away would lose the metadata we'd retry against.
+            // Delete the temporary file on success or failure. The clip record stays, since a retry needs its metadata.
             if ($downloadPath !== null && file_exists($downloadPath)) {
                 unlink($downloadPath);
             }
@@ -184,8 +164,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     }
 
     /**
-     * Called once the retries are exhausted (or the job is otherwise permanently failed). The clip never made it into
-     * the feed, so record that and tell the UI to stop showing it as processing.
+     * Called once the retries are exhausted or the job otherwise fails permanently. Marks the clip Failed and tells the
+     * UI to stop showing it as processing.
      */
     public function failed(?\Throwable $e): void
     {
@@ -196,9 +176,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     }
 
     /**
-     * Tell each feed the clip belongs to that it's finished processing, so a page watching that feed can update. Only
-     * call this on a terminal outcome — success, permanently unavailable, or permanently failed — never on a transient
-     * failure that's about to be retried.
+     * Tell each of the clip's feeds that it has finished processing, so a page watching that feed can update. Call
+     * this only on a final outcome (processed, unavailable, or failed), never on a failure that will be retried.
      */
     private function broadcastFinishedProcessing(Dispatcher $events): void
     {

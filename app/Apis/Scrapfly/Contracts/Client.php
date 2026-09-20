@@ -9,10 +9,10 @@ interface Client
 {
     /**
      * Fetch a URL through Scrapfly's Anti-Scraping-Protection (ASP), which
-     * clears Cloudflare/CAPTCHA walls that a raw HTTP client can't pass.
+     * passes Cloudflare/CAPTCHA checks that a plain HTTP client can't.
      *
-     * This SPENDS SCRAPFLY CREDITS. Retries transient connection drops and
-     * sanitizes the API key out of any thrown exception.
+     * This SPENDS SCRAPFLY CREDITS. Connection failures are retried, and no
+     * thrown exception contains the API key.
      *
      * @throws ScrapflyException on a Scrapfly-level failure
      *                           or an exhausted connection retry

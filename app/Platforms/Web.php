@@ -27,9 +27,7 @@ readonly class Web implements Platform
     ) {}
 
     /**
-     * Which platform this instance reports itself as in errors. Rss extends
-     * this class (a feed item is a web article), and its failures should be
-     * attributed to Rss, not Web.
+     * The platform named in this instance's errors. Rss overrides it.
      */
     protected function type(): PlatformType
     {
@@ -37,10 +35,10 @@ readonly class Web implements Platform
     }
 
     /**
-     * A conservative guess at one download's wall-clock time. Nearly all of it
-     * is narration, and only the TTS backend knows what that costs — it depends
-     * on how the text is split and how much is narrated at once — so ask it,
-     * and add overhead for re-fetching the article at download time.
+     * A conservative estimate of one download's wall-clock time, in seconds.
+     * Narration is nearly all of it, and its cost depends on how the TTS
+     * backend splits and batches the text, so the estimate comes from there.
+     * The overhead covers fetching the article again at download time.
      */
     private function estimateDownloadTime(Article $article): int
     {

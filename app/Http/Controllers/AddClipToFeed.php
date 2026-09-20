@@ -26,22 +26,15 @@ readonly class AddClipToFeed
     ): void {
         $gate->authorizeUpdate($feed);
 
-        // Detect the platform type (e.g. YouTube or Web) from the URL.
         $platformType = $platforms->typeForUrl($request->url);
 
-        // Download the metadata from the platform.
         $metadata = $platforms->for($platformType)->getClipMetadata($request->url);
 
-        // Find an existing audio clip in the database or create a new one from the metadata.
         $clip = $findOrCreateAudioClip($platformType, $metadata);
 
-        // Attach the clip to the feed, presented as published now. Unlike a subscription, a clip added by hand is new
-        // to this feed whenever it went up on the platform: someone adding a talk from three years ago wants it at the
-        // top of their podcast app, not three years down the listing where they'll never see it.
-        //
-        // syncWithoutDetaching rather than attach so that adding the same clip twice is idempotent: the second add
-        // leaves the existing pivot row (and its published_at) alone instead of inserting a duplicate that would show
-        // up as a second copy of the episode in the feed.
+        // A clip added by hand is dated now, so it appears at the top of the podcast app whatever its age on the
+        // platform. syncWithoutDetaching makes a repeat add a no-op: the existing pivot row keeps its published_at and
+        // the feed gets no duplicate episode.
         $feed->audioClips()->syncWithoutDetaching([
             $clip->id => ['published_at' => CarbonImmutable::now()],
         ]);

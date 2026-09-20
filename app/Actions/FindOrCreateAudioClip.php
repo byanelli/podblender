@@ -21,14 +21,12 @@ readonly class FindOrCreateAudioClip
 
     public function __invoke(PlatformType $platformType, ClipMetadata $metadata): AudioClip
     {
-        // If a clip already exists for this URL, return it instead of creating a new one. NOTE: A platform will
-        // typically have many URL formats pointing to the same content. Here we use the canonical form of the URL,
-        // retrieved during the metadata request, to avoid duplication.
+        // A platform typically has many URL formats for the same content, so match on the canonical URL from the
+        // metadata request.
         if ($existing = AudioClip::query()->where('platform_url', $metadata->canonicalUrl)->first()) {
             return $existing;
         }
 
-        // Find an existing audio source in the database or create one from the metadata.
         /** @var AudioSource $source */
         $source = AudioSource::query()->firstOrCreate(
             [
@@ -44,8 +42,7 @@ readonly class FindOrCreateAudioClip
 
         $storagePath = AudioClipStoragePath::for($source->name, $metadata->title);
 
-        // Create the audio clip from the metadata with processing=true. While this column is true, the clip will not
-        // show up in RSS feeds. A queued job will be dispatched to download the audio and set processing=false.
+        // A clip in the Processing state is left out of RSS feeds. The download job queued below sets the final state.
         try {
             /** @var AudioClip $clip */
             $clip = AudioClip::query()->create([
@@ -62,18 +59,14 @@ readonly class FindOrCreateAudioClip
                 'size'                    => 0,
             ]);
         } catch (UniqueConstraintViolationException $e) {
-            // The existence check above and this insert aren't atomic, and platform_url is unique. Two concurrent
-            // updates of the same subscription can both pass the check and race to create the same clip; whichever
-            // insert loses lands here. The other job already created the clip and dispatched its download, so return
-            // the winner rather than failing the whole update.
+            // The existence check above and this insert aren't atomic, and platform_url is unique. A concurrent job
+            // created the clip first and queued its download, so return that clip.
             return AudioClip::query()->where('platform_url', $metadata->canonicalUrl)->firstOrFail();
         }
 
-        // Queue a job to download the clip.
         ($this->queueDownload)($clip);
 
-        // And its artwork, when the platform offers any. This is a separate job because it's a separate concern: a
-        // thumbnail that won't download mustn't hold up, or fail, the audio that's the point of the clip.
+        // A separate job, so a thumbnail failure can't delay or fail the audio download.
         if ($metadata->thumbnail !== null) {
             ($this->queueThumbnailDownload)($clip, $metadata->thumbnail);
         }

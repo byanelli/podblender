@@ -3,8 +3,8 @@
 namespace App\Apis\Scrapfly;
 
 /**
- * The outcome of a single Scrapfly scrape: the fetched HTML plus the target's
- * own signals (final URL and HTTP status) that Scrapfly reports back.
+ * The result of one Scrapfly scrape: the fetched HTML, plus the final URL and
+ * HTTP status of the target page as Scrapfly reports them.
  */
 readonly class ScrapflyResult
 {

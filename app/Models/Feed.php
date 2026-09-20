@@ -52,9 +52,9 @@ class Feed extends Model
     ];
 
     /**
-     * The column default alone isn't enough: a freshly made model doesn't know
-     * about it until it's been reloaded, so wantsFutureEpisodes() would read
-     * null — and treat a brand-new subscription as one that has finished.
+     * Duplicates the column default, which a new model doesn't have until it
+     * is reloaded. Without it tracks_new_episodes reads as null on a feed that
+     * was just created.
      *
      * @var array<string, mixed>
      */
@@ -91,9 +91,8 @@ class Feed extends Model
     {
         return $this->audioClips()
             ->where('processing_state', ClipProcessingState::Processed)
-            // Newest episode first, in the order the feed itself presents them (the pivot date, not the clip's own
-            // publication date). Without this the RSS emits clips in insert order, which is not the order a podcast
-            // app expects and not the order ShowFeed renders them in.
+            // Newest first by the pivot date, which is the date the feed presents the clip at. The RSS and ShowFeed
+            // both depend on this order.
             ->orderByPivot('published_at', 'desc');
     }
 
@@ -106,13 +105,9 @@ class Feed extends Model
     }
 
     /**
-     * Does this subscriber still need its source checked?
-     *
-     * True while it's collecting new episodes, and also true for a one-shot
-     * that hasn't been filled yet — that feed still needs the single sweep that
-     * populates it. Only once a one-shot has had that fill is there nothing
-     * left to do: it captured the source as it stood and asked to be left
-     * alone, and checking it again would cost platform quota forever.
+     * Whether this feed's source still needs checking: true while the feed
+     * tracks new episodes, and for a one-time feed until its first fill.
+     * Checking a filled one-time feed would only spend platform quota.
      */
     public function needsUpdating(): bool
     {
@@ -120,8 +115,7 @@ class Feed extends Model
     }
 
     /**
-     * Restrict a query to subscribers that still need their source checked.
-     * Mirrors needsUpdating() in SQL, for the sweep to select sources by.
+     * The SQL equivalent of needsUpdating().
      *
      * @param  Builder<Feed>|Relation<Feed, Model, *>  $query
      */
@@ -135,9 +129,7 @@ class Feed extends Model
     }
 
     /**
-     * The earliest a clip can have been published and still belong in this
-     * feed: whatever backfill the subscriber asked for, or failing that the
-     * moment they subscribed.
+     * Clips published before this time are left out of the feed.
      */
     public function earliestWantedPublicationTime(): ?\DateTimeInterface
     {
@@ -145,12 +137,8 @@ class Feed extends Model
     }
 
     /**
-     * Who the podcast is "by".
-     *
-     * For a subscription that's whoever publishes it, not the podblender user
-     * who set the feed up — a listener seeing this in their podcast app expects
-     * the channel's name. A hand-built feed has no such publisher, so it falls
-     * back to its owner.
+     * The podcast's author as shown in podcast apps: the source's publisher
+     * for a subscription, the feed's user for a custom feed.
      *
      * @return Attribute<string, never>
      */
@@ -164,11 +152,8 @@ class Feed extends Model
     }
 
     /**
-     * The feed's show artwork, or null for a feed that has none. Both the feed
-     * page and the RSS channel leave the picture out rather than substitute
-     * one, the same way a clip without a thumbnail does.
-     *
-     * {@see AudioClip::thumbnailUrl()}
+     * The feed's artwork, or null if it has none. The feed page and the RSS
+     * channel then show no image, as with {@see AudioClip::thumbnailUrl()}.
      *
      * @return Attribute<string|null, never>
      */

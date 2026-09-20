@@ -15,7 +15,7 @@ final class Platforms
     use FixesUrls;
 
     /**
-     * The hosts we treat as YouTube. This is the single authoritative list; YouTube::getIdFromUrl references it too.
+     * The hosts treated as YouTube. Also used by YouTube::getIdFromUrl.
      */
     public const array YOUTUBE_HOSTS = [
         'youtube.com',
@@ -25,8 +25,8 @@ final class Platforms
     ];
 
     /**
-     * Which concrete class serves each platform type. Resolved lazily from the container (see for()) so a request only
-     * ever constructs the one platform it actually uses, rather than every platform up front.
+     * The class for each platform type. for() resolves it from the container on demand, so a request constructs only
+     * the platform it uses.
      *
      * @var array<int, class-string<Platform>>
      */
@@ -70,12 +70,10 @@ final class Platforms
     }
 
     /**
-     * The platform a SUBSCRIPTION URL belongs to. Unlike typeForUrl — which
-     * classifies a single clip's URL, where non-YouTube means a web article —
-     * a subscription to anything that isn't a YouTube channel can only mean an
-     * RSS/Atom feed, since a bare web page has nothing to poll. The Rss
-     * platform accepts either the feed URL itself or a page that advertises
-     * one via autodiscovery.
+     * The platform for a subscription URL. typeForUrl() classifies a clip URL,
+     * where a non-YouTube URL is a web article. A web page can't be polled,
+     * so a non-YouTube subscription is an RSS/Atom feed, given either as the
+     * feed URL or as a page with an autodiscovery link.
      */
     public function subscribableTypeForUrl(string $url): PlatformType
     {

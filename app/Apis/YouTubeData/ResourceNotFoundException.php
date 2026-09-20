@@ -3,10 +3,8 @@
 namespace App\Apis\YouTubeData;
 
 /**
- * YouTube answered, but with nothing: the id doesn't exist, or the resource is
- * private or deleted. The API reports this as an empty "items" list and a 200,
- * not as an error, so it has to be turned into one — otherwise the caller reads
- * past the end of the list and fails with something unrelated to the cause.
+ * The id doesn't exist, or the resource is private or deleted. The API
+ * reports this as a 200 with an empty "items" list.
  */
 class ResourceNotFoundException extends \RuntimeException
 {

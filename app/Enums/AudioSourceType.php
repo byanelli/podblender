@@ -5,11 +5,9 @@ namespace App\Enums;
 /**
  * What kind of thing an AudioSource is on its platform.
  *
- * The distinction that matters is authorship: a channel's name is also the name
- * of whoever publishes it, so it can be credited as the author of a feed. A
- * playlist's name is a collection ("Select Lectures"), which would read as
- * nonsense in a podcast app's author field, so a playlist is credited to the
- * channel that owns it instead.
+ * The type determines a feed's author. A channel's name is its publisher's
+ * name, so the channel is the author. A playlist's name describes a collection
+ * ("Select Lectures"), so the author is the channel the playlist belongs to.
  */
 enum AudioSourceType: string
 {

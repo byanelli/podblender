@@ -7,8 +7,8 @@ use App\Articles\Article;
 interface Reader
 {
     /**
-     * Fetch, extract, and return the Article for a URL, retrying through
-     * archive.is when the direct page is gated.
+     * Return the Article for a URL, retrying through the archives when the
+     * direct page is paywalled.
      */
     public function read(string $url): Article;
 }
