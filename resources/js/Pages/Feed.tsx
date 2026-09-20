@@ -16,6 +16,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AddClipForm from '@/AppComponents/AddClipForm';
 import ClipThumbnail from '@/AppComponents/ClipThumbnail';
 import ErrorPanel from '@/AppComponents/ErrorPanel';
+import MetadataSeparator from '@/AppComponents/MetadataSeparator';
 import events from '@/events';
 import routes from '@/routes';
 import { AudioClip, ClipProcessingState, Feed as FeedType } from '@/types';
@@ -237,42 +238,56 @@ export default function Feed({ feed }: { feed: FeedType }) {
                         {feed.audio_clips.map((clip) => (
                             <li key={clip.id}>
                                 <Card className="gap-0 py-0 transition-all hover:-translate-x-px hover:-translate-y-px hover:shadow-hard-lg">
-                                    <div className="flex items-start justify-between gap-4 p-4">
-                                        <ClipThumbnail
-                                            url={clip.thumbnail_url}
-                                            clipId={clip.id}
-                                        />
+                                    {/* On a phone the actions drop to a row of their own at the bottom, the way a
+                                        feed card stacks, so the title gets the full width beside the thumbnail. */}
+                                    <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
+                                        <div className="flex min-w-0 items-start gap-4">
+                                            <ClipThumbnail
+                                                url={clip.thumbnail_url}
+                                                clipId={clip.id}
+                                            />
 
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <p className="font-display text-lg leading-tight font-bold">
-                                                    {clip.title}
-                                                </p>
-                                                <StatusBadge
-                                                    state={clip.processing_state}
-                                                />
-                                                <Badge variant="outline">
-                                                    {
-                                                        clip.audio_source
-                                                            .platform_type.name
-                                                    }
-                                                </Badge>
-                                            </div>
-                                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                                                <span>From {clip.audio_source.name}</span>
-                                                <span className="opacity-40">/</span>
-                                                <span>
-                                                    Published{' '}
-                                                    {formatDate(clip.published_at)}
-                                                </span>
-                                                <span className="opacity-40">/</span>
-                                                <span>
-                                                    Added {formatDate(clip.created_at)}
-                                                </span>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <p className="font-display text-lg leading-tight font-bold">
+                                                        {clip.title}
+                                                    </p>
+                                                    {/* The full width drops the badges onto a line of their own
+                                                        on a phone; from sm they sit after the title again. */}
+                                                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                                                        <StatusBadge
+                                                            state={
+                                                                clip.processing_state
+                                                            }
+                                                        />
+                                                        <Badge variant="outline">
+                                                            {
+                                                                clip.audio_source
+                                                                    .platform_type.name
+                                                            }
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-1.5 text-xs text-muted-foreground">
+                                                    <span className="block sm:inline">
+                                                        From {clip.audio_source.name}
+                                                    </span>
+                                                    <MetadataSeparator />
+                                                    <span className="block sm:inline">
+                                                        Published{' '}
+                                                        {formatDate(clip.published_at)}
+                                                    </span>
+                                                    <MetadataSeparator />
+                                                    <span className="block sm:inline">
+                                                        Added{' '}
+                                                        {formatDate(clip.created_at)}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-none items-center gap-1">
+                                        {/* The wider gap gives the icons room to be tapped apart on a phone. */}
+                                        <div className="flex flex-none items-center gap-2 sm:gap-1">
                                             {clip.preview_url && (
                                                 <Button
                                                     variant="ghost"

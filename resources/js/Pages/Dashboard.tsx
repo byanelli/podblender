@@ -8,6 +8,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AddSubscriptionForm from "@/AppComponents/AddSubscriptionForm";
 import CopyRssButton from "@/AppComponents/CopyRssButton";
 import ErrorPanel from "@/AppComponents/ErrorPanel";
+import MetadataSeparator from "@/AppComponents/MetadataSeparator";
 import routes from "@/routes";
 import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
@@ -150,11 +151,11 @@ export default function Dashboard({ user }: { user: User }) {
                                                                 : "Subscription"}
                                                         </Badge>
                                                     </div>
-                                                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                                    <div className="mt-1.5 text-xs text-muted-foreground">
                                                         {feed.subscription !=
                                                             null && (
                                                             <>
-                                                                <span>
+                                                                <span className="block sm:inline">
                                                                     From{" "}
                                                                     {
                                                                         feed
@@ -162,12 +163,10 @@ export default function Dashboard({ user }: { user: User }) {
                                                                             .name
                                                                     }
                                                                 </span>
-                                                                <span className="opacity-40">
-                                                                    /
-                                                                </span>
+                                                                <MetadataSeparator />
                                                             </>
                                                         )}
-                                                        <span>
+                                                        <span className="block sm:inline">
                                                             {feed.audio_clips_count}{" "}
                                                             {feed.audio_clips_count ===
                                                             1
