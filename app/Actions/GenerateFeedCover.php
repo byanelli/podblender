@@ -31,6 +31,9 @@ readonly class GenerateFeedCover
     {
         $temporaryCoverPath = null;
         $coverHandle = null;
+        $newCoverPath = null;
+        $previousCoverPath = $feed->cover_path;
+        $saved = false;
 
         try {
             // The feed id selects the background, so a renamed feed keeps it.
@@ -48,10 +51,9 @@ readonly class GenerateFeedCover
                 throw new \RuntimeException("Couldn't store a cover from {$temporaryCoverPath}");
             }
 
-            $previousCoverPath = $feed->cover_path;
-
             $feed->cover_path = $newCoverPath;
             $feed->save();
+            $saved = true;
 
             // The old cover is deleted after the save. If the save fails,
             // cover_path still names the old file, so it has to exist.
@@ -59,6 +61,12 @@ readonly class GenerateFeedCover
                 $this->storage->delete($previousCoverPath);
             }
         } catch (\Throwable $e) {
+            // The save didn't complete, so no feed references the new cover.
+            if ($newCoverPath !== null && ! $saved) {
+                $this->storage->delete($newCoverPath);
+                $feed->cover_path = $previousCoverPath;
+            }
+
             // A feed works without artwork, so a failure here must not stop
             // the feed being created. cover_path is left unchanged.
             $this->logger->warning(

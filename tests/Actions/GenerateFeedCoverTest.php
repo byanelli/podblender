@@ -104,6 +104,26 @@ class GenerateFeedCoverTest extends TestCase
         $storage->assertExists($existing);
     }
 
+    #[Test]
+    public function a_failed_save_removes_the_new_cover_and_keeps_the_old_one()
+    {
+        $storage = Storage::fake();
+        $this->fakeCoverGenerator();
+
+        $feed = $this->feed('Lectures');
+        $this->generate($feed);
+        $existing = $feed->cover_path;
+
+        Feed::saving(fn () => throw new \RuntimeException('the database is unavailable'));
+        Log::shouldReceive('warning')->once();
+
+        $this->generate($feed);
+
+        $this->assertSame([$existing], $storage->allFiles());
+        $this->assertSame($existing, $feed->cover_path);
+        $this->assertSame($existing, $feed->fresh()?->cover_path);
+    }
+
     private function feed(string $name): Feed
     {
         return Feed::factory()->create([
