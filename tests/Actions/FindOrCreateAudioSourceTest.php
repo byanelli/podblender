@@ -48,8 +48,7 @@ class FindOrCreateAudioSourceTest extends TestCase
 
         $this->assertEquals(AudioSourceType::Playlist, $source->type);
 
-        // A playlist isn't its own author, so the feed is credited to the
-        // channel that owns it rather than to "Select Lectures".
+        // A playlist's author is the channel that owns it.
         $this->assertEquals('Lecture Channel', $source->author_name);
     }
 
@@ -77,7 +76,7 @@ class FindOrCreateAudioSourceTest extends TestCase
             'name'          => 'Original name',
         ]);
 
-        // Different name in the metadata: firstOrCreate matches on type + url, so no new row and no rename.
+        // The name differs, but firstOrCreate matches on type and URL only.
         $metadata = new SourceMetadata(
             name: 'A different name',
             canonicalUrl: $url,

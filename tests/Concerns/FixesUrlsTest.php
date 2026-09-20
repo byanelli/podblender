@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 class FixesUrlsTest extends TestCase
 {
     /**
-     * An object exposing the trait's protected methods so they can be exercised directly.
+     * An object that makes the trait's protected methods public.
      */
     private function fixer(): object
     {
@@ -47,8 +47,7 @@ class FixesUrlsTest extends TestCase
     #[Test]
     public function it_tolerates_a_url_with_no_host()
     {
-        // A URL like a mailto: has a null host. The Phase 3 guard means str_starts_with is never handed a null, so the
-        // URL passes through unchanged rather than throwing a TypeError.
+        // A mailto: URL has a null host, and str_starts_with(null) would throw a TypeError.
         $this->assertEquals('mailto:foo@example.com', $this->fixer()->removeWwwFromHost('mailto:foo@example.com'));
     }
 

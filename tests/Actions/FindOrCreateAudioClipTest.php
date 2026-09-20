@@ -37,7 +37,6 @@ class FindOrCreateAudioClipTest extends TestCase
             ),
         );
 
-        // We don't want to actually run the DownloadAndStoreAudioClip job, but we do want to assert it was dispatched.
         Bus::fake();
 
         /** @var FindOrCreateAudioClip $createAudioClip */
@@ -55,11 +54,10 @@ class FindOrCreateAudioClipTest extends TestCase
         $this->assertEquals($sourceName, $clip->audioSource->name);
         $this->assertEquals(ClipProcessingState::Processing, $clip->processing_state);
 
-        // A newly created clip has no audio yet, so its download must be queued exactly once.
         Bus::assertDispatchedTimes(DownloadAndStoreAudioClip::class, 1);
 
-        // This platform offered no artwork, and an empty thumbnail job would only
-        // fail three times over before giving up on nothing.
+        // The metadata has no thumbnail, and a thumbnail job with no source
+        // would fail on every attempt.
         Bus::assertNotDispatched(DownloadAndStoreThumbnail::class);
     }
 
@@ -112,8 +110,8 @@ class FindOrCreateAudioClipTest extends TestCase
                 canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
                 authorName: 'bar',
             ),
-            // Artwork and all: a clip we already have is a clip we've already
-            // fetched a picture for.
+            // Included so the test can check that no thumbnail job is queued
+            // for an existing clip.
             thumbnail: new RemoteImageThumbnail('https://i.ytimg.com/vi/already/maxresdefault.jpg'),
         );
 
@@ -124,7 +122,6 @@ class FindOrCreateAudioClipTest extends TestCase
 
         $clip = $createAudioClip->__invoke(PlatformType::YouTube, $metadata);
 
-        // The existing clip is returned as-is; no new clip and no fresh download.
         $this->assertTrue($clip->is($existing));
         $this->assertDatabaseCount('audio_clips', 1);
         Bus::assertNotDispatched(DownloadAndStoreAudioClip::class);
@@ -153,7 +150,7 @@ class FindOrCreateAudioClipTest extends TestCase
 
         $clip = $createAudioClip->__invoke(PlatformType::YouTube, $metadata);
 
-        // Str::limit trims to (limit - 3) characters and appends an ellipsis, keeping the stored value within bounds.
+        // The action limits to (column length - 3) characters, and Str::limit appends a three-character ellipsis.
         $this->assertEquals(str_repeat('a', 497).'...', $clip->title);
         $this->assertEquals(500, strlen($clip->title));
         $this->assertEquals(str_repeat('b', 997).'...', $clip->description);
@@ -179,8 +176,8 @@ class FindOrCreateAudioClipTest extends TestCase
 
         Bus::fake();
 
-        // Simulate a concurrent job winning the race: after our existence check has passed but before our own insert, a
-        // row with the same (unique) platform_url appears. Our insert then loses on the unique constraint.
+        // Simulate a concurrent job: a row with the same unique platform_url is inserted after the action's existence
+        // check and before its insert, which then fails on the unique constraint.
         AudioClip::creating(function (AudioClip $clip) use ($clipUrl) {
             static $raced = false;
             if ($raced) {
@@ -209,8 +206,7 @@ class FindOrCreateAudioClipTest extends TestCase
 
         $clip = $createAudioClip->__invoke(PlatformType::YouTube, $metadata);
 
-        // Instead of letting the unique-constraint violation blow up the whole subscription update, the action
-        // returns the clip the winner created — and no duplicate is left behind.
+        // An uncaught violation would fail the whole subscription update.
         $this->assertEquals('the winner', $clip->title);
         $this->assertDatabaseCount('audio_clips', 1);
     }

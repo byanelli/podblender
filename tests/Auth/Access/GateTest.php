@@ -17,7 +17,7 @@ class GateTest extends TestCase
     }
 
     /**
-     * The abilities FeedPolicy actually defines, so the owner is allowed and a stranger is denied.
+     * Abilities FeedPolicy defines: the owner is allowed and another user is denied.
      *
      * @return list<array{string, string}>
      */
@@ -31,7 +31,7 @@ class GateTest extends TestCase
     }
 
     /**
-     * The remaining model abilities the gate exposes but FeedPolicy does not implement, so everyone is denied.
+     * Gate abilities FeedPolicy does not implement: everyone is denied.
      *
      * @return list<array{string, string}>
      */

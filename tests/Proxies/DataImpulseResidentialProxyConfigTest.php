@@ -26,14 +26,12 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
     {
         $url = $this->makeConfig()->getUrlForDownload();
 
-        // Without a session, the gateway hands out a different address on every request, and a download that fetches
-        // its metadata and its media from two addresses is refused. The semicolons between parameters arrive
-        // percent-encoded, which is how they're meant to travel inside a URL's userinfo.
+        // Without a session, the gateway uses a different address for every request, and a download whose metadata
+        // and media requests come from two addresses is refused. The semicolons between parameters are
+        // percent-encoded because they are in the URL's userinfo.
         $this->assertMatchesRegularExpression('/%3Bsessid\.\w+%3B/', $url);
 
-        // Sixty minutes, which we measured the gateway honouring on port 823: the exit address held for the full
-        // hour and changed once it was up. An address that changes midway through a download is exactly what the
-        // session is there to prevent.
+        // Measured on port 823: the gateway kept the exit address for the full 60 minutes, then changed it.
         $this->assertStringContainsString('%3Bsessttl.60:', $url);
 
         $this->assertStringStartsWith('http://someuser__cr.us%3Bsessid.', $url);
@@ -48,8 +46,8 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
         $config->set('services.dataimpulse.residential.user', 'someuser');
         $config->set('services.dataimpulse.residential.password', 'somepassword');
 
-        // Every country code in DataImpulse's documentation is lowercase, and the rest of this app writes them the
-        // way Oxylabs wants them, in capitals. Whichever way it's written in .env, DataImpulse gets lowercase.
+        // DataImpulse's documentation writes country codes in lowercase. Oxylabs takes capitals, so .env may have
+        // either.
         $config->set('services.dataimpulse.residential.country', 'DE');
 
         $url = $this->app->make(DataImpulseResidentialProxyConfig::class)->getUrlForDownload();
@@ -70,8 +68,8 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
 
             $url = $this->app->make(DataImpulseResidentialProxyConfig::class)->getUrlForDownload();
 
-            // "cr." with nothing after it is a parameter with no value, which DataImpulse refuses. Saying nothing
-            // lets them pick the exit country themselves, which is a working download rather than a 503.
+            // DataImpulse refuses "cr." with no value, and the download fails with a 503. With the parameter omitted,
+            // DataImpulse chooses the exit country.
             $this->assertStringNotContainsString('cr.', $url, "Sent an empty country for: $name");
 
             $this->assertStringStartsWith('http://someuser__sessid.', $url, "Wrong username for: $name");
@@ -88,8 +86,7 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
             ->map(fn () => $config->getUrlForDownload())
             ->map(fn (string $url) => preg_match('/%3Bsessid\.(\w+)%3B/', $url, $m) ? $m[1] : null);
 
-        // Downloading everything from one address is what gets us blocked, so consecutive downloads must ask for
-        // different ones.
+        // Downloading everything from one address gets that address blocked, so each download requests a new one.
         $this->assertCount(5, $sessions->unique(), 'Two downloads were given the same session, and so the same IP.');
     }
 
@@ -101,14 +98,14 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
         $config->set('services.dataimpulse.residential.user', 'someuser');
         $config->set('services.dataimpulse.residential.country', 'us');
 
-        // DataImpulse generates passwords, and they routinely contain characters that mean something inside a URL.
+        // DataImpulse generates the passwords, and they often contain characters reserved in URLs.
         $config->set('services.dataimpulse.residential.password', 'pa+ss:word@example');
 
         $url = $this->app->make(DataImpulseResidentialProxyConfig::class)->getUrlForDownload();
 
         $this->assertStringContainsString('pa%2Bss%3Aword%40example', $url);
 
-        // The host has to survive an @ in the password.
+        // An unescaped @ in the password would change the host.
         $this->assertStringEndsWith('@gw.dataimpulse.com:823', $url);
     }
 
@@ -123,8 +120,7 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
             'no password'    => ['someuser', null, false],
             'no user'        => [null, 'somepassword', false],
             'neither'        => [null, null, false],
-            // An account that was half-filled-in is not an account. Empty strings are what a .env with bare
-            // "DATAIMPULSE_USERNAME=" produces, which is likelier than the key being absent altogether.
+            // A bare "DATAIMPULSE_USERNAME=" in .env produces an empty string, which is more likely than a missing key.
             'empty strings'  => ['', '', false],
             'empty password' => ['someuser', '', false],
         ];
@@ -145,8 +141,8 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
         $config->set('services.dataimpulse.residential.user', null);
         $config->set('services.dataimpulse.residential.password', null);
 
-        // Better than a TypeError from somewhere inside the username, which reads like a bug in this class rather
-        // than a machine that never had a DataImpulse account.
+        // The message names the missing env variable. A TypeError from building the username would look like a bug
+        // in this class.
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('DATAIMPULSE_USERNAME');
 
@@ -156,8 +152,7 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
     #[Test]
     public function it_leaves_tls_alone()
     {
-        // DataImpulse tunnels with CONNECT, so we can still verify YouTube's certificate and shouldn't be turning
-        // that check off.
+        // DataImpulse tunnels with CONNECT, so YouTube's certificate can still be verified.
         $this->assertFalse($this->makeConfig()->requiresInsecureTls());
     }
 }

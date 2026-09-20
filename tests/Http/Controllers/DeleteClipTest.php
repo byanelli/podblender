@@ -36,7 +36,6 @@ class DeleteClipTest extends TestCase
         $this->actingAs($user)->delete("/feeds/{$feed->id}/clips/{$clip->id}");
 
         $this->assertEquals(0, $feed->audioClips()->count());
-        // The clip itself is only detached, never deleted.
         $this->assertModelExists($clip);
     }
 
@@ -57,9 +56,8 @@ class DeleteClipTest extends TestCase
 
         $this->actingAs($user)->delete("/feeds/{$feed->id}/clips/{$clip->id}");
 
-        // Removing a clip from a feed detaches it and nothing more: the clip
-        // record stays, and so do its audio and its artwork, because the same
-        // clip may still be on another feed — or be added back to this one.
+        // The files are kept because the clip may be on another feed, or be
+        // added back to this one.
         $storage->assertExists($clip->storage_path);
         $storage->assertExists($clip->thumbnail_path);
     }

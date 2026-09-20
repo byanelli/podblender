@@ -39,7 +39,6 @@ class AddClipToFeedTest extends TestCase
             ),
         );
 
-        // We don't want to run the DownloadAndStore job
         Bus::fake();
 
         $user = User::factory()->create();
@@ -99,7 +98,6 @@ class AddClipToFeedTest extends TestCase
     {
         $this->travelTo($now = CarbonImmutable::parse('2026-01-02 03:04:05'));
 
-        // A talk from years ago, of the sort someone finds and adds to a feed by hand.
         $publishedAt = CarbonImmutable::parse('2023-05-06 07:08:09');
 
         $this->fakePlatform(
@@ -126,11 +124,9 @@ class AddClipToFeedTest extends TestCase
         /** @var AudioClip $clip */
         $clip = $feed->audioClips()->first();
 
-        // The clip keeps the date the platform published it...
         $this->assertEquals($publishedAt, $clip->published_at);
 
-        // ...but this feed presents it as new, so that it arrives at the top of a podcast app rather than three years
-        // down the listing where nobody would ever come across it.
+        // The pivot date is now, so a podcast app lists the clip first instead of under its 2023 date.
         $this->assertEquals($now, $clip->pivot->published_at);
     }
 
@@ -161,15 +157,13 @@ class AddClipToFeedTest extends TestCase
             'processing_state' => ClipProcessingState::Processed,
         ]);
 
-        // Add the same clip to the same feed twice, as an impatient user double-submitting the form would.
+        // Added twice, as when a user submits the form twice.
         $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $url]);
         $this->actingAs($user)->postJson("api/feeds/$feed->id/add", ['url' => $url]);
 
-        // A single pivot row: the second add is a no-op, not a duplicate.
         $this->assertEquals(1, $feed->audioClips()->count());
         $this->assertDatabaseCount('audio_clip_feed', 1);
 
-        // And so a single item in the RSS.
         $response = $this->get("rss/{$feed->uuid}")->content();
         $this->assertEquals(1, substr_count($response, "<guid isPermaLink=\"false\">{$clip->guid}</guid>"));
     }

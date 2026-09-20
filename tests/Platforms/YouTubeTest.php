@@ -38,8 +38,7 @@ class YouTubeTest extends TestCase
     public function it_lists_a_channels_clips_through_its_uploads_playlist()
     {
         // search.list stops paging after ~500 results, so a channel is listed
-        // through its uploads playlist instead — the "UC" id with a "UU"
-        // prefix. Getting this wrong silently truncates a large channel.
+        // through its uploads playlist: the "UC" id with a "UU" prefix.
         $this->fakeYouTubeData(
             channelMetadata: new ChannelMetadata(id: 'UCabc123', name: 'Some Channel'),
             playlistVideos: [
@@ -83,8 +82,8 @@ class YouTubeTest extends TestCase
     #[Test]
     public function it_credits_each_clip_to_the_channel_that_uploaded_it()
     {
-        // A playlist can collect videos from several channels, so the source of
-        // a clip is its own uploader — not whoever owns the playlist.
+        // A playlist can include videos from several channels, so a clip's
+        // source is its uploader, not the playlist's owner.
         $this->fakeYouTubeData(playlistVideos: [
             $this->video('v1', 'By Alice', now()->subDay(), 'UCalice', 'Alice'),
             $this->video('v2', 'By Bob', now()->subDays(2), 'UCbob', 'Bob'),
@@ -124,8 +123,7 @@ class YouTubeTest extends TestCase
         $this->assertEquals(AudioSourceType::Playlist, $metadata->type);
         $this->assertEquals(42, $metadata->clipCount);
 
-        // The playlist is named for what it collects, so the channel that owns
-        // it is who the feed gets credited to.
+        // The author is the channel that owns the playlist.
         $this->assertEquals('Lecture Channel', $metadata->authorName);
     }
 
@@ -147,8 +145,7 @@ class YouTubeTest extends TestCase
         $this->assertEquals(AudioSourceType::Channel, $metadata->type);
         $this->assertEquals(864, $metadata->clipCount);
 
-        // A channel is its own author, so authorName repeats its name rather
-        // than being left empty for a caller to work around.
+        // A channel is its own author, so authorName repeats its name.
         $this->assertEquals('Some Channel', $metadata->authorName);
     }
 
@@ -174,9 +171,8 @@ class YouTubeTest extends TestCase
     #[Test]
     public function it_says_so_when_a_playlist_does_not_exist()
     {
-        // YouTube answers a wrong, private, or deleted id with an empty list and
-        // a 200, so without handling this the user is told about an undefined
-        // array key rather than about their link.
+        // YouTube responds to a wrong, private, or deleted id with a 200 and an
+        // empty list.
         Http::fake(['*' => Http::response(['items' => []])]);
 
         $this->expectException(PlatformException::class);
@@ -339,7 +335,7 @@ class YouTubeTest extends TestCase
 
         $content = 'mp3 content';
 
-        // Matches the download yt-dlp runs when it goes straight to YouTube, rather than by way of a proxy.
+        // Matches yt-dlp's direct download command, which has no proxy argument.
         Process::fake(["*'--extract-audio' '*' '--audio-format=mp3' '--audio-quality=2' '-o' '*' '$url'" => function (PendingProcess $process) use ($content) {
             $file = collect($process->command)->first(fn ($s) => Str::endsWith($s, '.mp3'));
 

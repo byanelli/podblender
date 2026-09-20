@@ -48,8 +48,8 @@ class AudioClipTest extends TestCase
     #[Test]
     public function its_audio_url_is_populated_when_preview_is_disabled()
     {
-        // The RSS enclosure needs a URL whether or not the browser can play
-        // the file back, so audio_url ignores the preview setting entirely.
+        // The RSS enclosure needs a URL even when browser preview is off, so
+        // audio_url ignores the preview setting.
         Config::set('audio-preview.enabled', false);
 
         $clip = $this->clip();
@@ -112,9 +112,8 @@ class AudioClipTest extends TestCase
     #[Test]
     public function its_thumbnail_url_is_null_when_it_has_no_thumbnail()
     {
-        // Plenty of clips have none — a platform that offered no artwork, or a
-        // download that never succeeded — and both the feed page and the RSS
-        // item leave the picture out rather than substitute one.
+        // A clip has no thumbnail when the platform offered none or the
+        // download failed. The feed page and the RSS item then omit the image.
         $this->assertNull($this->clip()->thumbnail_url);
     }
 
@@ -131,8 +130,8 @@ class AudioClipTest extends TestCase
     }
 
     /**
-     * Point the default disk at a public S3-compatible bucket, as production
-     * does: a configured "url" means Storage::url() returns that public URL.
+     * Point the default disk at a public S3-compatible bucket, as in
+     * production. With "url" configured, Storage::url() returns the public URL.
      */
     private function useS3Disk(): void
     {

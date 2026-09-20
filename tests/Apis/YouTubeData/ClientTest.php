@@ -13,10 +13,9 @@ use Tests\TestCase;
 class ClientTest extends TestCase
 {
     /**
-     * The snippet.thumbnails map the API returns for a video, keyed by size
-     * name. Which sizes are present varies from video to video — maxres is only
-     * there when the uploader supplied a big enough image — so a test can ask
-     * for a subset of them.
+     * A snippet.thumbnails map as the API returns it, keyed by size name. Real
+     * videos don't all have every size (maxres requires a large enough upload),
+     * so $sizes selects which to include.
      *
      * @param  array<int, string>  $sizes
      * @return array<string, array<string, mixed>>
@@ -80,8 +79,8 @@ class ClientTest extends TestCase
     #[Test]
     public function it_takes_the_largest_thumbnail_the_api_listed()
     {
-        // Plenty of videos have no maxres image, so asking for one size by name
-        // would leave those with nothing. Take the widest of whatever is there.
+        // Many videos have no maxres image, so the client takes the widest size
+        // listed.
         Http::fake(['*' => Http::response([
             'items' => [
                 [
@@ -241,10 +240,10 @@ class ClientTest extends TestCase
     }
 
     /**
-     * One page of playlistItems. The two date/channel fields here are the ones
-     * that matter: contentDetails.videoPublishedAt (when the video went up) is
-     * NOT snippet.publishedAt (when it was added to the playlist), and
-     * videoOwnerChannel* is the uploader rather than the playlist's owner.
+     * One page of playlistItems. contentDetails.videoPublishedAt is when the
+     * video was published; snippet.publishedAt is when it was added to the
+     * playlist. videoOwnerChannel* is the uploader; channel* is the playlist's
+     * owner.
      *
      * @param  array<int, array{id: string, title: string, videoPublishedAt: string, addedAt?: string, ownerId?: string, ownerTitle?: string}>  $videos
      * @return array<string, mixed>
@@ -280,8 +279,8 @@ class ClientTest extends TestCase
                 'id'               => 'v1',
                 'title'            => 'An old talk',
                 'videoPublishedAt' => '2019-03-04T10:00:00Z',
-                // Added to the playlist years later. Dating the clip by this
-                // would push an old video to the top of a podcast app.
+                // Dating the clip by this would list an old video as new in a
+                // podcast app.
                 'addedAt'          => '2026-01-01T00:00:00Z',
             ],
         ]))]);
@@ -320,9 +319,7 @@ class ClientTest extends TestCase
     #[Test]
     public function it_reads_a_playlist_videos_thumbnail()
     {
-        // A playlist item carries the video's own thumbnails, and this fixture
-        // has no maxres — as most real ones don't — so the biggest listed size
-        // is what should come back.
+        // The fixture lists default and high only, so high is the largest.
         Http::fake(['*' => Http::response($this->playlistItemsPage([
             ['id' => 'v1', 'title' => 'A talk', 'videoPublishedAt' => '2024-05-05T10:00:00Z'],
         ]))]);
@@ -338,10 +335,9 @@ class ClientTest extends TestCase
     #[Test]
     public function it_stops_paging_a_playlist_once_it_passes_the_cutoff()
     {
-        // playlistItems has no server-side date filter — it accepts
-        // publishedAfter and ignores it — so the cutoff is applied while
-        // paging. Items come back newest-first, so the first one older than the
-        // cutoff means every later page is older too.
+        // playlistItems accepts publishedAfter but ignores it, so the client
+        // applies the cutoff while paging. Items are newest first, so every
+        // item after the first one past the cutoff is older too.
         Http::fakeSequence()
             ->push($this->playlistItemsPage([
                 ['id' => 'v1', 'title' => 'Recent', 'videoPublishedAt' => '2026-06-01T00:00:00Z'],
@@ -359,16 +355,15 @@ class ClientTest extends TestCase
         $this->assertCount(1, $videos);
         $this->assertEquals('Recent', $videos[0]->title);
 
-        // The second page was never requested: paging stopped at the first
-        // item past the cutoff.
+        // The second page was not requested.
         Http::assertSentCount(1);
     }
 
     #[Test]
     public function it_skips_playlist_items_for_deleted_or_private_videos()
     {
-        // A removed video keeps its slot in the playlist but loses its
-        // publication date, and there's nothing to download.
+        // A deleted or private video stays in the playlist, but the API omits
+        // its videoPublishedAt.
         Http::fake(['*' => Http::response([
             'items' => [
                 [
@@ -459,8 +454,7 @@ class ClientTest extends TestCase
 
         $this->assertEquals('Select Lectures', $playlist->title);
         $this->assertEquals(42, $playlist->itemCount);
-        // The owning channel is who the feed is "by": a playlist title is a
-        // collection name, not an author.
+        // The owning channel is used as the feed's author.
         $this->assertEquals('Lecture Channel', $playlist->channel->name);
     }
 
@@ -541,9 +535,6 @@ class ClientTest extends TestCase
                 'nextPageToken' => null,
             ]),
         ]);
-
-        /*
-RuntimeException: Attempted request to [https://www.googleapis.com/youtube/v3/search?maxResults=50&type=video&part=snippet&order=date&channelId=wlifjlwjf&publishedAfter=2024-12-26T17%3A57%3A59%2B00%3A00&key=REDACTED*/
 
         /** @var Client $client */
         $client = $this->app->make(Client::class);

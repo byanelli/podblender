@@ -44,8 +44,9 @@ class ReaderTest extends TestCase
     }
 
     /**
-     * Fake both hops: a non-Scrapfly host gets $direct; Scrapfly's listing hop
-     * gets the fixture listing, and its snapshot hop gets $snapshot.
+     * Fake the direct fetch and both Scrapfly requests. Any non-Scrapfly host
+     * returns $direct, the listing request returns the fixture listing, and
+     * the snapshot request returns $snapshot.
      */
     private function fake(string $direct, string $snapshot): void
     {
@@ -65,9 +66,9 @@ class ReaderTest extends TestCase
     }
 
     /**
-     * Fake all three tiers at once. $wayback = null means the availability API
-     * reports NO snapshot; a string is the raw snapshot HTML web.archive.org
-     * serves. Scrapfly's listing/snapshot hops behave as in fake().
+     * Fake all three tiers. A null $wayback means the availability API reports
+     * no snapshot; a string is the snapshot HTML from web.archive.org. Scrapfly
+     * requests behave as in fake().
      */
     private function fakeCascade(string $direct, ?string $wayback, string $archiveSnapshot): void
     {
@@ -132,8 +133,7 @@ class ReaderTest extends TestCase
 
         $this->assertEquals('A Complete, Freely Readable Article', $article->title);
 
-        // A clean direct page settles on the free tier: neither the free Wayback
-        // tier nor the paid Scrapfly/archive.is tier is touched.
+        // Neither Wayback nor the paid Scrapfly/archive.is tier is requested.
         Http::assertNotSent(fn (Request $request) => str_starts_with($request->url(), 'https://web.archive.org/')
             || str_starts_with($request->url(), 'https://archive.org/wayback/')
             || str_starts_with($request->url(), 'https://api.scrapfly.io'));
@@ -142,7 +142,7 @@ class ReaderTest extends TestCase
     #[Test]
     public function it_uses_the_free_wayback_tier_when_direct_is_gated_and_never_spends_scrapfly_credits()
     {
-        // Direct is gated, but Wayback has the full, un-paywalled capture.
+        // The direct page is gated and Wayback has the full article.
         $this->fakeCascade(
             direct: $this->gatedHtml(),
             wayback: $this->cleanHtml(),
@@ -153,8 +153,7 @@ class ReaderTest extends TestCase
 
         $this->assertEquals('A Complete, Freely Readable Article', $article->title);
 
-        // The credit-saving path: Wayback answered, so archive.is/Scrapfly is
-        // never called.
+        // Scrapfly requests cost credits, so none is sent once Wayback succeeds.
         $this->assertWaybackSnapshotFetched();
         $this->assertScrapflyNotSent();
     }
@@ -162,7 +161,7 @@ class ReaderTest extends TestCase
     #[Test]
     public function it_falls_through_wayback_to_the_archive_when_the_wayback_snapshot_is_also_gated()
     {
-        // Wayback's crawler hit the same paywall: its snapshot is a teaser too.
+        // Wayback's crawler was served the paywall too, so its snapshot is gated.
         $this->fakeCascade(
             direct: $this->gatedHtml(),
             wayback: $this->gatedHtml(),
@@ -171,7 +170,7 @@ class ReaderTest extends TestCase
 
         $article = $this->reader()->read('https://theonion.com/some-article');
 
-        // The clean archive.is article, not the gated Wayback teaser.
+        // This title comes from the archive.is snapshot.
         $this->assertEquals('A Complete, Freely Readable Article', $article->title);
 
         $this->assertWaybackSnapshotFetched();
@@ -181,7 +180,7 @@ class ReaderTest extends TestCase
     #[Test]
     public function it_falls_through_to_the_archive_when_wayback_has_no_snapshot()
     {
-        // Many gated outlets block the Wayback crawler, so there is no capture.
+        // Many gated outlets block the Wayback crawler, so no snapshot exists.
         $this->fakeCascade(
             direct: $this->gatedHtml(),
             wayback: null,
@@ -192,7 +191,7 @@ class ReaderTest extends TestCase
 
         $this->assertEquals('A Complete, Freely Readable Article', $article->title);
 
-        // Availability was consulted, no snapshot was fetched, archive.is closed it.
+        // The availability API was queried, but no Wayback snapshot was fetched.
         Http::assertSent(fn (Request $request) => str_starts_with($request->url(), 'https://archive.org/wayback/available'));
         Http::assertNotSent(fn (Request $request) => str_starts_with($request->url(), 'https://web.archive.org/web/'));
         $this->assertScrapflySent();
@@ -201,8 +200,7 @@ class ReaderTest extends TestCase
     #[Test]
     public function it_skips_the_direct_fetch_for_a_hard_paywall_domain_and_cascades_wayback_then_archive()
     {
-        // NYT blocks the Wayback crawler, so the free tiers miss and archive.is
-        // closes it — all without ever attempting the doomed direct fetch.
+        // NYT blocks the Wayback crawler, so only archive.is has the article.
         $this->fakeCascade(
             direct: $this->gatedHtml(),
             wayback: null,
@@ -213,10 +211,9 @@ class ReaderTest extends TestCase
 
         $this->assertEquals('A Complete, Freely Readable Article', $article->title);
 
-        // No direct fetch for the hard-paywall host.
         Http::assertNotSent(fn (Request $request) => $request->url() === 'https://nytimes.com/some-article');
 
-        // Wayback (free) is still tried first — on the www-preserved canonical URL.
+        // Wayback is still tried before archive.is, with the URL that keeps "www.".
         Http::assertSent(function (Request $request) {
             $query = [];
             parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
@@ -237,11 +234,10 @@ class ReaderTest extends TestCase
 
         $this->assertEquals('A Complete, Freely Readable Article', $article->title);
 
-        // The doomed direct fetch is skipped entirely.
         Http::assertNotSent(fn (Request $request) => $request->url() === 'https://nytimes.com/some-article');
 
-        // The archive lookup uses the www-PRESERVED canonical URL, because that
-        // is how archive.is indexes the New York Times.
+        // archive.is indexes the New York Times under www.nytimes.com, so the
+        // lookup keeps "www.".
         Http::assertSent(function (Request $request) {
             $query = [];
             parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
@@ -261,7 +257,6 @@ class ReaderTest extends TestCase
 
         $this->assertEquals($first->title, $second->title);
 
-        // One fetch total: the second read comes from cache.
         Http::assertSentCount(1);
     }
 }

@@ -26,7 +26,7 @@ class RetryClipTest extends TestCase
     }
 
     /**
-     * The job keeps its clip private, so read it back to check the retry queued a download for the right one.
+     * The job's clip property is private, so it is read by reflection.
      */
     private function clipOf(DownloadAndStoreAudioClip $job): AudioClip
     {
@@ -47,7 +47,7 @@ class RetryClipTest extends TestCase
             ->post("/feeds/{$feed->id}/clips/{$clip->id}/retry")
             ->assertSuccessful();
 
-        // The clip is in flight again, so the feed page shows it as processing and the RSS keeps leaving it out.
+        // While Processing, the feed page shows the clip as processing and the RSS omits it.
         $this->assertEquals(
             ClipProcessingState::Processing,
             $clip->fresh()->processing_state
@@ -74,8 +74,7 @@ class RetryClipTest extends TestCase
         $clip = $this->clip($state);
         $feed->audioClips()->attach($clip);
 
-        // Unavailable in particular is the platform telling us the content is gone for good, so trying again would
-        // only fail again. Processing and Processed aren't failures at all.
+        // Unavailable means the platform reported the content as permanently gone, so a retry would fail again.
         $this->actingAs($user)
             ->post("/feeds/{$feed->id}/clips/{$clip->id}/retry")
             ->assertStatus(Response::HTTP_CONFLICT);

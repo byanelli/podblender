@@ -12,9 +12,8 @@ use Tests\TestCase;
 trait FakesCoverGenerator
 {
     /**
-     * Stand in for the real generator, which spends most of a tenth of a second
-     * drawing an image no test looks at. Tests that care what a cover looks
-     * like exercise GdCoverGenerator directly.
+     * Replaces the real generator, which takes nearly 0.1s per image. Tests of
+     * the image itself use GdCoverGenerator directly.
      */
     protected function fakeCoverGenerator(): void
     {
@@ -22,8 +21,8 @@ trait FakesCoverGenerator
         {
             public function generate(string $title, int $variant): string
             {
-                // The real generator hands back a file the caller has to store
-                // and then delete, so this one does too.
+                // Like the real generator, returns a file the caller must
+                // store and then delete.
                 $path = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.jpg';
 
                 file_put_contents($path, "a pretend cover for \"{$title}\", variant {$variant}");
@@ -34,7 +33,7 @@ trait FakesCoverGenerator
     }
 
     /**
-     * A generator that can't draw anything, for checking that a feed is still
+     * A generator that always throws, for checking that a feed is still
      * created when its cover fails.
      */
     protected function fakeCoverGeneratorThatFails(string $message = 'no font'): void

@@ -11,8 +11,8 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * The residential proxy provider is chosen in config, and everything that downloads through a proxy asks the
- * container for the interface rather than for a provider by name. These tests cover that choice.
+ * Config selects the residential proxy provider, and code that downloads through a proxy resolves the
+ * ResidentialProxyConfig interface from the container. These tests cover the binding.
  */
 class ResidentialProxyConfigBindingTest extends TestCase
 {
@@ -47,8 +47,8 @@ class ResidentialProxyConfigBindingTest extends TestCase
         try {
             $this->app->make(ResidentialProxyConfig::class);
         } catch (InvalidArgumentException $e) {
-            // Falling back to the default would leave a typo looking like it worked, and the app using an account
-            // nobody chose. So it fails, naming the bad value and the ones that would have worked.
+            // Falling back to the default would hide a typo and use an account nobody chose. The message names the
+            // bad value and the valid ones.
             $this->assertStringContainsString('dataimpluse', $e->getMessage());
             $this->assertStringContainsString('oxylabs', $e->getMessage());
             $this->assertStringContainsString('dataimpulse', $e->getMessage());

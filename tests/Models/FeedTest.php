@@ -31,8 +31,7 @@ class FeedTest extends TestCase
             'processing_state' => ClipProcessingState::Processing,
         ]);
 
-        // Attach the older clip with the more recent pivot date reversed from insert order, to prove the ordering
-        // comes from the pivot's published_at and not the order the rows were inserted.
+        // Attached oldest pivot date first, so returning rows in insert order would fail the ordering assertion.
         $feed->audioClips()->attach($older, [
             'published_at' => CarbonImmutable::parse('2026-01-01 00:00:00'),
         ]);
@@ -45,7 +44,7 @@ class FeedTest extends TestCase
 
         $finished = $feed->audioClipsFinishedProcessing()->get();
 
-        // The still-processing clip is filtered out even though its pivot date is the most recent.
+        // The processing clip is excluded even though its pivot date is the most recent.
         $this->assertCount(2, $finished);
         $this->assertEquals([$newer->id, $older->id], $finished->pluck('id')->all());
     }

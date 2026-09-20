@@ -12,9 +12,8 @@ use Tests\TestCase;
 trait FakesTts
 {
     /**
-     * Bind a stand-in TTS backend. Returns the narration time it reports, so a
-     * test asserting on a download estimate has a number to expect without
-     * duplicating it.
+     * Bind a fake TTS backend. Returns the narration time it reports, for
+     * tests that assert on a download estimate.
      */
     protected function fakeTts(?string $mp3 = null, int $narrationSeconds = 480): int
     {

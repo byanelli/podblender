@@ -48,8 +48,7 @@ class GdCoverGeneratorTest extends TestCase
     #[Test]
     public function it_draws_a_square_rgb_jpeg_for_a_single_very_long_word()
     {
-        // No space to wrap at, so the word has to be broken across lines
-        // rather than shrunk until nobody can read it.
+        // With no space to wrap at, the word is broken across lines.
         $this->assertIsAppleSizedJpeg($this->generate(
             'Donaudampfschifffahrtsgesellschaftskapitän', 3
         ));
@@ -64,8 +63,7 @@ class GdCoverGeneratorTest extends TestCase
     #[Test]
     public function it_draws_a_square_rgb_jpeg_for_a_title_with_emoji()
     {
-        // GD can't draw colour emoji, so they're dropped. What matters is that
-        // the words around them still come out and nothing blows up.
+        // GD can't draw colour emoji, so they're dropped.
         $this->assertIsAppleSizedJpeg($this->generate('🎧 Deep Work 🚀', 0));
     }
 
@@ -78,8 +76,8 @@ class GdCoverGeneratorTest extends TestCase
     #[Test]
     public function an_empty_title_leaves_the_background_alone()
     {
-        // No white anywhere means no letters were drawn: the gradients never
-        // reach white, so the only white on a cover is its title.
+        // The gradients never reach white, so the only white on a cover is its
+        // title.
         $this->assertSame(0, $this->whitePixels($this->generate('   ', 0)));
         $this->assertGreaterThan(0, $this->whitePixels($this->generate('Lectures', 0)));
     }
@@ -93,8 +91,8 @@ class GdCoverGeneratorTest extends TestCase
     #[Test]
     public function the_same_variant_always_gives_the_same_gradient()
     {
-        // The corner is background whatever the title is, so it stands for the
-        // gradient the feed was given.
+        // The corner is background for any title, so its colour identifies the
+        // gradient.
         $this->assertSame(
             $this->corner($this->generate('Lectures', 7)),
             $this->corner($this->generate('Adam Tooze', 7)),
@@ -116,8 +114,8 @@ class GdCoverGeneratorTest extends TestCase
     #[Test]
     public function the_variant_wraps_round_so_any_feed_id_picks_a_gradient()
     {
-        // Feed ids climb past the number of gradients, and nothing stops a
-        // caller passing something odd.
+        // Feed ids exceed the number of gradients, and a caller may pass a
+        // negative number.
         $this->assertSame(
             $this->corner($this->generate('Lectures', 2)),
             $this->corner($this->generate('Lectures', 7)),
@@ -135,7 +133,7 @@ class GdCoverGeneratorTest extends TestCase
     }
 
     /**
-     * Apple Podcasts wants square RGB artwork of at least 1400 pixels, as a
+     * Apple Podcasts requires square RGB artwork of at least 1400 pixels, as a
      * JPEG or a PNG. getimagesize() reports three channels for an RGB JPEG and
      * four for a CMYK one.
      */
@@ -152,7 +150,7 @@ class GdCoverGeneratorTest extends TestCase
     }
 
     /**
-     * How many of the sampled pixels are white, which on a cover means they're
+     * The number of sampled pixels that are white. On a cover, a white pixel is
      * part of a letter.
      */
     private function whitePixels(string $path): int

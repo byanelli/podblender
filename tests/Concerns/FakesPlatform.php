@@ -16,10 +16,9 @@ use Tests\TestCase;
 trait FakesPlatform
 {
     /**
-     * The publication time the subscription sync last asked the platform for.
-     * This is the fetch cursor, and getting it wrong is expensive but invisible
-     * — too far back re-fetches history on every sweep, too recent silently
-     * skips clips — so tests assert on it directly.
+     * The publication time last passed to the platform: the fetch cursor. A
+     * cursor too far back re-fetches history on every sweep, and one too recent
+     * skips clips without an error, so tests assert on it directly.
      */
     private ?\DateTimeInterface $platformPublicationTimeRequested = null;
 
@@ -59,7 +58,6 @@ trait FakesPlatform
 
             public function downloadAudio(string $clipUrl): string
             {
-                // Let a test make the download itself fail, to exercise the job's error handling.
                 if ($this->downloadError !== null) {
                     throw $this->downloadError;
                 }
@@ -85,8 +83,8 @@ trait FakesPlatform
             }
         };
 
-        // Bind the fake against every concrete platform so the Platforms service resolves it from the container no
-        // matter which type a URL maps to. It's a SubscribablePlatform so subscribableFor() accepts it too.
+        // Bound to YouTube and Web so the Platforms service resolves the fake for either URL type. It implements
+        // SubscribablePlatform so subscribableFor() accepts it.
         $this->app->instance(YouTube::class, $platform);
         $this->app->instance(Web::class, $platform);
     }

@@ -45,8 +45,8 @@ class RssTest extends TestCase
         $metadata = $this->rss()->getSourceMetadata('https://riversidegazette.com');
 
         $this->assertEquals('The Riverside Gazette', $metadata->name);
-        // The source's canonical URL is the FEED the page advertised (with the
-        // relative href resolved) — that's what UpdateSubscription will poll.
+        // The canonical URL is the feed the page advertised, with the relative
+        // href resolved. UpdateSubscription polls this URL.
         $this->assertEquals('https://riversidegazette.com/feed.xml', $metadata->canonicalUrl);
     }
 
@@ -74,23 +74,22 @@ class RssTest extends TestCase
             CarbonImmutable::parse('2026-07-01T00:00:00+00:00'),
         );
 
-        // The June item is filtered out by the feed's own dates.
+        // The fixture's June item is before the cutoff.
         $this->assertCount(1, $clips);
 
         $clip = $clips[0];
         $this->assertInstanceOf(ClipMetadata::class, $clip);
         $this->assertEquals('City Council Approves Riverside Park', $clip->title);
-        // The item's HTML description is flattened to plain text.
+        // The fixture's description is HTML.
         $this->assertEquals('The council voted unanimously on Tuesday.', $clip->description);
-        // The item link is canonicalized the same way a hand-pasted article
-        // URL would be (https, no www, no utm_*), so the two paths dedupe.
+        // The link is canonicalized like a pasted article URL (https, no www,
+        // no utm_*), so the same article from either route is one clip.
         $this->assertEquals('https://riversidegazette.com/city-council-approves-riverside-park', $clip->canonicalUrl);
         $this->assertEquals(CarbonImmutable::parse('2026-07-15T09:30:00+00:00'), $clip->publishedAt);
         $this->assertEquals('The Riverside Gazette', $clip->source->name);
         $this->assertEquals('https://riversidegazette.com/feed.xml', $clip->source->canonicalUrl);
 
-        // A fully-dated, fully-titled feed costs exactly one request: the feed
-        // itself. No article page is ever fetched.
+        // One request for the feed. No article page is fetched.
         Http::assertSentCount(1);
     }
 
@@ -122,10 +121,8 @@ class RssTest extends TestCase
             CarbonImmutable::parse('2020-01-01T00:00:00+00:00'),
         );
 
-        // A feed that won't say what an item is called or when it was
-        // published hasn't described an item: the undated and untitled
-        // entries are dropped, and — crucially — their article pages are
-        // never fetched to fill the gaps. One request: the feed itself.
+        // Undated and untitled items are dropped, and their article pages are
+        // not fetched to fill in the missing fields.
         $this->assertCount(1, $clips);
         $this->assertEquals('The One Complete Item', $clips[0]->title);
         $this->assertEquals('https://theopenpress.com/complete-item', $clips[0]->canonicalUrl);

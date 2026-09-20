@@ -48,7 +48,6 @@ class VerifyEmailControllerTest extends TestCase
 
         $response = $this->actingAs($user)->get($verificationUrl);
 
-        // No second Verified event fires for an address that was already verified.
         Event::assertNotDispatched(Verified::class);
         $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
     }

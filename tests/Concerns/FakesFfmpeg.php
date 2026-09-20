@@ -29,9 +29,8 @@ trait FakesFfmpeg
 
             public function imageToSquareJpeg(string $inputPath, int $maxSide = 1400): string
             {
-                // Pretend crop: the real method returns a distinct file, and
-                // what the caller does with those bytes is what a test cares
-                // about, so hand back a copy under a .jpg path.
+                // Like the real method, returns a new file. It is a copy of the
+                // input under a .jpg path.
                 $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.jpg';
 
                 copy($inputPath, $outputPath);
@@ -41,9 +40,8 @@ trait FakesFfmpeg
 
             public function pcmToMp3(string $pcm, int $sampleRate): string
             {
-                // Pretend transcode: copy the bytes to a fresh .mp3 path (the
-                // real method returns a distinct file), so a convertTextToSpeech
-                // round-trip reassembles the original text.
+                // Copies the bytes to a new .mp3 path, so a convertTextToSpeech
+                // round trip reassembles the original text.
                 $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
 
                 copy($pcm, $outputPath);

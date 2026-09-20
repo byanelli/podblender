@@ -38,7 +38,7 @@ class ClientTest extends TestCase
                 'url'         => 'https://archive.is/CLBwm',
                 'status_code' => 200,
                 'success'     => true,
-                // Cost is an OBJECT, not a scalar — the client must not choke on it.
+                // Scrapfly returns cost as an object, and the client must accept that.
                 'cost'        => ['total' => 30, 'details' => [['amount' => 30]]],
             ],
             'context' => ['cost' => ['total' => 30]],
@@ -141,8 +141,8 @@ class ClientTest extends TestCase
     #[Test]
     public function it_keeps_the_api_key_out_of_a_thrown_exception_message()
     {
-        // A ConnectionException message would echo the full request URL, key and
-        // all. The sanitized ScrapflyException must never carry it.
+        // A ConnectionException message includes the full request URL, which
+        // contains the API key.
         Http::fake(fn () => throw new ConnectionException(
             'cURL error 56 for https://api.scrapfly.io/scrape?key='.self::KEY.'&url=x'
         ));

@@ -13,8 +13,9 @@ class GeminiClientTest extends TestCase
     use FakesFfmpeg;
 
     /**
-     * Build a streamed (server-sent event) body whose audio deltas carry the
-     * given PCM bytes, so the fake ffmpeg hands the narration straight back.
+     * Build a server-sent event body with $pcm as its audio delta. The tests
+     * pass the input text as $pcm, so with the fake ffmpeg the returned
+     * narration equals the text sent.
      */
     private function sseBodyFor(string $pcm, int $sampleRate = 24000): string
     {
@@ -36,8 +37,7 @@ class GeminiClientTest extends TestCase
     #[Test]
     public function it_converts_text_to_speech()
     {
-        // Short, single-segment input — segmentation itself is covered
-        // separately by SegmentsTextTest.
+        // A single segment. SegmentsTextTest covers segmentation.
         $text = 'Have a wonderful day!';
 
         config()->set('services.gemini.api_key', 'test-key');
@@ -91,8 +91,7 @@ class GeminiClientTest extends TestCase
     #[Test]
     public function it_splits_long_text_into_word_boundary_segments()
     {
-        // 500 three-to-four-character words cross the 1500-char segment budget
-        // into multiple segments; none may be dropped or split.
+        // About 2,400 characters, which exceeds the 1500-char segment budget.
         $text = collect(range(1, 500))->map(fn ($i) => "w$i")->implode(' ');
 
         config()->set('services.gemini.api_key', 'test-key');
@@ -112,7 +111,7 @@ class GeminiClientTest extends TestCase
         $this->assertGreaterThan(1, $sentInputs->count());
         $sentInputs->each(fn (string $input) => $this->assertLessThanOrEqual(1500, strlen($input)));
 
-        // Every word survives, in order, exactly once.
+        // Every word is sent once, in order, and none is split.
         $this->assertEquals(
             preg_split('/\s+/', $text),
             preg_split('/\s+/', $sentInputs->implode(' '))
@@ -122,10 +121,8 @@ class GeminiClientTest extends TestCase
     #[Test]
     public function it_reassembles_segments_in_order_across_pools()
     {
-        // Enough distinct words to fill several 1500-char segments, so the
-        // narration spans more than one concurrent pool. Pooled responses can
-        // settle in any order, so this is what guards against the audio being
-        // stitched back together shuffled.
+        // Enough distinct words to need more than one pool of concurrent
+        // requests. Pooled responses can complete in any order.
         $text = collect(range(1, 2000))->map(fn (int $i) => "word$i")->implode(' ');
 
         config()->set('services.gemini.api_key', 'test-key');
@@ -140,18 +137,16 @@ class GeminiClientTest extends TestCase
 
         $narrated = app(GeminiClient::class)->convertTextToSpeech($text);
 
-        // The fake ffmpeg concatenates segment audio in the order it's handed
-        // them, so the round trip reproduces the original text only if the
-        // pooled responses were reassembled in the order they were sent.
-        // Compare ignoring whitespace: the space that joined two segments
-        // belongs to neither, so it's absent from the concatenation.
+        // The fake ffmpeg concatenates segments in the order given, so the
+        // output equals the input only if the responses were reassembled in
+        // request order. Whitespace is ignored because the space between two
+        // segments is in neither.
         $this->assertEquals(
             preg_replace('/\s+/', '', $text),
             preg_replace('/\s+/', '', $narrated),
         );
 
-        // Guard the premise: this only tests ordering if there was more than
-        // one pool's worth of segments.
+        // A pool is 3 requests, so more than 3 means more than one pool ran.
         $this->assertGreaterThan(3, Http::recorded()->count());
     }
 
@@ -162,9 +157,8 @@ class GeminiClientTest extends TestCase
 
         config()->set('services.gemini.api_key', 'test-key');
 
-        // One particular segment always fails, however many times it's retried;
-        // the whole narration should fail rather than quietly returning audio
-        // with a hole in it.
+        // One segment fails on every attempt. The narration must fail, because
+        // succeeding would return audio with that segment missing.
         Http::fake([
             'generativelanguage.googleapis.com/*' => function ($request) {
                 return str_contains((string) $request['input'], 'word2 ')

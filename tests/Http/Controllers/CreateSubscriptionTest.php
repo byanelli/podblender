@@ -23,8 +23,8 @@ class CreateSubscriptionTest extends TestCase
     {
         parent::setUp();
 
-        // Every feed gets a cover drawn as it is created, and no test here
-        // looks at the picture, so nothing has to be drawn for real.
+        // Creating a feed draws a cover. No test here inspects the image, so
+        // the generator is faked.
         Storage::fake();
         $this->fakeCoverGenerator();
     }
@@ -72,7 +72,6 @@ class CreateSubscriptionTest extends TestCase
 
     public function test_backfill_window_is_configurable()
     {
-        // The window a new subscription reaches back over is config-driven, not the hardcoded one month it used to be.
         config(['subscriptions.backfill_months' => 3]);
 
         $this->travelTo($now = CarbonImmutable::parse('2026-05-06 07:08:09'));
@@ -96,11 +95,9 @@ class CreateSubscriptionTest extends TestCase
         /** @var Feed $feed */
         $feed = Feed::first();
 
-        // Three months back from now, per the config override.
         $this->assertEquals($now->subMonths(3), $feed->backfill_since);
 
-        // ...and the subscription date records when they actually subscribed. These used to be the same column, so
-        // the recorded subscription date was silently a backfill window and no screen could show the real one.
+        // The subscription date is separate from the backfill window.
         $this->assertEquals($now, $feed->subscribed_at);
     }
 
@@ -121,7 +118,7 @@ class CreateSubscriptionTest extends TestCase
         $this->postJson('/feeds/subscription', [
             'url'           => $sourceUrl,
             'name'          => 'Test Feed',
-            // The epoch is how "everything ever published" is expressed.
+            // The epoch means "everything ever published".
             'backfillSince' => '1970-01-01T00:00:00+00:00',
         ])->assertOk();
 
@@ -156,8 +153,8 @@ class CreateSubscriptionTest extends TestCase
 
         $this->assertFalse($feed->tracks_new_episodes);
 
-        // Not filled yet — that happens when the initial update runs, and until
-        // then the feed still needs its one sweep.
+        // The feed is marked filled when the initial update runs. Until then
+        // it still needs updating.
         $this->assertNull($feed->subscription_filled_at);
         $this->assertTrue($feed->needsUpdating());
     }

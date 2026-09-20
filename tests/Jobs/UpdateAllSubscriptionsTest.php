@@ -40,9 +40,8 @@ class UpdateAllSubscriptionsTest extends TestCase
     {
         Bus::fake();
 
-        // A one-shot subscriber captured this source and has been filled, so
-        // there's nothing left to collect. Sweeping it every couple of hours
-        // would spend platform quota forever on a feed nobody wants updated.
+        // The only subscriber is a filled one-shot. Sweeping the source would
+        // spend platform quota on a feed that takes no new episodes.
         $finished = AudioSource::factory()->create();
         Feed::factory()->create([
             'subscription_id'        => $finished->id,
@@ -60,8 +59,7 @@ class UpdateAllSubscriptionsTest extends TestCase
     {
         Bus::fake();
 
-        // Declining future episodes doesn't mean declining the first fill —
-        // that sweep is what populates the feed in the first place.
+        // A one-shot subscription still needs its first fill.
         $pending = AudioSource::factory()->create();
         Feed::factory()->create([
             'subscription_id'        => $pending->id,
@@ -79,8 +77,8 @@ class UpdateAllSubscriptionsTest extends TestCase
     {
         Bus::fake();
 
-        // Two subscribers to one source disagreeing about future episodes: the
-        // finished one mustn't switch the other one off.
+        // One source with a filled one-shot subscriber and a tracking
+        // subscriber. The source must still be swept for the second.
         $source = AudioSource::factory()->create();
 
         Feed::factory()->create([
@@ -104,7 +102,6 @@ class UpdateAllSubscriptionsTest extends TestCase
     {
         Bus::fake();
 
-        // A source with a subscriber, and one without.
         $subscribed = AudioSource::factory()->create();
         Feed::factory()->create(['subscription_id' => $subscribed->id]);
 

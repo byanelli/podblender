@@ -54,7 +54,7 @@ class AuthenticatedSessionControllerTest extends TestCase
 
         $user = User::factory()->create();
 
-        // Five failures reach the limit; the sixth attempt is rejected before it even checks the password.
+        // The limit is five failures. The sixth attempt is rejected before the password is checked.
         foreach (range(1, 5) as $ignored) {
             $this->post('/login', ['email' => $user->email, 'password' => 'wrong-password']);
         }

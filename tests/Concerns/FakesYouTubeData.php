@@ -68,8 +68,7 @@ trait FakesYouTubeData
             }
 
             /**
-             * Applies the date cutoff the real client applies as it pages, so a
-             * test using this fake sees the same filtering the API path does.
+             * Applies the same date cutoff as the real client.
              */
             public function getAllVideoMetadataForPlaylist(string $playlistId, ?DateTimeInterface $publishedAfter = null): array
             {
