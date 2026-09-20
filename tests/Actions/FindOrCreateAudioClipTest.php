@@ -14,6 +14,7 @@ use App\Models\AudioSource;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\SourceMetadata;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
@@ -209,5 +210,60 @@ class FindOrCreateAudioClipTest extends TestCase
         // An uncaught violation would fail the whole subscription update.
         $this->assertEquals('the winner', $clip->title);
         $this->assertDatabaseCount('audio_clips', 1);
+    }
+
+    #[Test]
+    public function it_rethrows_a_violation_of_another_unique_column()
+    {
+        $metadata = new ClipMetadata(
+            title: 'foo',
+            description: 'zzz',
+            canonicalUrl: 'https://youtube.com/watch?v=new',
+            publishedAt: now()->subDay()->roundSeconds(),
+            source: new SourceMetadata(
+                name: 'bar',
+                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
+                authorName: 'bar',
+            ),
+        );
+
+        Bus::fake();
+
+        // Before the action's insert, add a clip with a different platform_url and the same storage_path, so the
+        // insert violates storage_path's unique index.
+        AudioClip::creating(function (AudioClip $clip) {
+            static $inserted = false;
+            if ($inserted) {
+                return;
+            }
+            $inserted = true;
+
+            DB::table('audio_clips')->insert([
+                'platform_url'     => 'https://youtube.com/watch?v=other',
+                'audio_source_id'  => $clip->audio_source_id,
+                'title'            => 'another clip',
+                'description'      => 'another clip',
+                'published_at'     => now(),
+                'duration'         => 0,
+                'storage_path'     => $clip->storage_path,
+                'guid'             => Uuid::uuid4()->toString(),
+                'processing_state' => ClipProcessingState::Processed->value,
+                'size'             => 0,
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ]);
+        });
+
+        /** @var FindOrCreateAudioClip $createAudioClip */
+        $createAudioClip = $this->app->make(FindOrCreateAudioClip::class);
+
+        try {
+            $createAudioClip->__invoke(PlatformType::YouTube, $metadata);
+            $this->fail('Expected a UniqueConstraintViolationException');
+        } catch (UniqueConstraintViolationException $e) {
+            $this->assertEquals(['storage_path'], $e->columns);
+        }
+
+        Bus::assertNothingDispatched();
     }
 }

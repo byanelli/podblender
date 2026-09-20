@@ -59,9 +59,9 @@ readonly class FindOrCreateAudioClip
                 'size'                    => 0,
             ]);
         } catch (UniqueConstraintViolationException $e) {
-            // The existence check above and this insert aren't atomic, and platform_url is unique. A concurrent job
-            // created the clip first and queued its download, so return that clip.
-            return AudioClip::query()->where('platform_url', $metadata->canonicalUrl)->firstOrFail();
+            // The existence check above and this insert aren't atomic, and platform_url is unique. If the clip now
+            // exists, a concurrent job created it and queued its download. Otherwise another unique column was violated.
+            return AudioClip::query()->where('platform_url', $metadata->canonicalUrl)->first() ?? throw $e;
         }
 
         ($this->queueDownload)($clip);
