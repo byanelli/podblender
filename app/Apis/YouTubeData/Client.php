@@ -120,7 +120,7 @@ readonly class Client implements Contracts\Client
      * The single item a by-id lookup asked for.
      *
      * For a wrong, private, or deleted id, YouTube returns a 200 with an empty
-     * items list. Throw a ResourceNotFoundException naming the resource.
+     * items list. Throw a ResourceNotFoundException with the resource type and id.
      *
      * @param  array<string, mixed>  $response
      * @return array<string, mixed>

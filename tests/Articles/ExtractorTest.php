@@ -67,8 +67,8 @@ class ExtractorTest extends TestCase
     #[Test]
     public function it_credits_the_publisher_not_the_archive_the_snapshot_came_from()
     {
-        // In a snapshot, the JSON-LD publisher and og:site_name both name the
-        // archive. The feed displays the publisher as the article's source.
+        // In a snapshot, the JSON-LD publisher and og:site_name both contain the
+        // archive's name. The feed displays the publisher as the article's source.
         $article = $this->extract('archive-snapshot', 'https://www.theatlantic.com/ideas/the-tunnel-under-the-old-quarter/');
 
         $this->assertEquals('theatlantic.com', $article->publisher);

@@ -3,8 +3,8 @@
 namespace App\Apis\YouTubeData;
 
 /**
- * A channel as named in a video or playlist response, which gives only its id
- * and title.
+ * The channel that a video or playlist response refers to. The response gives
+ * only the channel's id and title.
  */
 readonly class ChannelReference
 {

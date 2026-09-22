@@ -56,7 +56,7 @@ readonly class GenerateFeedCover
             $saved = true;
 
             // The old cover is deleted after the save. If the save fails,
-            // cover_path still names the old file, so it has to exist.
+            // cover_path still contains the old file's path, so the file has to exist.
             if ($previousCoverPath !== null) {
                 $this->storage->delete($previousCoverPath);
             }

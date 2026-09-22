@@ -27,7 +27,7 @@ readonly class Web implements Platform
     ) {}
 
     /**
-     * The platform named in this instance's errors. Rss overrides it.
+     * The platform type reported in this instance's exceptions. Rss overrides it.
      */
     protected function type(): PlatformType
     {

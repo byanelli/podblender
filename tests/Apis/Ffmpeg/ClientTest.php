@@ -21,8 +21,8 @@ class ClientTest extends TestCase
     }
 
     /**
-     * Whether the command is a duration probe. An encode names an output file
-     * after its input; a probe ends with the argument after `-i`.
+     * Whether the command is a duration probe. An encode's command ends with an
+     * output path; a probe's ends with the input path, the argument after `-i`.
      */
     private function isDurationProbe(PendingProcess $process): bool
     {

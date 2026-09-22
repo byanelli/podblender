@@ -71,7 +71,8 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * The residential proxy implementation named in config. Only that provider's credentials are read.
+     * The residential proxy implementation that RESIDENTIAL_PROXY_PROVIDER selects. Only that provider's credentials
+     * are read.
      *
      * An unrecognized name throws. Falling back to a default would let a typo in RESIDENTIAL_PROXY_PROVIDER select a
      * provider account the operator didn't choose.

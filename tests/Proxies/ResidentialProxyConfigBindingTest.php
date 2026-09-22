@@ -47,8 +47,8 @@ class ResidentialProxyConfigBindingTest extends TestCase
         try {
             $this->app->make(ResidentialProxyConfig::class);
         } catch (InvalidArgumentException $e) {
-            // Falling back to the default would hide a typo and use an account nobody chose. The message names the
-            // bad value and the valid ones.
+            // Falling back to the default would hide a typo and use an account nobody chose. The message includes
+            // the bad value and the valid ones.
             $this->assertStringContainsString('dataimpluse', $e->getMessage());
             $this->assertStringContainsString('oxylabs', $e->getMessage());
             $this->assertStringContainsString('dataimpulse', $e->getMessage());

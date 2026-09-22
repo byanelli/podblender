@@ -101,8 +101,8 @@ class OxylabsResidentialProxyConfigTest extends TestCase
         $config->set('services.oxylabs.residential.user', null);
         $config->set('services.oxylabs.residential.password', null);
 
-        // The message names the missing env variable. A TypeError from building the username would look like a bug
-        // in this class.
+        // The message includes the missing env variable's name. A TypeError from building the username would look
+        // like a bug in this class.
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('OXYLABS_USERNAME');
 

@@ -224,8 +224,8 @@ readonly class YouTube implements SubscribablePlatform
     }
 
     /**
-     * The author is the playlist's channel, because a playlist title names a
-     * collection ("Select Lectures").
+     * The author is the playlist's channel. A playlist's title, such as "Select
+     * Lectures", describes its contents and isn't an author.
      */
     private function convertPlaylistMetadataToSourceMetadata(PlaylistMetadata $playlist): SourceMetadata
     {

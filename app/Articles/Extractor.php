@@ -207,7 +207,7 @@ readonly class Extractor
         if (is_array($publisher) && isset($publisher['name']) && is_string($publisher['name'])) {
             $name = trim($publisher['name']);
 
-            if ($name !== '' && ! $this->namesAnArchive($name)) {
+            if ($name !== '' && ! $this->isArchiveName($name)) {
                 return $name;
             }
         }
@@ -215,25 +215,26 @@ readonly class Extractor
         if (isset($meta['og:site_name'])) {
             $name = trim($meta['og:site_name']);
 
-            if ($name !== '' && ! $this->namesAnArchive($name)) {
+            if ($name !== '' && ! $this->isArchiveName($name)) {
                 return $name;
             }
         }
 
         // The URL is the article's even when the HTML came from an archive, so
-        // its host never names the archive.
+        // its host is the publisher's.
         return $this->getPublisherFromUrl($url);
     }
 
     /**
      * Whether this name belongs to an archiving service.
      *
-     * A snapshot's og:site_name and JSON-LD publisher name the archive, and both
-     * are checked before the article's URL, so without this test the article
-     * would be credited to archive.ph. The archive.today mirrors are one
-     * service, so every mirror is matched regardless of which one was fetched.
+     * A snapshot's og:site_name and JSON-LD publisher contain the archive's
+     * name, and both are checked before the article's URL, so without this
+     * test the article would be credited to archive.ph. The archive.today
+     * mirrors are one service, so every mirror is matched regardless of which
+     * one was fetched.
      */
-    private function namesAnArchive(string $name): bool
+    private function isArchiveName(string $name): bool
     {
         $name = strtolower(trim($name));
 

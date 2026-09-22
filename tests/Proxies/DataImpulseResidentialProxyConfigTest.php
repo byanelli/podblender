@@ -141,8 +141,8 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
         $config->set('services.dataimpulse.residential.user', null);
         $config->set('services.dataimpulse.residential.password', null);
 
-        // The message names the missing env variable. A TypeError from building the username would look like a bug
-        // in this class.
+        // The message includes the missing env variable's name. A TypeError from building the username would look
+        // like a bug in this class.
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('DATAIMPULSE_USERNAME');
 
