@@ -7,8 +7,8 @@ use Illuminate\Support\Str;
 /**
  * Decides whether a fetched page is paywalled or missing its body, in which
  * case the Reader tries the next fetch tier. Checks run most reliable first:
- * a word-count mismatch, then body length, then the schema.org flag, then
- * paywall prompts and containers in the page.
+ * a word-count mismatch, then body length, then paywall prompts and
+ * containers in the page.
  */
 readonly class PaywallDetector
 {
@@ -18,7 +18,7 @@ readonly class PaywallDetector
      */
     private const WORD_COUNT_FLOOR_RATIO = 0.5;
 
-    /** How close to the end of the article a paywall prompt can be, in characters. */
+    /** How far from the start or end of the article a paywall prompt can be, in characters. */
     private const PROMPT_WINDOW = 300;
 
     public function __construct(
@@ -40,14 +40,7 @@ readonly class PaywallDetector
             return true;
         }
 
-        // 3. The flag Google specifies for paywalled content. Metered sites set
-        // it on pages that still contain the whole article, so it counts only
-        // when nothing shows the body is complete.
-        if ($jsonLd->isAccessibleForFree === false && ! $this->bodyIsComplete($jsonLd, $article)) {
-            return true;
-        }
-
-        // 4. Least reliable: a paywall prompt or container in the page.
+        // 3. Least reliable: a paywall prompt or container in the page.
         return $this->showsPaywallPrompt($html, $article) || $this->containsPaywallSelector($html);
     }
 
@@ -60,16 +53,11 @@ readonly class PaywallDetector
         return str_word_count($article->text) < ($jsonLd->wordCount * self::WORD_COUNT_FLOOR_RATIO);
     }
 
-    private function bodyIsComplete(JsonLd $jsonLd, Article $article): bool
-    {
-        return $jsonLd->articleBody !== null
-            || ($jsonLd->wordCount !== null && ! $this->wordCountFallsShort($jsonLd, $article));
-    }
-
     /**
      * Whether the page's visible text has a paywall marker phrase. The
-     * extracted article can include the prompt at its end, so a phrase in the
-     * article counts only in its last PROMPT_WINDOW characters.
+     * extracted article can include the prompt, at its start (NYT) or its end
+     * (Substack), so a phrase in the article counts only within PROMPT_WINDOW
+     * characters of either end.
      */
     private function showsPaywallPrompt(string $html, Article $article): bool
     {
@@ -81,9 +69,12 @@ readonly class PaywallDetector
                 continue;
             }
 
-            $position = mb_strrpos($body, mb_strtolower($marker));
+            $first = mb_strpos($body, mb_strtolower($marker));
+            $last = mb_strrpos($body, mb_strtolower($marker));
 
-            if ($position === false || $position >= mb_strlen($body) - self::PROMPT_WINDOW) {
+            if ($first === false
+                || $first < self::PROMPT_WINDOW
+                || $last >= mb_strlen($body) - self::PROMPT_WINDOW) {
                 return true;
             }
         }

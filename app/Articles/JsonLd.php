@@ -21,7 +21,5 @@ readonly class JsonLd
         public ?CarbonImmutable $datePublished = null,
         public array $authors = [],
         public ?int $wordCount = null,
-        /** False if the Article node or any of its hasPart sections is marked paywalled. */
-        public ?bool $isAccessibleForFree = null,
     ) {}
 }

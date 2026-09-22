@@ -47,7 +47,6 @@ readonly class JsonLdParser
             datePublished: $this->date($node['datePublished'] ?? null),
             authors: $this->authors($node['author'] ?? null, $byId),
             wordCount: is_numeric($wordCount) ? (int) $wordCount : null,
-            isAccessibleForFree: $this->isAccessibleForFree($node),
         );
     }
 
@@ -212,23 +211,6 @@ readonly class JsonLdParser
     }
 
     /**
-     * @param  array<string, mixed>  $node
-     */
-    private function isAccessibleForFree(array $node): ?bool
-    {
-        $parts = $node['hasPart'] ?? [];
-        $parts = is_array($parts) ? (array_is_list($parts) ? $parts : [$parts]) : [];
-
-        foreach ([$node, ...$parts] as $section) {
-            if (is_array($section) && $this->bool($section['isAccessibleForFree'] ?? null) === false) {
-                return false;
-            }
-        }
-
-        return $this->bool($node['isAccessibleForFree'] ?? null);
-    }
-
-    /**
      * A trimmed string with HTML entities decoded, or null if blank.
      */
     private function string(mixed $value): ?string
@@ -255,22 +237,5 @@ readonly class JsonLdParser
         } catch (\Exception) {
             return null;
         }
-    }
-
-    private function bool(mixed $value): ?bool
-    {
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_string($value)) {
-            return match (strtolower($value)) {
-                'false', 'no', '0' => false,
-                'true', 'yes', '1' => true,
-                default            => null,
-            };
-        }
-
-        return null;
     }
 }

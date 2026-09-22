@@ -162,17 +162,4 @@ class JsonLdParserTest extends TestCase
         $this->assertSame('An update.', $jsonLd->articleBody);
     }
 
-    #[Test]
-    public function it_reports_an_article_with_a_paywalled_section_as_not_free()
-    {
-        $jsonLd = $this->parse([
-            '@type'               => 'NewsArticle',
-            'isAccessibleForFree' => 'True',
-            'hasPart'             => ['@type' => 'WebPageElement', 'isAccessibleForFree' => 'False'],
-        ]);
-
-        $this->assertFalse($jsonLd->isAccessibleForFree);
-        $this->assertTrue($this->parse(['@type' => 'Article', 'isAccessibleForFree' => true])->isAccessibleForFree);
-        $this->assertNull($this->parse(['@type' => 'Article'])->isAccessibleForFree);
-    }
 }

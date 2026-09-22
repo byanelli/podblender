@@ -49,6 +49,7 @@ return [
         'This content is for subscribers only',
         'This post is for paid subscribers',
         'Keep reading with a 7-day free trial',
+        'You have a preview view of this article',
     ],
 
     /*

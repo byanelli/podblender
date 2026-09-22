@@ -37,22 +37,6 @@ class PaywallDetectorTest extends TestCase
     }
 
     #[Test]
-    public function it_treats_is_accessible_for_free_false_as_gated()
-    {
-        $html = $this->jsonLdPage('{"@type":"NewsArticle","isAccessibleForFree":false}');
-
-        $this->assertTrue($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
-    }
-
-    #[Test]
-    public function it_treats_a_nested_has_part_gate_as_gated()
-    {
-        $html = $this->jsonLdPage('{"@type":"NewsArticle","isAccessibleForFree":true,"hasPart":[{"@type":"WebPageElement","isAccessibleForFree":false}]}');
-
-        $this->assertTrue($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
-    }
-
-    #[Test]
     public function it_treats_a_word_count_far_above_the_extracted_body_as_gated()
     {
         $html = $this->jsonLdPage('{"@type":"NewsArticle","wordCount":2000}');
@@ -77,35 +61,14 @@ class PaywallDetectorTest extends TestCase
     }
 
     #[Test]
-    public function it_ignores_the_flag_when_the_json_ld_contains_the_body()
-    {
-        // Metered sites such as CNN and The Verge set the flag on pages that
-        // contain the whole article.
-        $html = $this->jsonLdPage(json_encode([
-            '@type'               => 'NewsArticle',
-            'isAccessibleForFree' => false,
-            'articleBody'         => self::LONG_BODY,
-        ]));
-
-        $this->assertFalse($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
-    }
-
-    #[Test]
-    public function it_ignores_the_flag_when_the_body_meets_the_declared_word_count()
-    {
-        $html = $this->jsonLdPage('{"@type":"NewsArticle","isAccessibleForFree":false,"wordCount":100}');
-
-        $this->assertFalse($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
-    }
-
-    #[Test]
     public function it_ignores_a_marker_phrase_inside_the_article()
     {
-        // From Wikipedia's article on the Enigma machine.
+        // From the middle of Wikipedia's article on the Enigma machine.
         $sentence = 'Polish cryptologists developed techniques and designed mechanical devices to continue reading Enigma traffic.';
         $html = "<html><body><p>{$sentence}</p></body></html>";
+        $body = self::LONG_BODY.' '.$sentence.' '.self::LONG_BODY;
 
-        $this->assertFalse($this->detector()->isGated($html, $this->article($sentence.' '.self::LONG_BODY)));
+        $this->assertFalse($this->detector()->isGated($html, $this->article($body)));
     }
 
     #[Test]
@@ -135,6 +98,18 @@ class PaywallDetectorTest extends TestCase
             .'<body><a href="/login">Already a subscriber? Sign in</a><p>Body.</p></body></html>';
 
         $this->assertFalse($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
+    }
+
+    #[Test]
+    public function it_treats_the_nyt_preview_page_as_gated()
+    {
+        // NYT serves the first paragraphs under this notice while it checks
+        // access, and Readability keeps the notice at the top of the body.
+        $notice = 'You have a preview view of this article while we are checking your access. '
+            .'When we have confirmed access, the full article content will load.';
+        $html = "<html><body><p>{$notice}</p><p>The first paragraphs.</p></body></html>";
+
+        $this->assertTrue($this->detector()->isGated($html, $this->article($notice.' '.self::LONG_BODY)));
     }
 
     #[Test]
