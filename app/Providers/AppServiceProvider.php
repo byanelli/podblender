@@ -10,6 +10,7 @@ use App\Apis\Tts\Contracts\Client as TtsClientContract;
 use App\Apis\Tts\GeminiClient as TtsClient;
 use App\Apis\YouTubeData\Client as YouTubeDataClient;
 use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClientContract;
+use App\Apis\Zyte\Client as ZyteClient;
 use App\Articles\Contracts\Fetcher as FetcherContract;
 use App\Articles\Contracts\Reader as ReaderContract;
 use App\Articles\Fetcher;
@@ -106,8 +107,9 @@ class AppServiceProvider extends ServiceProvider
 
         return match ($provider) {
             'scrapfly' => ScrapflyClient::class,
+            'zyte'     => ZyteClient::class,
             default    => throw new InvalidArgumentException(sprintf(
-                'Unknown scraper provider [%s]. SCRAPER_PROVIDER must be one of: scrapfly.',
+                'Unknown scraper provider [%s]. SCRAPER_PROVIDER must be one of: scrapfly, zyte.',
                 is_string($provider) ? $provider : get_debug_type($provider),
             )),
         };

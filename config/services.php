@@ -60,6 +60,11 @@ return [
         'key' => env('SCRAPFLY_API_KEY'),
     ],
 
+    'zyte'              => [
+        // Zyte API, the other scraping service. Pay as you go, per successful response.
+        'key' => env('ZYTE_API_KEY'),
+    ],
+
     'ytdlp'             => [
         // How long to remember that YouTube has refused this host's address, and so skip straight to the residential
         // proxy. The refusal lasts hours, and the only cost of guessing short is one wasted download attempt.

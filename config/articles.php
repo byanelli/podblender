@@ -135,6 +135,8 @@ return [
 
     'scrapfly_timeout'     => (int) env('ARTICLES_SCRAPFLY_TIMEOUT', 180),
 
+    'zyte_timeout'         => (int) env('ARTICLES_ZYTE_TIMEOUT', 120),
+
     /*
     |--------------------------------------------------------------------------
     | User Agent
