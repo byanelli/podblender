@@ -30,10 +30,26 @@ class MetaTagParserTest extends TestCase
             twitterTitle: 'Tweet title',
             ogSiteName: 'The Paper',
             author: 'Ada Lovelace',
-            articleAuthor: 'https://example.com/authors/ada',
+            articleAuthors: ['https://example.com/authors/ada'],
             articlePublishedTime: CarbonImmutable::parse('2026-03-15T09:00:00Z'),
             ogPublishedTime: CarbonImmutable::parse('2026-03-14'),
         ), $meta);
+    }
+
+    #[Test]
+    public function it_splits_comma_joined_author_urls()
+    {
+        // The Guardian's live blogs list every author's profile in one tag.
+        $parser = new MetaTagParser;
+
+        $this->assertSame(
+            ['https://www.theguardian.com/profile/jakub-krupa', 'https://www.theguardian.com/profile/martin-belam'],
+            $parser->parse('<meta property="article:author" content="https://www.theguardian.com/profile/jakub-krupa,https://www.theguardian.com/profile/martin-belam">')->articleAuthors
+        );
+        $this->assertSame(
+            ['Martin Luther King, Jr.'],
+            $parser->parse('<meta property="article:author" content="Martin Luther King, Jr.">')->articleAuthors
+        );
     }
 
     #[Test]

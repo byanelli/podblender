@@ -99,6 +99,70 @@ class JsonLdParserTest extends TestCase
     }
 
     #[Test]
+    public function it_resolves_id_references_for_authors_and_the_publisher()
+    {
+        // WordPress and Yoast link nodes by @id, sometimes across blocks.
+        $jsonLd = $this->parse(
+            ['@graph' => [
+                [
+                    '@type'     => 'Article',
+                    'author'    => [['@id' => 'https://example.com/#/person/1'], 'Grace Hopper'],
+                    'publisher' => ['@id' => 'https://example.com/#organization'],
+                ],
+                ['@type' => 'Person', '@id' => 'https://example.com/#/person/1', 'name' => 'Maddy Osman'],
+            ]],
+            ['@type' => 'Organization', '@id' => 'https://example.com/#organization', 'name' => 'Example News'],
+        );
+
+        $this->assertSame(['Maddy Osman', 'Grace Hopper'], $jsonLd->authors);
+        $this->assertSame('Example News', $jsonLd->publisherName);
+    }
+
+    #[Test]
+    public function it_decodes_html_entities()
+    {
+        $jsonLd = $this->parse([
+            '@type'    => 'NewsArticle',
+            'headline' => 'Beshear says he didn&#8217;t write book',
+            'author'   => ['name' => 'Tom &amp; Jerry'],
+        ]);
+
+        $this->assertSame('Beshear says he didn’t write book', $jsonLd->headline);
+        $this->assertSame(['Tom & Jerry'], $jsonLd->authors);
+    }
+
+    #[Test]
+    public function it_joins_a_live_blogs_updates_oldest_first()
+    {
+        $jsonLd = $this->parse(['@type' => 'LiveBlogPosting', 'headline' => 'Live: the summit', 'liveBlogUpdate' => [
+            ['@type' => 'BlogPosting', 'headline' => 'Talks end', 'articleBody' => 'The leaders left.'],
+            ['@type' => 'BlogPosting', 'headline' => 'Live: the summit', 'articleBody' => 'A delay.'],
+            ['@type' => 'BlogPosting', 'headline' => 'Talks begin', 'articleBody' => 'The leaders arrived.'],
+        ]]);
+
+        // An update that repeats the blog's headline is read without it.
+        $this->assertSame(
+            "Talks begin. The leaders arrived.\n\nA delay.\n\nTalks end. The leaders left.",
+            $jsonLd->articleBody
+        );
+    }
+
+    #[Test]
+    public function it_prefers_an_article_node_that_has_a_body()
+    {
+        // CNN's live pages have an empty NewsArticle before the LiveBlogPosting.
+        $jsonLd = $this->parse([
+            ['@type' => 'NewsArticle', 'headline' => 'Wrapper', 'articleBody' => ''],
+            ['@type' => 'LiveBlogPosting', 'headline' => 'Live', 'liveBlogUpdate' => [
+                ['articleBody' => 'An update.'],
+            ]],
+        ]);
+
+        $this->assertSame('Live', $jsonLd->headline);
+        $this->assertSame('An update.', $jsonLd->articleBody);
+    }
+
+    #[Test]
     public function it_reports_an_article_with_a_paywalled_section_as_not_free()
     {
         $jsonLd = $this->parse([

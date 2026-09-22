@@ -15,7 +15,7 @@ readonly class MetaTagParser
             twitterTitle: $this->string($tags['twitter:title'] ?? null),
             ogSiteName: $this->string($tags['og:site_name'] ?? null),
             author: $this->string($tags['author'] ?? null),
-            articleAuthor: $this->string($tags['article:author'] ?? null),
+            articleAuthors: $this->articleAuthors($tags['article:author'] ?? null),
             articlePublishedTime: $this->date($tags['article:published_time'] ?? null),
             ogPublishedTime: $this->date($tags['og:published_time'] ?? null),
         );
@@ -51,6 +51,26 @@ readonly class MetaTagParser
         }
 
         return null;
+    }
+
+    /**
+     * Some sites put every author's profile URL in one tag, separated by
+     * commas. Anything else is kept whole, since a name can contain a comma.
+     *
+     * @return list<string>
+     */
+    private function articleAuthors(?string $value): array
+    {
+        $value = $this->string($value);
+
+        if ($value === null) {
+            return [];
+        }
+
+        $parts = array_values(array_filter(array_map(trim(...), explode(',', $value))));
+        $allUrls = collect($parts)->every(fn (string $part) => preg_match('#^https?://#i', $part) === 1);
+
+        return $allUrls ? $parts : [$value];
     }
 
     private function string(?string $value): ?string

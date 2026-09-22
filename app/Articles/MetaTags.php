@@ -16,7 +16,8 @@ readonly class MetaTags
         public ?string $twitterTitle = null,
         public ?string $ogSiteName = null,
         public ?string $author = null,
-        public ?string $articleAuthor = null,
+        /** @var list<string> */
+        public array $articleAuthors = [],
         public ?CarbonImmutable $articlePublishedTime = null,
         public ?CarbonImmutable $ogPublishedTime = null,
     ) {}

@@ -53,12 +53,12 @@ readonly class Extractor
     {
         // Some publishers (e.g. CNN) put the entire body in JSON-LD.
         if ($jsonLd->articleBody !== null) {
-            return $this->normalizeWhitespace($jsonLd->articleBody);
+            return $this->collapseWhitespace($jsonLd->articleBody);
         }
 
         if ($readability !== null && ($content = $readability->getContent()) !== null) {
             // Readability returns HTML; narration needs plain text.
-            return $this->normalizeWhitespace(strip_tags($content));
+            return $this->collapseWhitespace(html_entity_decode(strip_tags($content)));
         }
 
         return '';
@@ -245,8 +245,7 @@ readonly class Extractor
         $authors = $jsonLd->authors;
 
         if ($authors === []) {
-            $author = $meta->author ?? $meta->articleAuthor;
-            $authors = $author === null ? [] : [$author];
+            $authors = $meta->author !== null ? [$meta->author] : $meta->articleAuthors;
         }
 
         // An author given as a profile URL becomes a display name derived from
@@ -298,10 +297,8 @@ readonly class Extractor
         }
     }
 
-    private function normalizeWhitespace(string $text): string
+    private function collapseWhitespace(string $text): string
     {
-        $text = html_entity_decode($text);
-
         return trim((string) preg_replace('/\s+/u', ' ', $text));
     }
 }
