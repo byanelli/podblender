@@ -81,7 +81,7 @@ class PaywallDetectorTest extends TestCase
     {
         $html = (string) file_get_contents(__DIR__.'/fixtures/clean-full.html');
 
-        $article = (new Extractor)->extract('https://theopenpress.com/harvest-festival', $html);
+        $article = $this->app->make(Extractor::class)->extract('https://theopenpress.com/harvest-festival', $html);
 
         $this->assertFalse($this->detector()->isGated($html, $article));
     }

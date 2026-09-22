@@ -18,21 +18,28 @@ use League\Uri\Uri;
  */
 readonly class Extractor
 {
+    public function __construct(
+        private JsonLdParser $jsonLdParser,
+        private MetaTagParser $metaTagParser,
+    ) {}
+
     public function extract(string $url, string $html): Article
     {
-        $jsonLd = JsonLd::parse($html);
-        $node = $jsonLd->articleNode();
-
+        $jsonLd = $this->jsonLdParser->parse($html);
+        $meta = $this->metaTagParser->parse($html);
         $readability = $this->readability($url, $html);
-        $meta = $this->parseMetaTags($html);
 
         return new Article(
             url: $url,
-            title: $this->extractTitle($url, $node, $meta, $html, $readability),
-            publisher: $this->extractPublisher($url, $node, $meta),
-            publicationDate: $this->extractDate($node, $meta),
-            authors: $this->extractAuthors($node, $meta),
-            text: $this->extractBody($node, $readability),
+            title: $this->extractTitle($url, $jsonLd, $meta, $html, $readability),
+            publisher: $this->extractPublisher($url, $jsonLd, $meta),
+            // The current time when the page gives no publication date.
+            publicationDate: $jsonLd->datePublished
+                ?? $meta->articlePublishedTime
+                ?? $meta->ogPublishedTime
+                ?? CarbonImmutable::now(),
+            authors: $this->extractAuthors($jsonLd, $meta),
+            text: $this->extractBody($jsonLd, $readability),
         );
 
         // Deferred: when the result is unusable (e.g. a title equal to the slug
@@ -42,16 +49,11 @@ readonly class Extractor
 
     // ----- Body -------------------------------------------------------------
 
-    /**
-     * @param  array<string, mixed>|null  $node
-     */
-    private function extractBody(?array $node, ?Readability $readability): string
+    private function extractBody(JsonLd $jsonLd, ?Readability $readability): string
     {
         // Some publishers (e.g. CNN) put the entire body in JSON-LD.
-        $articleBody = $node['articleBody'] ?? null;
-
-        if (is_string($articleBody) && trim($articleBody) !== '') {
-            return $this->normalizeWhitespace($articleBody);
+        if ($jsonLd->articleBody !== null) {
+            return $this->normalizeWhitespace($jsonLd->articleBody);
         }
 
         if ($readability !== null && ($content = $readability->getContent()) !== null) {
@@ -64,24 +66,16 @@ readonly class Extractor
 
     // ----- Title ------------------------------------------------------------
 
-    /**
-     * @param  array<string, mixed>|null  $node
-     * @param  array<string, string>  $meta
-     */
-    private function extractTitle(string $url, ?array $node, array $meta, string $html, ?Readability $readability): string
-    {
+    private function extractTitle(
+        string $url,
+        JsonLd $jsonLd,
+        MetaTags $meta,
+        string $html,
+        ?Readability $readability,
+    ): string {
         $pageTitle = $this->pageTitle($html);
-
-        $rawHeadline = $node['headline'] ?? null;
-        $headline = (is_string($rawHeadline) && trim($rawHeadline) !== '') ? trim($rawHeadline) : null;
-
-        $ogTitle = null;
-        foreach (['og:title', 'twitter:title'] as $key) {
-            if (isset($meta[$key]) && trim($meta[$key]) !== '') {
-                $ogTitle = trim($meta[$key]);
-                break;
-            }
-        }
+        $headline = $jsonLd->headline;
+        $ogTitle = $meta->ogTitle ?? $meta->twitterTitle;
 
         // Use og:title instead of the JSON-LD headline when the <title> contains
         // the og:title but not the headline. Some sites (e.g. Wikipedia) put a
@@ -108,7 +102,7 @@ readonly class Extractor
         if ($pageTitle !== null) {
             // The raw <title> usually includes the site name (" - Wikipedia",
             // " | The Guardian"), which can be at either end.
-            return $this->stripSiteName($pageTitle, $this->siteNameCandidates($url, $node, $meta));
+            return $this->stripSiteName($pageTitle, $this->siteNameCandidates($url, $jsonLd, $meta));
         }
 
         return $this->getNameFromSlug($url);
@@ -142,24 +136,16 @@ readonly class Extractor
      * Names a site might add to its <title>, most reliable first: the OpenGraph
      * site name, the JSON-LD publisher, then the host without "www.".
      *
-     * @param  array<string, mixed>|null  $node
-     * @param  array<string, string>  $meta
-     * @return array<int, string>
+     * @return list<string>
      */
-    private function siteNameCandidates(string $url, ?array $node, array $meta): array
+    private function siteNameCandidates(string $url, JsonLd $jsonLd, MetaTags $meta): array
     {
-        $publisherName = null;
-        $publisher = $node['publisher'] ?? null;
-        if (is_array($publisher) && isset($publisher['name']) && is_string($publisher['name'])) {
-            $publisherName = $publisher['name'];
-        }
-
         $host = Uri::new($url)->getHost();
         $host = is_string($host) ? (string) preg_replace('/^www\./', '', $host) : null;
 
         return array_values(array_filter(
-            [$meta['og:site_name'] ?? null, $publisherName, $host],
-            fn ($name): bool => is_string($name) && trim($name) !== '',
+            [$meta->ogSiteName, $jsonLd->publisherName, $host],
+            fn (?string $name): bool => $name !== null && $name !== '',
         ));
     }
 
@@ -196,26 +182,10 @@ readonly class Extractor
 
     // ----- Publisher --------------------------------------------------------
 
-    /**
-     * @param  array<string, mixed>|null  $node
-     * @param  array<string, string>  $meta
-     */
-    private function extractPublisher(string $url, ?array $node, array $meta): string
+    private function extractPublisher(string $url, JsonLd $jsonLd, MetaTags $meta): string
     {
-        $publisher = $node['publisher'] ?? null;
-
-        if (is_array($publisher) && isset($publisher['name']) && is_string($publisher['name'])) {
-            $name = trim($publisher['name']);
-
-            if ($name !== '' && ! $this->isArchiveName($name)) {
-                return $name;
-            }
-        }
-
-        if (isset($meta['og:site_name'])) {
-            $name = trim($meta['og:site_name']);
-
-            if ($name !== '' && ! $this->isArchiveName($name)) {
+        foreach ([$jsonLd->publisherName, $meta->ogSiteName] as $name) {
+            if ($name !== null && ! $this->isArchiveName($name)) {
                 return $name;
             }
         }
@@ -265,87 +235,26 @@ readonly class Extractor
         'wayback machine',
     ];
 
-    // ----- Date -------------------------------------------------------------
-
-    /**
-     * @param  array<string, mixed>|null  $node
-     * @param  array<string, string>  $meta
-     */
-    private function extractDate(?array $node, array $meta): CarbonImmutable
-    {
-        $candidates = [
-            $node['datePublished'] ?? null,
-            $meta['article:published_time'] ?? null,
-            $meta['og:published_time'] ?? null,
-        ];
-
-        foreach ($candidates as $candidate) {
-            if (is_string($candidate) && trim($candidate) !== '') {
-                try {
-                    return CarbonImmutable::parse($candidate);
-                } catch (\Exception) {
-                    continue;
-                }
-            }
-        }
-
-        // No publication date found; use the current time.
-        return CarbonImmutable::now();
-    }
-
     // ----- Authors ----------------------------------------------------------
 
     /**
-     * @param  array<string, mixed>|null  $node
-     * @param  array<string, string>  $meta
-     * @return array<int, string>
+     * @return list<string>
      */
-    private function extractAuthors(?array $node, array $meta): array
+    private function extractAuthors(JsonLd $jsonLd, MetaTags $meta): array
     {
-        $authors = $this->authorsFromJsonLd($node['author'] ?? null);
+        $authors = $jsonLd->authors;
 
-        if ($authors === [] && isset($meta['author']) && trim($meta['author']) !== '') {
-            $authors = [$meta['author']];
-        }
-
-        if ($authors === [] && isset($meta['article:author']) && trim($meta['article:author']) !== '') {
-            $authors = [$meta['article:author']];
+        if ($authors === []) {
+            $author = $meta->author ?? $meta->articleAuthor;
+            $authors = $author === null ? [] : [$author];
         }
 
         // An author given as a profile URL becomes a display name derived from
         // its slug.
-        return array_values(array_map(
-            fn (string $author) => $this->isUrl($author) ? $this->getNameFromSlug($author) : trim($author),
-            array_filter($authors, fn (string $a) => trim($a) !== ''),
-        ));
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function authorsFromJsonLd(mixed $author): array
-    {
-        if ($author === null) {
-            return [];
-        }
-
-        // author may be a single string, a single object {name}, or a list of
-        // either. Wrap a single object so it isn't iterated field by field.
-        $entries = (is_array($author) && ! array_is_list($author)) ? [$author] : Arr::wrap($author);
-
-        $authors = [];
-
-        foreach ($entries as $entry) {
-            if (is_string($entry)) {
-                $authors[] = $entry;
-            } elseif (is_array($entry) && isset($entry['name']) && is_string($entry['name'])) {
-                $authors[] = $entry['name'];
-            } elseif (is_array($entry) && isset($entry['url']) && is_string($entry['url'])) {
-                $authors[] = $entry['url'];
-            }
-        }
-
-        return $authors;
+        return array_map(
+            fn (string $author) => $this->isUrl($author) ? $this->getNameFromSlug($author) : $author,
+            $authors,
+        );
     }
 
     // ----- Heuristics -------------------------------------------------------
@@ -387,36 +296,6 @@ readonly class Extractor
         } catch (ParseException) {
             return null;
         }
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function parseMetaTags(string $html): array
-    {
-        preg_match_all('/<meta\b[^>]*>/is', $html, $tags);
-
-        $meta = [];
-
-        foreach ($tags[0] as $tag) {
-            $key = $this->attr($tag, 'property') ?? $this->attr($tag, 'name');
-            $content = $this->attr($tag, 'content');
-
-            if ($key !== null && $content !== null) {
-                $meta[strtolower($key)] = html_entity_decode($content);
-            }
-        }
-
-        return $meta;
-    }
-
-    private function attr(string $tag, string $name): ?string
-    {
-        if (preg_match('/\b'.preg_quote($name, '/').'\s*=\s*(["\'])(.*?)\1/is', $tag, $m) === 1) {
-            return $m[2];
-        }
-
-        return null;
     }
 
     private function normalizeWhitespace(string $text): string

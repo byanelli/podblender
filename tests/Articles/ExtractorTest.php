@@ -14,7 +14,7 @@ class ExtractorTest extends TestCase
     {
         $html = (string) file_get_contents(__DIR__."/fixtures/$fixture.html");
 
-        return (new Extractor)->extract($url, $html);
+        return $this->app->make(Extractor::class)->extract($url, $html);
     }
 
     #[Test]
@@ -87,7 +87,7 @@ class ExtractorTest extends TestCase
         $html = '<html><head><meta property="og:site_name" content="The Archive"></head>'
             .'<body><article><p>'.str_repeat('A perfectly ordinary article body. ', 40).'</p></article></body></html>';
 
-        $article = (new Extractor)->extract('https://thearchive.com/a-story', $html);
+        $article = $this->app->make(Extractor::class)->extract('https://thearchive.com/a-story', $html);
 
         $this->assertEquals('The Archive', $article->publisher);
     }

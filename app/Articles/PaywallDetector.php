@@ -19,14 +19,17 @@ readonly class PaywallDetector
      */
     private const WORD_COUNT_FLOOR_RATIO = 0.5;
 
-    public function __construct(private Config $config) {}
+    public function __construct(
+        private Config $config,
+        private JsonLdParser $jsonLdParser,
+    ) {}
 
     public function isGated(string $html, Article $article): bool
     {
-        $jsonLd = JsonLd::parse($html);
+        $jsonLd = $this->jsonLdParser->parse($html);
 
         // 1. The structured flag that Google specifies for paywalled content.
-        if ($jsonLd->isAccessibleForFree() === false) {
+        if ($jsonLd->isAccessibleForFree === false) {
             return true;
         }
 
@@ -45,7 +48,7 @@ readonly class PaywallDetector
 
     private function wordCountFallsShort(JsonLd $jsonLd, Article $article): bool
     {
-        $declared = $jsonLd->wordCount();
+        $declared = $jsonLd->wordCount;
 
         if ($declared === null || $declared === 0) {
             return false;
