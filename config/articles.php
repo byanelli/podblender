@@ -25,7 +25,6 @@ return [
         'washingtonpost.com',
         'ft.com',
         'bloomberg.com',
-        'newyorker.com',
         'theatlantic.com',
     ],
 
