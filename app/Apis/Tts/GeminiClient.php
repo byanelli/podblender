@@ -5,7 +5,6 @@ namespace App\Apis\Tts;
 use App\Apis\Ffmpeg\Contracts\Client as FfmpegClient;
 use App\Apis\Tts\Concerns\SegmentsText;
 use App\Apis\Tts\Contracts\Client as ClientContract;
-use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Client\Factory as Http;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
@@ -53,7 +52,7 @@ readonly class GeminiClient implements ClientContract
     public function __construct(
         private Http $http,
         private FfmpegClient $ffmpeg,
-        private Config $config,
+        private GeminiClientConfig $config,
     ) {}
 
     /**
@@ -142,15 +141,13 @@ readonly class GeminiClient implements ClientContract
      */
     private function requestAudioForSegments(array $segments): array
     {
-        $apiKey = (string) $this->config->get('services.gemini.api_key');
-
         $responses = $this->http->pool(fn (Pool $pool) => collect($segments)
             ->map(fn (string $segment, int $index) => $pool->as((string) $index)
                 ->timeout(300)
                 ->connectTimeout(10)
                 // Retry transient transport failures. The POST is idempotent.
                 ->retry(3, 1000, throw: false)
-                ->withHeaders(['x-goog-api-key' => $apiKey])
+                ->withHeaders(['x-goog-api-key' => $this->config->apiKey])
                 ->post(self::ENDPOINT, $this->audioRequestBody($segment)))
             ->all(), concurrency: self::CONCURRENCY);
 
@@ -184,12 +181,12 @@ readonly class GeminiClient implements ClientContract
     private function audioRequestBody(string $segment): array
     {
         return [
-            'model'             => (string) $this->config->get('services.gemini.tts.model'),
+            'model'             => $this->config->model,
             'input'             => $segment,
             'response_format'   => ['type' => 'audio'],
             'generation_config' => [
                 'speech_config' => [
-                    ['voice' => (string) $this->config->get('services.gemini.tts.voice')],
+                    ['voice' => $this->config->voice],
                 ],
             ],
             'stream'            => true,

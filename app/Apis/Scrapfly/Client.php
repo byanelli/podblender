@@ -3,7 +3,6 @@
 namespace App\Apis\Scrapfly;
 
 use App\Apis\Scrapfly\Contracts\Client as ClientContract;
-use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Response;
@@ -29,7 +28,7 @@ readonly class Client implements ClientContract
 
     public function __construct(
         private Factory $http,
-        private Config $config,
+        private ClientConfig $config,
     ) {}
 
     public function scrape(string $url, bool $renderJs = false): ScrapflyResult
@@ -57,15 +56,15 @@ readonly class Client implements ClientContract
     private function request(string $url, bool $renderJs): Response
     {
         return $this->http
-            ->timeout((int) $this->config->get('articles.scrapfly_timeout', 180))
+            ->timeout($this->config->timeout)
             ->connectTimeout(self::CONNECT_TIMEOUT)
             ->get(self::ENDPOINT, [
-                'key'       => (string) $this->config->get('services.scrapfly.key'),
+                'key'       => $this->config->apiKey,
                 'url'       => $url,
                 // ASP passes Cloudflare/CAPTCHA checks. It is what costs credits.
                 'asp'       => 'true',
                 'render_js' => $renderJs ? 'true' : 'false',
-                'country'   => (string) $this->config->get('articles.scrapfly_country', 'us'),
+                'country'   => $this->config->country,
             ]);
     }
 

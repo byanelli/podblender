@@ -10,7 +10,6 @@ use App\Proxies\Contracts\ResidentialProxyConfig;
 use Carbon\CarbonImmutable;
 use DOMDocument;
 use DOMXPath;
-use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\PendingRequest;
 
@@ -31,7 +30,7 @@ readonly class Fetcher implements FetcherContract
 {
     public function __construct(
         private Factory $http,
-        private Config $config,
+        private FetcherConfig $config,
         private Scrapfly $scrapfly,
         private ResidentialProxyConfig $residentialProxy,
     ) {}
@@ -39,7 +38,7 @@ readonly class Fetcher implements FetcherContract
     public function fetchDirect(string $url): string
     {
         return $this->http
-            ->withHeaders(['User-Agent' => $this->config->get('articles.user_agent')])
+            ->withHeaders(['User-Agent' => $this->config->userAgent])
             ->timeout(30)
             ->get($url)
             ->throw()
@@ -113,13 +112,13 @@ readonly class Fetcher implements FetcherContract
     {
         return $this->http
             ->withOptions(['proxy' => $this->residentialProxy->getUrlForDownload()])
-            ->withHeaders(['User-Agent' => $this->config->get('articles.user_agent')])
+            ->withHeaders(['User-Agent' => $this->config->userAgent])
             ->timeout(30);
     }
 
     private function waybackAvailabilityUrl(): string
     {
-        return rtrim((string) $this->config->get('articles.wayback_base_url'), '/').'/wayback/available';
+        return $this->config->waybackBaseUrl.'/wayback/available';
     }
 
     /**
@@ -130,7 +129,7 @@ readonly class Fetcher implements FetcherContract
      */
     private function waybackSnapshotUrl(string $timestamp, string $url): string
     {
-        $base = rtrim((string) $this->config->get('articles.wayback_base_url'), '/');
+        $base = $this->config->waybackBaseUrl;
 
         $scheme = parse_url($base, PHP_URL_SCHEME) ?: 'https';
         $host = (string) (parse_url($base, PHP_URL_HOST) ?: 'archive.org');
@@ -146,7 +145,7 @@ readonly class Fetcher implements FetcherContract
         // The ~30-credit call. render_js is on by default.
         return $this->scrape(
             $snapshotUrl,
-            (bool) $this->config->get('articles.scrapfly_snapshot_render_js', true),
+            $this->config->scrapflySnapshotRenderJs,
         )->content;
     }
 
@@ -159,7 +158,7 @@ readonly class Fetcher implements FetcherContract
     {
         $result = $this->scrape(
             $this->listingUrl($url),
-            (bool) $this->config->get('articles.scrapfly_listing_render_js', false),
+            $this->config->scrapflyListingRenderJs,
         );
 
         // An error status from archive.is can be retried. It doesn't show that
@@ -242,7 +241,7 @@ readonly class Fetcher implements FetcherContract
 
     private function listingUrl(string $url): string
     {
-        $base = rtrim((string) $this->config->get('articles.archive_base_url'), '/');
+        $base = $this->config->archiveBaseUrl;
 
         return "$base/$url";
     }

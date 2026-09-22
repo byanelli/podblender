@@ -2,7 +2,6 @@
 
 namespace App\Articles;
 
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Support\Str;
 
 /**
@@ -24,11 +23,7 @@ readonly class PaywallDetector
 
     public function __construct(
         private JsonLdParser $jsonLdParser,
-        #[Config('articles.min_body_length')] private int $minBodyLength,
-        /** @var list<string> */
-        #[Config('articles.paywall_markers')] private array $markers,
-        /** @var list<string> */
-        #[Config('articles.paywall_selectors')] private array $selectors,
+        private PaywallDetectorConfig $config,
     ) {}
 
     public function isGated(string $html, Article $article): bool
@@ -41,7 +36,7 @@ readonly class PaywallDetector
         }
 
         // 2. Too little body.
-        if (Str::length($article->text) < $this->minBodyLength) {
+        if (Str::length($article->text) < $this->config->minBodyLength) {
             return true;
         }
 
@@ -81,7 +76,7 @@ readonly class PaywallDetector
         $visibleText = $this->visibleText($html);
         $body = mb_strtolower($article->text);
 
-        foreach ($this->markers as $marker) {
+        foreach ($this->config->markers as $marker) {
             if ($marker === '' || ! Str::contains($visibleText, $marker, ignoreCase: true)) {
                 continue;
             }
@@ -98,7 +93,7 @@ readonly class PaywallDetector
 
     private function containsPaywallSelector(string $html): bool
     {
-        foreach ($this->selectors as $selector) {
+        foreach ($this->config->selectors as $selector) {
             if ($selector !== '' && Str::contains($html, $selector, ignoreCase: true)) {
                 return true;
             }
