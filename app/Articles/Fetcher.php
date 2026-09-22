@@ -7,24 +7,16 @@ use App\Apis\Scraping\ScrapeResult;
 use App\Apis\Scraping\ScraperException;
 use App\Articles\Contracts\Fetcher as FetcherContract;
 use App\Proxies\Contracts\ResidentialProxyConfig;
-use Carbon\CarbonImmutable;
-use DOMDocument;
-use DOMXPath;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\PendingRequest;
 
 /**
  * Retrieves the raw HTML for an article. Open pages use a free, direct GET;
- * paywalled ones use a two-step Scrapfly flow.
+ * paywalled ones come from an archive.
  *
  * archive.is is behind Cloudflare and serves an interactive CAPTCHA to a plain
- * HTTP client, so the archive path goes through Scrapfly's ASP, the only method
- * found to pass it. Resolving a URL to its snapshot HTML takes two Scrapfly
- * calls, and both spend credits:
- *   1. the snapshot listing ({base}/{url}, render_js off, ~25 credits), parsed
- *      for the newest snapshot; then
- *   2. that snapshot ({snapshot-url}, render_js on, ~30 credits), the archived
- *      article HTML passed to the Extractor.
+ * HTTP client, so its snapshots are fetched through the configured Scraper,
+ * which costs money per request.
  */
 readonly class Fetcher implements FetcherContract
 {
@@ -47,10 +39,10 @@ readonly class Fetcher implements FetcherContract
 
     /**
      * The middle tier, tried before archive.is. web.archive.org has no
-     * Cloudflare CAPTCHA, so it needs no Scrapfly. archive.org does rate-limit
+     * Cloudflare CAPTCHA, so it needs no scraper. archive.org does rate-limit
      * and block the datacenter IP production runs from, so both requests go
-     * through the residential proxy, which costs bandwidth but no Scrapfly
-     * credits:
+     * through the residential proxy, which costs bandwidth but no scraper
+     * fees:
      *   1. the availability API returns the closest snapshot's timestamp; and
      *   2. that snapshot is fetched in raw "id_" form, without Wayback's
      *      injected toolbar, so the Extractor gets the original markup.
@@ -140,33 +132,21 @@ readonly class Fetcher implements FetcherContract
 
     public function fetchFromArchive(string $url): string
     {
-        $snapshotUrl = $this->newestSnapshotUrl($this->fetchListing($url));
-
-        // The ~30-credit call. render_js is on by default.
-        return $this->scrape(
-            $snapshotUrl,
-            $this->config->scrapflySnapshotRenderJs,
-        )->content;
-    }
-
-    /**
-     * Step 1: the static snapshot listing, which is cheaper because it needs no
-     * JS render. A Scrapfly failure here means blocked: the listing may exist
-     * but couldn't be retrieved.
-     */
-    private function fetchListing(string $url): string
-    {
+        // archive.today redirects /newest/{url} to the newest snapshot, and
+        // answers 404 when it has none.
         $result = $this->scrape(
-            $this->listingUrl($url),
-            $this->config->scrapflyListingRenderJs,
+            "{$this->config->archiveBaseUrl}/newest/{$url}",
+            $this->config->archiveRenderJs,
         );
 
-        // An error status from archive.is can be retried. It doesn't show that
-        // the snapshot is missing.
+        if ($result->statusCode === 404) {
+            throw new ArchiveSnapshotNotFoundException("No archive snapshot exists for: $url");
+        }
+
+        // Any other error status can be retried. It doesn't show that the
+        // snapshot is missing.
         if ($result->statusCode >= 400) {
-            throw new ArchiveBlockedException(
-                "Archive listing blocked (HTTP {$result->statusCode}) for: $url"
-            );
+            throw new ArchiveBlockedException("Archive fetch blocked (HTTP {$result->statusCode}) for: $url");
         }
 
         return $result->content;
@@ -178,71 +158,8 @@ readonly class Fetcher implements FetcherContract
             return $this->scraper->scrape($url, $renderJs);
         } catch (ScraperException $e) {
             // A scraper error is reported as blocked, which the caller can
-            // retry later, unlike an empty listing.
+            // retry later, unlike a missing snapshot.
             throw new ArchiveBlockedException('Archive fetch was blocked: '.$e->getMessage());
         }
-    }
-
-    /**
-     * Parse the newest snapshot URL out of an archive.today listing.
-     *
-     * Each snapshot in the listing is an anchor to https://archive.<tld>/
-     * <5-char-code> whose text includes a date. A regex over the raw page also
-     * matches archive.is/https, /loadi, /searc (truncations of unrelated links),
-     * so this queries the DOM and keeps only anchors whose href is exactly a
-     * 5-char snapshot code and whose text has a parseable date, then returns
-     * the latest.
-     *
-     * @throws ArchiveSnapshotNotFoundException when the listing has no snapshot rows
-     */
-    private function newestSnapshotUrl(string $html): string
-    {
-        if (trim($html) === '') {
-            throw new ArchiveSnapshotNotFoundException('Archive listing was empty.');
-        }
-
-        $document = new DOMDocument;
-
-        libxml_use_internal_errors(true);
-        $document->loadHTML($html);
-        libxml_clear_errors();
-
-        $xpath = new DOMXPath($document);
-
-        $newestUrl = null;
-        $newestAt = null;
-
-        /** @var \DOMElement $anchor */
-        foreach ($xpath->query('//a[@href]') ?: [] as $anchor) {
-            $href = $anchor->getAttribute('href');
-
-            if (! preg_match('~^https?://archive\.[a-z]+/[A-Za-z0-9]{5}$~', $href)) {
-                continue;
-            }
-
-            if (! preg_match('~(\d{1,2} [A-Za-z]{3} \d{4}(?: \d{2}:\d{2})?)~', $anchor->textContent, $match)) {
-                continue;
-            }
-
-            $snapshotAt = CarbonImmutable::parse($match[1]);
-
-            if ($newestAt === null || $snapshotAt->greaterThan($newestAt)) {
-                $newestAt = $snapshotAt;
-                $newestUrl = $href;
-            }
-        }
-
-        if ($newestUrl === null) {
-            throw new ArchiveSnapshotNotFoundException('No archive snapshot exists for this URL.');
-        }
-
-        return $newestUrl;
-    }
-
-    private function listingUrl(string $url): string
-    {
-        $base = $this->config->archiveBaseUrl;
-
-        return "$base/$url";
     }
 }

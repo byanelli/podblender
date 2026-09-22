@@ -48,11 +48,6 @@ class FetcherTest extends TestCase
         return $this->app->make(Fetcher::class);
     }
 
-    private function listingHtml(): string
-    {
-        return (string) file_get_contents(__DIR__.'/fixtures/archive-today-listing.html');
-    }
-
     /**
      * A Scrapfly scrape JSON envelope wrapping the given target HTML.
      */
@@ -70,24 +65,19 @@ class FetcherTest extends TestCase
     }
 
     /**
-     * Route Scrapfly calls by their target `url` query param. A bare 5-char
-     * archive code is the snapshot request, and anything else is the listing.
+     * Fake the scraper's answer to the archive request, and capture the
+     * request's target `url` and `render_js` query params.
      *
-     * @param  callable|PromiseInterface  $listing
-     * @param  callable|PromiseInterface  $snapshot
+     * @param  array<string, string|null>  $captured
      */
-    private function fakeTwoStep($listing, $snapshot): void
+    private function fakeArchive(PromiseInterface $response, array &$captured = []): void
     {
-        Http::fake(function (Request $request) use ($listing, $snapshot) {
+        Http::fake(function (Request $request) use ($response, &$captured) {
             $query = [];
             parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
-            $target = (string) ($query['url'] ?? '');
+            $captured = ['url' => $query['url'] ?? null, 'render_js' => $query['render_js'] ?? null];
 
-            $response = preg_match('~^https?://archive\.[a-z]+/[A-Za-z0-9]{5}$~', $target)
-                ? $snapshot
-                : $listing;
-
-            return is_callable($response) ? $response($request) : $response;
+            return $response;
         });
     }
 
@@ -193,76 +183,24 @@ class FetcherTest extends TestCase
     }
 
     #[Test]
-    public function it_resolves_the_newest_snapshot_through_scrapfly_and_returns_its_html()
+    public function it_fetches_the_newest_archive_snapshot_in_one_rendered_request()
     {
-        $this->fakeTwoStep(
-            listing: $this->scrapflyResponse($this->listingHtml()),
-            snapshot: $this->scrapflyResponse('<html>snapshot body</html>'),
-        );
+        $captured = [];
+        $this->fakeArchive($this->scrapflyResponse('<html>snapshot body</html>'), $captured);
 
         $body = $this->fetcher()->fetchFromArchive('https://www.nytimes.com/some-article');
 
         $this->assertEquals('<html>snapshot body</html>', $body);
 
-        // Step 1: the listing at {base}/{url}, with ASP on and JS rendering off.
-        Http::assertSent(function (Request $request) {
-            $query = [];
-            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
-
-            return ($query['asp'] ?? null) === 'true'
-                && ($query['render_js'] ?? null) === 'false'
-                && ($query['url'] ?? null) === 'https://archive.ph/https://www.nytimes.com/some-article';
-        });
-
-        // Step 2: the newest snapshot (CLBwm at 18:47 in the fixture), with JS
-        // rendering on.
-        Http::assertSent(function (Request $request) {
-            $query = [];
-            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
-
-            return ($query['render_js'] ?? null) === 'true'
-                && ($query['url'] ?? null) === 'https://archive.is/CLBwm';
-        });
+        // archive.today redirects /newest/{url} to the newest snapshot.
+        $this->assertSame('https://archive.ph/newest/https://www.nytimes.com/some-article', $captured['url']);
+        $this->assertSame('true', $captured['render_js']);
     }
 
     #[Test]
-    public function it_picks_the_newest_among_multiple_dated_snapshots()
+    public function it_throws_snapshot_not_found_when_the_archive_answers_404()
     {
-        $listing = <<<'HTML'
-        <html><body>
-          <a href="https://archive.is/aaaaa"><div>10 Jan 2026 09:00</div></a>
-          <a href="https://archive.is/zzzzz"><div>15 Mar 2026 12:00</div></a>
-          <a href="https://archive.is/mmmmm"><div>02 Feb 2026 08:00</div></a>
-        </body></html>
-        HTML;
-
-        $capturedSnapshotTarget = null;
-
-        $this->fakeTwoStep(
-            listing: $this->scrapflyResponse($listing),
-            snapshot: function (Request $request) use (&$capturedSnapshotTarget) {
-                $query = [];
-                parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
-                $capturedSnapshotTarget = $query['url'] ?? null;
-
-                return $this->scrapflyResponse('<html>newest</html>');
-            },
-        );
-
-        $body = $this->fetcher()->fetchFromArchive('https://www.example.com/x');
-
-        $this->assertEquals('<html>newest</html>', $body);
-        // 15 Mar 2026 is the latest.
-        $this->assertSame('https://archive.is/zzzzz', $capturedSnapshotTarget);
-    }
-
-    #[Test]
-    public function it_throws_snapshot_not_found_when_the_listing_has_no_snapshots()
-    {
-        $this->fakeTwoStep(
-            listing: $this->scrapflyResponse('<html><body>No results found.</body></html>'),
-            snapshot: $this->scrapflyResponse('<html>unused</html>'),
-        );
+        $this->fakeArchive($this->scrapflyResponse('<html>No results</html>', statusCode: 404));
 
         $this->expectException(ArchiveSnapshotNotFoundException::class);
 
@@ -270,12 +208,9 @@ class FetcherTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_blocked_when_scrapfly_fails_on_the_listing()
+    public function it_throws_blocked_when_the_scraper_fails()
     {
-        $this->fakeTwoStep(
-            listing: $this->scrapflyResponse('', 200, success: false),
-            snapshot: $this->scrapflyResponse('<html>unused</html>'),
-        );
+        $this->fakeArchive($this->scrapflyResponse('', 200, success: false));
 
         $this->expectException(ArchiveBlockedException::class);
 
@@ -283,12 +218,9 @@ class FetcherTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_blocked_when_archive_answers_with_a_blocking_status()
+    public function it_throws_blocked_when_the_archive_answers_with_another_error_status()
     {
-        $this->fakeTwoStep(
-            listing: $this->scrapflyResponse('<html>blocked</html>', statusCode: 429),
-            snapshot: $this->scrapflyResponse('<html>unused</html>'),
-        );
+        $this->fakeArchive($this->scrapflyResponse('<html>blocked</html>', statusCode: 429));
 
         $this->expectException(ArchiveBlockedException::class);
 

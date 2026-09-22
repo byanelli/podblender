@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'hard_paywall_domains'        => [
+    'hard_paywall_domains' => [
         'nytimes.com',
         'economist.com',
         'wsj.com',
@@ -41,7 +41,7 @@ return [
     |
     */
 
-    'paywall_markers'             => [
+    'paywall_markers'      => [
         'Subscribe to continue',
         'Subscribe to read',
         'to continue reading',
@@ -63,7 +63,7 @@ return [
     |
     */
 
-    'paywall_selectors'           => [
+    'paywall_selectors'    => [
         'piano-inline',
         'gateway-content',
         'article-gate',
@@ -80,7 +80,7 @@ return [
     |
     */
 
-    'min_body_length'             => (int) env('ARTICLES_MIN_BODY_LENGTH', 500),
+    'min_body_length'      => (int) env('ARTICLES_MIN_BODY_LENGTH', 500),
 
     /*
     |--------------------------------------------------------------------------
@@ -93,7 +93,7 @@ return [
     |
     */
 
-    'archive_base_url'            => env('ARTICLES_ARCHIVE_BASE_URL', 'https://archive.ph'),
+    'archive_base_url'     => env('ARTICLES_ARCHIVE_BASE_URL', 'https://archive.ph'),
 
     /*
     |--------------------------------------------------------------------------
@@ -114,34 +114,26 @@ return [
     |
     */
 
-    'wayback_base_url'            => env('ARTICLES_WAYBACK_BASE_URL', 'https://archive.org'),
+    'wayback_base_url'     => env('ARTICLES_WAYBACK_BASE_URL', 'https://archive.org'),
 
     /*
     |--------------------------------------------------------------------------
-    | Scrapfly Archive Fetch
+    | Archive Fetch
     |--------------------------------------------------------------------------
     |
-    | archive.is is fronted by Cloudflare and serves a CAPTCHA to raw HTTP
-    | clients, so gated articles are retrieved through Scrapfly's ASP. Resolving
-    | one paywalled article is TWO scrapes, and EACH SPENDS CREDITS:
-    |
-    |   1. the snapshot listing ({base}/{url}, JS render off, ~25 credits), and
-    |   2. the chosen snapshot ({snapshot-url}, JS render on, ~30 credits)
-    |      — roughly 55 credits per paywalled article.
-    |
-    | The listing is static HTML so it renders without JS (cheaper); the snapshot
-    | needs JS to materialize the archived body. Scrapfly is slow on this target
-    | (~50-75s) and drops connections intermittently, hence the generous timeout.
+    | archive.is is behind Cloudflare and serves a CAPTCHA to plain HTTP
+    | clients, so its snapshots are fetched through the scraping service that
+    | SCRAPER_PROVIDER selects. One request per article, at {base}/newest/{url},
+    | which archive.is redirects to the newest snapshot. The snapshot needs
+    | JavaScript to render its body.
     |
     */
 
-    'scrapfly_country'            => env('ARTICLES_SCRAPFLY_COUNTRY', 'us'),
+    'archive_render_js'    => (bool) env('ARTICLES_ARCHIVE_RENDER_JS', true),
 
-    'scrapfly_timeout'            => (int) env('ARTICLES_SCRAPFLY_TIMEOUT', 180),
+    'scrapfly_country'     => env('ARTICLES_SCRAPFLY_COUNTRY', 'us'),
 
-    'scrapfly_listing_render_js'  => (bool) env('ARTICLES_SCRAPFLY_LISTING_RENDER_JS', false),
-
-    'scrapfly_snapshot_render_js' => (bool) env('ARTICLES_SCRAPFLY_SNAPSHOT_RENDER_JS', true),
+    'scrapfly_timeout'     => (int) env('ARTICLES_SCRAPFLY_TIMEOUT', 180),
 
     /*
     |--------------------------------------------------------------------------
@@ -154,7 +146,7 @@ return [
     |
     */
 
-    'user_agent'                  => env(
+    'user_agent'           => env(
         'ARTICLES_USER_AGENT',
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
     ),
@@ -171,6 +163,6 @@ return [
     |
     */
 
-    'cache_ttl_hours'             => (int) env('ARTICLES_CACHE_TTL_HOURS', 168),
+    'cache_ttl_hours'      => (int) env('ARTICLES_CACHE_TTL_HOURS', 168),
 
 ];

@@ -51,7 +51,7 @@ readonly class Reader implements ReaderContract
      *      a usable page to a logged-out reader. Used only if not paywalled.
      *   2. Wayback (free). Its snapshot is often a capture of the paywalled
      *      page, so it is used only if the PaywallDetector passes it.
-     *   3. archive.is (paid, ~55 Scrapfly credits). Its snapshots are
+     *   3. archive.is (paid, one scraper request). Its snapshots are
      *      user-submitted captures without the paywall, and it is the last
      *      tier, so its result is not checked.
      */

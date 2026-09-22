@@ -16,11 +16,6 @@ class ReaderTest extends TestCase
         return (string) file_get_contents(__DIR__.'/fixtures/clean-full.html');
     }
 
-    private function listingHtml(): string
-    {
-        return (string) file_get_contents(__DIR__.'/fixtures/archive-today-listing.html');
-    }
-
     private function gatedHtml(): string
     {
         return '<html><head><script type="application/ld+json">'
@@ -44,25 +39,14 @@ class ReaderTest extends TestCase
     }
 
     /**
-     * Fake the direct fetch and both Scrapfly requests. Any non-Scrapfly host
-     * returns $direct, the listing request returns the fixture listing, and
-     * the snapshot request returns $snapshot.
+     * Fake the direct fetch and the archive request. Any non-Scrapfly host
+     * returns $direct, and the Scrapfly request returns $snapshot.
      */
     private function fake(string $direct, string $snapshot): void
     {
-        Http::fake(function (Request $request) use ($direct, $snapshot) {
-            if (! str_starts_with($request->url(), 'https://api.scrapfly.io')) {
-                return Http::response($direct);
-            }
-
-            $query = [];
-            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
-            $target = (string) ($query['url'] ?? '');
-
-            return preg_match('~^https?://archive\.[a-z]+/[A-Za-z0-9]{5}$~', $target)
-                ? $this->scrapfly($snapshot)
-                : $this->scrapfly($this->listingHtml());
-        });
+        Http::fake(fn (Request $request) => str_starts_with($request->url(), 'https://api.scrapfly.io')
+            ? $this->scrapfly($snapshot)
+            : Http::response($direct));
     }
 
     /**
@@ -91,13 +75,7 @@ class ReaderTest extends TestCase
             }
 
             if (str_starts_with($url, 'https://api.scrapfly.io')) {
-                $query = [];
-                parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
-                $target = (string) ($query['url'] ?? '');
-
-                return preg_match('~^https?://archive\.[a-z]+/[A-Za-z0-9]{5}$~', $target)
-                    ? $this->scrapfly($archiveSnapshot)
-                    : $this->scrapfly($this->listingHtml());
+                return $this->scrapfly($archiveSnapshot);
             }
 
             return Http::response($direct);

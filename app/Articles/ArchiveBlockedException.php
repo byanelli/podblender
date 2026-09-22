@@ -5,8 +5,8 @@ namespace App\Articles;
 use RuntimeException;
 
 /**
- * The archive lookup was blocked or failed: Scrapfly threw, reported an
- * unsuccessful scrape, or archive.is returned an HTTP error status. The
+ * The archive fetch was blocked or failed: the scraper threw, or archive.is
+ * returned an HTTP error status other than 404. The
  * snapshot may still exist, so the lookup can be retried.
  */
 class ArchiveBlockedException extends RuntimeException {}

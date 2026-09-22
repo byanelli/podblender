@@ -17,7 +17,7 @@ interface Fetcher
 
     /**
      * Retrieve the closest Wayback Machine snapshot of the URL as raw HTML,
-     * without Wayback's toolbar. Uses no Scrapfly credits. The snapshot may be a
+     * without Wayback's toolbar. Uses no scraper. The snapshot may be a
      * capture of the paywalled page, so the caller must check it.
      *
      * @throws WaybackSnapshotNotFoundException when no snapshot exists or the
@@ -27,9 +27,9 @@ interface Fetcher
 
     /**
      * Retrieve the HTML of the newest archive.is snapshot of the URL through
-     * Scrapfly's ASP.
+     * the configured Scraper.
      *
-     * @throws ArchiveSnapshotNotFoundException when the listing has no snapshot
+     * @throws ArchiveSnapshotNotFoundException when the archive has no snapshot
      * @throws ArchiveBlockedException when the archive is blocked or errors
      */
     public function fetchFromArchive(string $url): string;
