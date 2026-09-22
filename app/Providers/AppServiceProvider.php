@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Apis\Ffmpeg\Client as FfmpegClient;
 use App\Apis\Ffmpeg\Contracts\Client as FfmpegClientContract;
 use App\Apis\Scrapfly\Client as ScrapflyClient;
-use App\Apis\Scrapfly\Contracts\Client as ScrapflyClientContract;
+use App\Apis\Scraping\Contracts\Scraper;
 use App\Apis\Tts\Contracts\Client as TtsClientContract;
 use App\Apis\Tts\GeminiClient as TtsClient;
 use App\Apis\YouTubeData\Client as YouTubeDataClient;
@@ -53,7 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TtsClientContract::class, TtsClient::class);
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
         $this->app->bind(YouTubeDataClientContract::class, YouTubeDataClient::class);
-        $this->app->bind(ScrapflyClientContract::class, ScrapflyClient::class);
+        $this->app->bind(Scraper::class, fn () => $this->app->make($this->scraperClass()));
 
         $this->app->bind(CoverGeneratorContract::class, GdCoverGenerator::class);
 
@@ -89,6 +89,25 @@ class AppServiceProvider extends ServiceProvider
             default       => throw new InvalidArgumentException(sprintf(
                 'Unknown residential proxy provider [%s]. RESIDENTIAL_PROXY_PROVIDER must be one of: oxylabs, '
                 .'dataimpulse.',
+                is_string($provider) ? $provider : get_debug_type($provider),
+            )),
+        };
+    }
+
+    /**
+     * The scraping service that SCRAPER_PROVIDER selects. An unrecognized name throws, for the same reason as
+     * residentialProxyConfigClass().
+     *
+     * @return class-string<Scraper>
+     */
+    private function scraperClass(): string
+    {
+        $provider = $this->app->make(Config::class)->get('services.scraper.provider');
+
+        return match ($provider) {
+            'scrapfly' => ScrapflyClient::class,
+            default    => throw new InvalidArgumentException(sprintf(
+                'Unknown scraper provider [%s]. SCRAPER_PROVIDER must be one of: scrapfly.',
                 is_string($provider) ? $provider : get_debug_type($provider),
             )),
         };

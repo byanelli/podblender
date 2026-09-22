@@ -2,9 +2,9 @@
 
 namespace App\Articles;
 
-use App\Apis\Scrapfly\Contracts\Client as Scrapfly;
-use App\Apis\Scrapfly\ScrapflyException;
-use App\Apis\Scrapfly\ScrapflyResult;
+use App\Apis\Scraping\Contracts\Scraper;
+use App\Apis\Scraping\ScrapeResult;
+use App\Apis\Scraping\ScraperException;
 use App\Articles\Contracts\Fetcher as FetcherContract;
 use App\Proxies\Contracts\ResidentialProxyConfig;
 use Carbon\CarbonImmutable;
@@ -31,7 +31,7 @@ readonly class Fetcher implements FetcherContract
     public function __construct(
         private Factory $http,
         private FetcherConfig $config,
-        private Scrapfly $scrapfly,
+        private Scraper $scraper,
         private ResidentialProxyConfig $residentialProxy,
     ) {}
 
@@ -172,12 +172,12 @@ readonly class Fetcher implements FetcherContract
         return $result->content;
     }
 
-    private function scrape(string $url, bool $renderJs): ScrapflyResult
+    private function scrape(string $url, bool $renderJs): ScrapeResult
     {
         try {
-            return $this->scrapfly->scrape($url, $renderJs);
-        } catch (ScrapflyException $e) {
-            // A Scrapfly error is reported as blocked, which the caller can
+            return $this->scraper->scrape($url, $renderJs);
+        } catch (ScraperException $e) {
+            // A scraper error is reported as blocked, which the caller can
             // retry later, unlike an empty listing.
             throw new ArchiveBlockedException('Archive fetch was blocked: '.$e->getMessage());
         }

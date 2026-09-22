@@ -2,13 +2,13 @@
 
 namespace App\Apis\Scrapfly;
 
-use RuntimeException;
+use App\Apis\Scraping\ScraperException;
 
 /**
  * A Scrapfly-level failure: the API returned an error, reported the scrape
  * unsuccessful, or the connection failed on every retry.
  */
-class ScrapflyException extends RuntimeException
+class ScrapflyException extends ScraperException
 {
     /**
      * Takes no $previous. The API key is in the request's query string, and

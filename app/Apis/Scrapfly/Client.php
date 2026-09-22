@@ -2,7 +2,8 @@
 
 namespace App\Apis\Scrapfly;
 
-use App\Apis\Scrapfly\Contracts\Client as ClientContract;
+use App\Apis\Scraping\Contracts\Scraper;
+use App\Apis\Scraping\ScrapeResult;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Response;
@@ -18,7 +19,7 @@ use Illuminate\Http\Client\Response;
  *     contain it. Every failure path throws a ScrapflyException whose message
  *     contains neither the URL nor the key.
  */
-readonly class Client implements ClientContract
+readonly class Client implements Scraper
 {
     private const string ENDPOINT = 'https://api.scrapfly.io/scrape';
 
@@ -31,7 +32,7 @@ readonly class Client implements ClientContract
         private ClientConfig $config,
     ) {}
 
-    public function scrape(string $url, bool $renderJs = false): ScrapflyResult
+    public function scrape(string $url, bool $renderJs = false): ScrapeResult
     {
         // Only connection failures are retried. A Scrapfly-level failure
         // (success=false / non-2xx) is deterministic and propagates immediately.
@@ -68,7 +69,7 @@ readonly class Client implements ClientContract
             ]);
     }
 
-    private function toResult(Response $response, string $url): ScrapflyResult
+    private function toResult(Response $response, string $url): ScrapeResult
     {
         // Report the status only. The URL contains the key.
         if ($response->failed()) {
@@ -87,11 +88,10 @@ readonly class Client implements ClientContract
             throw new ScrapflyException('Scrapfly reported an unsuccessful scrape.');
         }
 
-        return new ScrapflyResult(
+        return new ScrapeResult(
             content: (string) ($result['content'] ?? ''),
             finalUrl: (string) ($result['url'] ?? $url),
             statusCode: (int) ($result['status_code'] ?? 0),
-            success: true,
         );
     }
 }

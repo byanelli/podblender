@@ -49,6 +49,11 @@ return [
         ],
     ],
 
+    // Which scraping service fetches pages a plain HTTP client can't, such as archive.is behind Cloudflare.
+    'scraper'           => [
+        'provider' => env('SCRAPER_PROVIDER', 'scrapfly'),
+    ],
+
     'scrapfly'          => [
         // Anti-Scraping-Protection scrape API, used to clear archive.is's
         // Cloudflare CAPTCHA for gated articles. Every scrape spends credits.

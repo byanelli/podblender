@@ -2,7 +2,7 @@
 
 namespace Tests\Apis\Scrapfly;
 
-use App\Apis\Scrapfly\Contracts\Client;
+use App\Apis\Scrapfly\Client;
 use App\Apis\Scrapfly\ScrapflyException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -55,7 +55,6 @@ class ClientTest extends TestCase
         $this->assertSame('<html>scraped</html>', $result->content);
         $this->assertSame('https://archive.is/CLBwm', $result->finalUrl);
         $this->assertSame(200, $result->statusCode);
-        $this->assertTrue($result->success);
 
         Http::assertSent(function (Request $request) {
             $query = [];
