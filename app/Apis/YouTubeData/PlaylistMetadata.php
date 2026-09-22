@@ -11,7 +11,7 @@ readonly class PlaylistMetadata
          * The playlist's owner channel. Used as the feed's author, because a
          * playlist's title names a collection.
          */
-        public ChannelMetadata $channel,
+        public ChannelReference $channel,
         /** How many videos the playlist contains, when the API reports it. */
         public ?int $itemCount = null,
     ) {}

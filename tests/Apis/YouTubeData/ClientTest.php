@@ -2,7 +2,6 @@
 
 namespace Tests\Apis\YouTubeData;
 
-use App\Apis\YouTubeData\ChannelMetadata;
 use App\Apis\YouTubeData\Client;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -445,15 +444,25 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $this->assertEquals('UUabc123', $client->getChannelMetadataForId('UCabc123')->uploadsPlaylistId());
+        $this->assertEquals('UUabc123', $client->getChannelMetadataForId('UCabc123')->uploadsPlaylistId);
     }
 
     #[Test]
     public function it_derives_the_uploads_playlist_from_the_channel_id_when_the_api_omits_it()
     {
-        $channel = new ChannelMetadata(id: 'UCabc123', name: 'Some Channel');
+        Http::fake(['*' => Http::response([
+            'items' => [
+                [
+                    'id'               => 'UCabc123',
+                    'brandingSettings' => ['channel' => ['title' => 'Some Channel']],
+                ],
+            ],
+        ])]);
 
-        $this->assertEquals('UUabc123', $channel->uploadsPlaylistId());
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $this->assertEquals('UUabc123', $client->getChannelMetadataForId('UCabc123')->uploadsPlaylistId);
     }
 
     #[Test]
@@ -496,6 +505,7 @@ class ClientTest extends TestCase
                             'title' => $name = 'some channel',
                         ],
                     ],
+                    'contentDetails'   => ['relatedPlaylists' => ['uploads' => 'UUleirjieljrg']],
                 ],
             ],
         ])]);

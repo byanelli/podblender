@@ -11,7 +11,7 @@ readonly class VideoMetadata
         public string $title,
         public string $description,
         public DateTimeInterface $publishedAt,
-        public ChannelMetadata $channel,
+        public ChannelReference $channel,
         /** Length of the video in seconds, when the API reports it. */
         public ?int $durationSeconds = null,
         /** The largest thumbnail the API listed for the video, if any. */

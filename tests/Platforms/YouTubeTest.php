@@ -3,6 +3,7 @@
 namespace Tests\Platforms;
 
 use App\Apis\YouTubeData\ChannelMetadata;
+use App\Apis\YouTubeData\ChannelReference;
 use App\Apis\YouTubeData\PlaylistMetadata;
 use App\Apis\YouTubeData\VideoMetadata;
 use App\Enums\AudioSourceType;
@@ -28,7 +29,7 @@ class YouTubeTest extends TestCase
             title: $title,
             description: 'description of '.$title,
             publishedAt: $publishedAt,
-            channel: new ChannelMetadata(id: $channelId, name: $channelName),
+            channel: new ChannelReference(id: $channelId, name: $channelName),
             durationSeconds: 600,
             thumbnailUrl: "https://i.ytimg.com/vi/{$id}/maxresdefault.jpg",
         );
@@ -40,7 +41,12 @@ class YouTubeTest extends TestCase
         // search.list stops paging after ~500 results, so a channel is listed
         // through its uploads playlist: the "UC" id with a "UU" prefix.
         $this->fakeYouTubeData(
-            channelMetadata: new ChannelMetadata(id: 'UCabc123', name: 'Some Channel'),
+            channelMetadata: new ChannelMetadata(
+                id: 'UCabc123',
+                name: 'Some Channel',
+                uploadsPlaylistId: 'UUabc123',
+                videoCount: null,
+            ),
             playlistVideos: [
                 $this->video('v1', 'Newest', now()->subDay()),
                 $this->video('v2', 'Older', now()->subMonths(2)),
@@ -109,7 +115,7 @@ class YouTubeTest extends TestCase
         $this->fakeYouTubeData(playlistMetadata: new PlaylistMetadata(
             id: 'PLabc123',
             title: 'Select Lectures',
-            channel: new ChannelMetadata(id: 'UCowner', name: 'Lecture Channel'),
+            channel: new ChannelReference(id: 'UCowner', name: 'Lecture Channel'),
             itemCount: 42,
         ));
 
@@ -133,6 +139,7 @@ class YouTubeTest extends TestCase
         $this->fakeYouTubeData(channelMetadata: new ChannelMetadata(
             id: 'UCabc123',
             name: 'Some Channel',
+            uploadsPlaylistId: 'UUabc123',
             videoCount: 864,
         ));
 
@@ -156,7 +163,7 @@ class YouTubeTest extends TestCase
         $this->fakeYouTubeData(playlistMetadata: new PlaylistMetadata(
             id: 'PLabc123',
             title: 'Select Lectures',
-            channel: new ChannelMetadata(id: 'UCowner', name: 'Lecture Channel'),
+            channel: new ChannelReference(id: 'UCowner', name: 'Lecture Channel'),
         ));
 
         /** @var YouTube $youtube */
@@ -205,7 +212,7 @@ class YouTubeTest extends TestCase
             title: $videoTitle = 'some video',
             description: $videoDescription = 'some description',
             publishedAt: $publishTime = now()->subDay()->roundSeconds(),
-            channel: new ChannelMetadata(
+            channel: new ChannelReference(
                 id: $channelId,
                 name: $channelName = 'some channel',
             ),
@@ -238,7 +245,7 @@ class YouTubeTest extends TestCase
             title: 'some video',
             description: 'some description',
             publishedAt: now(),
-            channel: new ChannelMetadata(id: 'channel-id', name: 'some channel'),
+            channel: new ChannelReference(id: 'channel-id', name: 'some channel'),
             thumbnailUrl: null,
         ));
 
@@ -279,7 +286,7 @@ class YouTubeTest extends TestCase
             title: 'some video',
             description: 'some description',
             publishedAt: now(),
-            channel: new ChannelMetadata(id: 'channel-id', name: 'some channel'),
+            channel: new ChannelReference(id: 'channel-id', name: 'some channel'),
             durationSeconds: 600,
         ));
 
@@ -299,7 +306,7 @@ class YouTubeTest extends TestCase
             title: 'some video',
             description: 'some description',
             publishedAt: now(),
-            channel: new ChannelMetadata(id: 'channel-id', name: 'some channel'),
+            channel: new ChannelReference(id: 'channel-id', name: 'some channel'),
             durationSeconds: null,
         ));
 
@@ -317,6 +324,8 @@ class YouTubeTest extends TestCase
         $this->fakeYouTubeData(channelMetadata: new ChannelMetadata(
             id: $id,
             name: $name = 'some channel',
+            uploadsPlaylistId: 'UUlwjflwjfwljfw',
+            videoCount: null,
         ));
 
         /** @var YouTube $youtube */

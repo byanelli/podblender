@@ -141,7 +141,8 @@ readonly class Client implements Contracts\Client
         return new ChannelMetadata(
             id: $channel['id'],
             name: $channel['brandingSettings']['channel']['title'],
-            uploadsPlaylistId: $channel['contentDetails']['relatedPlaylists']['uploads'] ?? null,
+            uploadsPlaylistId: $channel['contentDetails']['relatedPlaylists']['uploads']
+                ?? ChannelMetadata::uploadsPlaylistIdFor($channel['id']),
             videoCount: isset($channel['statistics']['videoCount'])
                 ? (int) $channel['statistics']['videoCount']
                 : null,
@@ -162,7 +163,7 @@ readonly class Client implements Contracts\Client
     {
         $response = $this->apiGet('channels', [
             'id'   => $channelId,
-            'part' => 'id,brandingSettings,contentDetails,contentOwnerDetails,status,snippet,statistics',
+            'part' => 'id,brandingSettings,contentDetails,statistics',
         ]);
 
         return $this->getChannelMetadataFromResponse($response, $channelId);
@@ -210,7 +211,7 @@ readonly class Client implements Contracts\Client
         return new PlaylistMetadata(
             id: $playlist['id'],
             title: $playlist['snippet']['title'],
-            channel: new ChannelMetadata(
+            channel: new ChannelReference(
                 id: $playlist['snippet']['channelId'],
                 name: $playlist['snippet']['channelTitle'],
             ),
@@ -298,7 +299,7 @@ readonly class Client implements Contracts\Client
             title: html_entity_decode($snippet['title']),
             description: $snippet['description'] ?? '',
             publishedAt: CarbonImmutable::parse($publishedAt),
-            channel: new ChannelMetadata(
+            channel: new ChannelReference(
                 id: $snippet['videoOwnerChannelId'] ?? $snippet['channelId'],
                 name: html_entity_decode($snippet['videoOwnerChannelTitle'] ?? $snippet['channelTitle']),
             ),
@@ -324,7 +325,7 @@ readonly class Client implements Contracts\Client
             title: $decodeTitle ? html_entity_decode($snippet['title']) : $snippet['title'],
             description: $snippet['description'],
             publishedAt: CarbonImmutable::parse($snippet['publishedAt']),
-            channel: new ChannelMetadata(
+            channel: new ChannelReference(
                 id: $snippet['channelId'],
                 name: $snippet['channelTitle'],
             ),

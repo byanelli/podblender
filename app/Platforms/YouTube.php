@@ -37,7 +37,7 @@ readonly class YouTube implements SubscribablePlatform
             description: $video->description,
             canonicalUrl: "https://youtube.com/watch?v=$video->id",
             publishedAt: $video->publishedAt,
-            source: $this->convertChannelMetadataToSourceMetadata($video->channel),
+            source: $this->channelSourceMetadata($video->channel->id, $video->channel->name),
             estimatedDownloadTime: $this->estimateDownloadTime($video),
             thumbnail: $video->thumbnailUrl === null
                 ? null
@@ -164,8 +164,8 @@ readonly class YouTube implements SubscribablePlatform
         $channelIdOrHandle = $this->getLastPathPiece($sourceUrl);
 
         return $this->sourceUrlHasChannelId($sourceUrl)
-            ? (new ChannelMetadata(id: $channelIdOrHandle, name: ''))->uploadsPlaylistId()
-            : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle)->uploadsPlaylistId();
+            ? ChannelMetadata::uploadsPlaylistIdFor($channelIdOrHandle)
+            : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle)->uploadsPlaylistId;
     }
 
     /**
@@ -191,14 +191,14 @@ readonly class YouTube implements SubscribablePlatform
         return (string) collect(explode('/', Uri::new($url)->getPath()))->last();
     }
 
-    private function convertChannelMetadataToSourceMetadata(ChannelMetadata $channel): SourceMetadata
+    private function channelSourceMetadata(string $id, string $name, ?int $videoCount = null): SourceMetadata
     {
         return new SourceMetadata(
-            name: $channel->name,
-            canonicalUrl: "https://youtube.com/channel/{$channel->id}",
-            authorName: $channel->name,
+            name: $name,
+            canonicalUrl: "https://youtube.com/channel/{$id}",
+            authorName: $name,
             type: AudioSourceType::Channel,
-            clipCount: $channel->videoCount,
+            clipCount: $videoCount,
         );
     }
 
@@ -213,11 +213,11 @@ readonly class YouTube implements SubscribablePlatform
 
             $channelIdOrHandle = $this->getLastPathPiece($sourceUrl);
 
-            return $this->convertChannelMetadataToSourceMetadata(
-                $this->sourceUrlHasChannelId($sourceUrl)
-                    ? $this->youTubeData->getChannelMetadataForId($channelIdOrHandle)
-                    : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle)
-            );
+            $channel = $this->sourceUrlHasChannelId($sourceUrl)
+                ? $this->youTubeData->getChannelMetadataForId($channelIdOrHandle)
+                : $this->youTubeData->getChannelMetadataForHandle($channelIdOrHandle);
+
+            return $this->channelSourceMetadata($channel->id, $channel->name, $channel->videoCount);
         } catch (\Exception $e) {
             throw new PlatformException(PlatformType::YouTube, PlatformOperation::Metadata, $e);
         }
