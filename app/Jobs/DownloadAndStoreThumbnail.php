@@ -67,8 +67,7 @@ class DownloadAndStoreThumbnail implements ShouldQueue
             $downloadPath = match (true) {
                 $this->source instanceof RemoteImageThumbnail => $this->downloadRemoteImage($http, $this->source),
 
-                // Other ThumbnailSource types, such as a generated cover for a
-                // narrated article, each need an arm here.
+                // Each ThumbnailSource type needs an arm here.
                 default                                       => throw new \InvalidArgumentException(
                     'Unsupported thumbnail source: '.$this->source::class
                 ),
@@ -114,7 +113,7 @@ class DownloadAndStoreThumbnail implements ShouldQueue
     {
         $response = $http->timeout(30)->get($source->url)->throw();
 
-        // Platforms often answer for a missing image with a 200 and an HTML
+        // For a missing image, platforms often return a 200 with an HTML
         // page, which ffmpeg would report as an unclear decode failure.
         $contentType = (string) $response->header('Content-Type');
 

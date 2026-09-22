@@ -30,7 +30,7 @@ class OxylabsResidentialProxyConfigTest extends TestCase
         // media requests come from two addresses is refused.
         $this->assertMatchesRegularExpression('/-sessid-\w+-/', $url);
 
-        // Oxylabs's default session is 10 minutes, which is shorter than a long download.
+        // Oxylabs' default session is 10 minutes, which is shorter than a long download.
         $this->assertStringContainsString('-sesstime-60:', $url);
 
         $this->assertStringStartsWith('http://customer-someuser-cc-US-sessid-', $url);

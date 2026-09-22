@@ -40,7 +40,7 @@ class UpdateAllSubscriptionsTest extends TestCase
     {
         Bus::fake();
 
-        // The only subscriber is a filled one-shot. Sweeping the source would
+        // The only subscriber is a filled one-time feed. Sweeping the source would
         // spend platform quota on a feed that takes no new episodes.
         $finished = AudioSource::factory()->create();
         Feed::factory()->create([
@@ -59,7 +59,7 @@ class UpdateAllSubscriptionsTest extends TestCase
     {
         Bus::fake();
 
-        // A one-shot subscription still needs its first fill.
+        // A one-time subscription still needs its first fill.
         $pending = AudioSource::factory()->create();
         Feed::factory()->create([
             'subscription_id'        => $pending->id,
@@ -77,8 +77,8 @@ class UpdateAllSubscriptionsTest extends TestCase
     {
         Bus::fake();
 
-        // One source with a filled one-shot subscriber and a tracking
-        // subscriber. The source must still be swept for the second.
+        // One source with two subscribers: a filled one-time feed and a feed
+        // that tracks new episodes. The source must still be swept for the second.
         $source = AudioSource::factory()->create();
 
         Feed::factory()->create([

@@ -142,7 +142,7 @@ class ReaderTest extends TestCase
     #[Test]
     public function it_uses_the_free_wayback_tier_when_direct_is_gated_and_never_spends_scrapfly_credits()
     {
-        // The direct page is gated and Wayback has the full article.
+        // The direct page is paywalled and Wayback has the full article.
         $this->fakeCascade(
             direct: $this->gatedHtml(),
             wayback: $this->cleanHtml(),
@@ -161,7 +161,7 @@ class ReaderTest extends TestCase
     #[Test]
     public function it_falls_through_wayback_to_the_archive_when_the_wayback_snapshot_is_also_gated()
     {
-        // Wayback's crawler was served the paywall too, so its snapshot is gated.
+        // Wayback's crawler was served the paywall too, so its snapshot is paywalled.
         $this->fakeCascade(
             direct: $this->gatedHtml(),
             wayback: $this->gatedHtml(),
@@ -180,7 +180,7 @@ class ReaderTest extends TestCase
     #[Test]
     public function it_falls_through_to_the_archive_when_wayback_has_no_snapshot()
     {
-        // Many gated outlets block the Wayback crawler, so no snapshot exists.
+        // Many paywalled outlets block the Wayback crawler, so no snapshot exists.
         $this->fakeCascade(
             direct: $this->gatedHtml(),
             wayback: null,

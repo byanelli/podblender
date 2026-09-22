@@ -51,7 +51,7 @@ class UpdateSubscriptionTest extends TestCase
                 title: 'Title 1',
                 description: 'Description 1',
                 canonicalUrl: $clip1Url = 'https://youtube.com/watch?v=clip1',
-                publishedAt: now()->subDays(3), // published before subscription date -- should be missing in db
+                publishedAt: now()->subDays(3), // Before the subscription date, so not stored.
                 source: $sourceMetadata,
             ),
             new ClipMetadata(
@@ -260,7 +260,7 @@ class UpdateSubscriptionTest extends TestCase
         /** @var AudioSource $subscription */
         $subscription = AudioSource::factory()->create();
 
-        // A filled one-shot whose backfill window starts in 2014. If it counted
+        // A filled one-time feed whose backfill window starts in 2014. If it counted
         // towards the cursor, every sweep of this source would re-fetch a decade
         // of clips.
         Feed::factory()->create([

@@ -68,7 +68,7 @@ readonly class GenerateFeedCover
             }
 
             // A feed works without artwork, so a failure here must not stop
-            // the feed being created. cover_path is left unchanged.
+            // the feed being created.
             $this->logger->warning(
                 "Couldn't generate a cover for feed {$feed->id}: {$e->getMessage()}"
             );

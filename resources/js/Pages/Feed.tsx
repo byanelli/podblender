@@ -172,8 +172,6 @@ export default function Feed({ feed }: { feed: FeedType }) {
         <AuthenticatedLayout
             header={
                 <div className="flex items-stretch gap-4">
-                    {/* A feed whose cover could not be drawn simply shows no picture, the same way a clip
-                        without a thumbnail does. */}
                     {/* The cover's height comes from the row, so it meets the top of the chip and the bottom of the
                         clip count, and stops at the height of a one-line name. Its width is fixed so the heading
                         does not move when the image loads. */}

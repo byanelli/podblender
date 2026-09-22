@@ -7,12 +7,9 @@
 @source not '../../.claude';
 
 /*
-  Podblender — "friendly blender bar"
-  A light, cheerful workshop where YouTube channels and web articles get blended
-  into podcast feeds. Cream-mint canvas, deep-teal primary, pastel aqua/mint/sky
-  accents, chunky ink outlines with hard offset shadows, pill-shaped controls,
-  and a bold rounded display face (Baloo 2) over a warm sans (Nunito Sans).
-  The app is light-only.
+  Cream-mint background, deep-teal primary, pastel aqua, mint and sky accents,
+  thick ink outlines with hard offset shadows, and pill-shaped controls. Baloo 2
+  for display text and Nunito Sans for body text. Light mode only.
 */
 
 @theme inline {
@@ -54,7 +51,7 @@
 :root {
   --radius: 1rem;
 
-  /* Cream-mint paper and deep-teal ink. */
+  /* Cream-mint background and deep-teal text. */
   --background: oklch(0.972 0.018 165);
   --foreground: oklch(0.26 0.035 200);
 
@@ -63,20 +60,17 @@
   --popover: oklch(0.995 0.008 150);
   --popover-foreground: oklch(0.26 0.035 200);
 
-  /* Deep teal — dark enough that white labels clear WCAG AA. */
+  /* Deep teal, dark enough for white text to pass WCAG AA. */
   --primary: oklch(0.50 0.10 194);
   --primary-foreground: oklch(0.99 0.012 150);
 
-  /* Soft aqua pill fill. */
-  /* Deliberately identical to --accent: the design uses exactly one medium green (nav pill, count pill, badges,
-     toggle chips). Only the page background is lighter and only --primary is darker. */
+  /* The same as --accent. The design uses one medium green for pills, badges and toggle chips. */
   --secondary: oklch(0.88 0.07 175);
   --secondary-foreground: oklch(0.28 0.05 205);
 
   --muted: oklch(0.94 0.022 175);
   --muted-foreground: oklch(0.44 0.035 200);
 
-  /* Mint accent. */
   --accent: oklch(0.88 0.07 175);
   --accent-foreground: oklch(0.28 0.05 205);
 
@@ -89,7 +83,7 @@
   --warning: oklch(0.75 0.14 78);
   --warning-foreground: oklch(0.28 0.05 80);
 
-  /* Soft border for incidental dividers; --ink is the chunky outline. */
+  /* For dividers. Outlines use --ink. */
   --border: oklch(0.86 0.025 185);
   --input: oklch(0.26 0.035 200);
   --ring: oklch(0.50 0.10 194);
@@ -115,8 +109,8 @@
   }
 
   /*
-    A soft mint wash drifting in from the top corners — just enough warmth to keep
-    the cream from reading as flat white. Fixed so it stays put while feeds scroll.
+    A mint gradient from the top corners, so the background doesn't look flat
+    white. Fixed, so it doesn't scroll with the page.
   */
   body::before {
     content: '';
@@ -143,9 +137,9 @@
   }
 }
 
-/* Chunky offset shadows — the hard, no-blur drop that defines the outline look. Declared with @utility (not plain
-   classes in a layer) so Tailwind generates hover:/active: variants; the hover states rely on swapping shadow size
-   against a translate so the shadow's outer edge stays planted while the element pops or depresses. */
+/* Hard offset shadows with no blur. Declared with @utility so Tailwind generates hover: and active: variants. The
+   hover and active states change the shadow size and translate the element by the same amount, so the shadow's
+   outer edge stays in place. */
 @utility shadow-hard-xs {
   box-shadow: 1px 1px 0 0 var(--ink);
 }
@@ -171,14 +165,13 @@
     font-family: var(--font-mono);
   }
 
-  /* Gentle letterspacing for small all-caps labels. */
+  /* For small all-caps labels. */
   .tracking-console {
     letter-spacing: 0.1em;
   }
 
-  /* Hand-drawn highlight stroke tucked under a key word in a heading. The 0.98em offset was tuned visually against
-     Baloo 2's metrics: its baseline sits unusually low in the em box, so bottom-relative positioning lands too deep
-     and small top offsets strike through the glyphs. */
+  /* A hand-drawn stroke under a word in a heading. The offset is set by eye. Baloo 2's baseline is low in its em
+     box, so positioning from the bottom puts the stroke too low, and a small top offset puts it through the glyphs. */
   .accent-underline {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M3 6 Q30 1 60 5 T117 4' fill='none' stroke='%2314a396' stroke-width='4.5' stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
@@ -186,7 +179,7 @@
     background-size: 100% 0.3em;
   }
 
-  /* Comic-style action lines that pop outward once, e.g. around the RSS button after a copy. */
+  /* Lines that burst outward once, e.g. around the RSS button after a copy. */
   @keyframes action-burst {
     0% {
       opacity: 1;
@@ -202,12 +195,9 @@
     animation: action-burst 0.5s ease-out forwards;
   }
 
-  /* Stand-in fills for clips that have no thumbnail. Five of them, picked by clip id, so a run of thumbnail-less
-     rows is not a column of near-identical squares. Each pairs a light and a darker tone from the blue-green
-     palette, and the five angles put the light end in a different place every time: top-left, top, top-right,
-     bottom-left, right. The shared corner highlight gives every square the same lit-from-above look as the page
-     wash. Shades written out rather than taken from a token are still on the same ramp: sky blue at the blue end
-     (hue 200-215) and spring green at the green end (hue 155-170). */
+  /* Placeholders for clips without a thumbnail. There are five, chosen by clip id, so adjacent placeholders usually
+     differ. Each is a light-to-dark blue-green gradient with the light end in a different position. Colors not taken
+     from a token stay within the palette: sky blue at hue 200-215 and spring green at hue 155-170. */
   .clip-placeholder {
     background-image:
       radial-gradient(75% 65% at 22% 18%, oklch(1 0 0 / 0.32), transparent 70%),
@@ -254,7 +244,7 @@
     );
   }
 
-  /* A small friendly pulse for live/processing dots. */
+  /* For status dots, such as a clip that is processing. */
   @keyframes signal-pulse {
     0%,
     100% {

@@ -40,8 +40,8 @@ readonly class Client implements ClientContract
             try {
                 return $this->toResult($this->request($url, $renderJs), $url);
             } catch (ConnectionException) {
-                // The message contains the full URL, including the API key.
-                // Don't log it or chain the exception.
+                // The message contains the full URL, including the API key, so
+                // it is discarded.
                 if ($attempt >= self::MAX_ATTEMPTS) {
                     throw new ScrapflyException(
                         'Scrapfly connection failed after '.self::MAX_ATTEMPTS.' attempts.'

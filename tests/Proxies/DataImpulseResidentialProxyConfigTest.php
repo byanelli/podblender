@@ -31,7 +31,7 @@ class DataImpulseResidentialProxyConfigTest extends TestCase
         // percent-encoded because they are in the URL's userinfo.
         $this->assertMatchesRegularExpression('/%3Bsessid\.\w+%3B/', $url);
 
-        // Measured on port 823: the gateway kept the exit address for the full 60 minutes, then changed it.
+        // Measured on port 823: a session kept one exit address through 55 minutes and had a new one at 60.
         $this->assertStringContainsString('%3Bsessttl.60:', $url);
 
         $this->assertStringStartsWith('http://someuser__cr.us%3Bsessid.', $url);

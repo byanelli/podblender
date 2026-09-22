@@ -15,8 +15,7 @@ use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 
 /**
- * From GitHub: "yt-dlp is a feature-rich command-line audio/video downloader with support for thousands of sites. The
- * project is a fork of youtube-dl based on the now inactive youtube-dlc."
+ * Downloads audio with yt-dlp.
  *
  * YouTube decides whether to serve a request based on three things, roughly in order of importance:
  *
