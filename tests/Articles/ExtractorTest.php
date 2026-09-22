@@ -80,6 +80,21 @@ class ExtractorTest extends TestCase
     }
 
     #[Test]
+    public function it_strips_the_site_name_from_an_og_title()
+    {
+        // Wikipedia's og:title repeats the <title> suffix, and the page has no
+        // og:site_name, so the site name comes from the host.
+        $html = '<html><head><title>Enigma machine - Wikipedia</title>'
+            .'<meta property="og:title" content="Enigma machine - Wikipedia">'
+            .'<script type="application/ld+json">{"@type":"Article","headline":"German cipher machine"}</script>'
+            .'</head><body><article><p>'.str_repeat('The Enigma machine was a cipher device. ', 30).'</p></article></body></html>';
+
+        $article = $this->app->make(Extractor::class)->extract('https://en.wikipedia.org/wiki/Enigma_machine', $html);
+
+        $this->assertEquals('Enigma machine', $article->title);
+    }
+
+    #[Test]
     public function it_keeps_a_publisher_whose_name_merely_mentions_archives()
     {
         // Only the archiving services' names are rejected. A publication called

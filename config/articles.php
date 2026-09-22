@@ -27,7 +27,6 @@ return [
         'bloomberg.com',
         'newyorker.com',
         'theatlantic.com',
-        'wired.com',
     ],
 
     /*

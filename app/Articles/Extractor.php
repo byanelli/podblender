@@ -84,7 +84,7 @@ readonly class Extractor
         if ($headline !== null && $ogTitle !== null && $pageTitle !== null
             && $this->reflectedIn($ogTitle, $pageTitle)
             && ! $this->reflectedIn($headline, $pageTitle)) {
-            return $ogTitle;
+            return $this->stripSiteName($ogTitle, $this->siteNameCandidates($url, $jsonLd, $meta));
         }
 
         if ($headline !== null) {
@@ -92,7 +92,8 @@ readonly class Extractor
         }
 
         if ($ogTitle !== null) {
-            return $ogTitle;
+            // og:title can include the site name, as Wikipedia's does.
+            return $this->stripSiteName($ogTitle, $this->siteNameCandidates($url, $jsonLd, $meta));
         }
 
         if ($readability !== null && ($title = $readability->getTitle()) !== null && trim($title) !== '') {
@@ -133,8 +134,9 @@ readonly class Extractor
     }
 
     /**
-     * Names a site might add to its <title>, most reliable first: the OpenGraph
-     * site name, the JSON-LD publisher, then the host without "www.".
+     * Names a site might add to its titles, most reliable first: the OpenGraph
+     * site name, the JSON-LD publisher, the host without "www.", and the host's
+     * second-level label ("wikipedia" for en.wikipedia.org).
      *
      * @return list<string>
      */
@@ -143,8 +145,11 @@ readonly class Extractor
         $host = Uri::new($url)->getHost();
         $host = is_string($host) ? (string) preg_replace('/^www\./', '', $host) : null;
 
+        $labels = explode('.', $host ?? '');
+        $domainLabel = count($labels) >= 2 ? $labels[count($labels) - 2] : null;
+
         return array_values(array_filter(
-            [$meta->ogSiteName, $jsonLd->publisherName, $host],
+            [$meta->ogSiteName, $jsonLd->publisherName, $host, $domainLabel],
             fn (?string $name): bool => $name !== null && $name !== '',
         ));
     }
