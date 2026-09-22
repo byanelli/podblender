@@ -35,19 +35,22 @@ return [
     | Paywall Markers
     |--------------------------------------------------------------------------
     |
-    | Case-insensitive substrings whose presence in a directly-fetched page is
-    | a fuzzy signal that the body is gated. This is the weakest paywall signal
-    | and the last one consulted; add strings here as new paywall walls surface.
+    | Case-insensitive phrases that a paywall prompt shows in place of the rest
+    | of the article. They are matched against the page's visible text, and a
+    | phrase that also appears in the extracted article doesn't count. Avoid
+    | phrases from sign-in links that sites show on every page, such as
+    | "Already a subscriber".
     |
     */
 
     'paywall_markers'             => [
         'Subscribe to continue',
-        'Already a subscriber',
         'Subscribe to read',
         'to continue reading',
         'Create a free account to read',
         'This content is for subscribers only',
+        'This post is for paid subscribers',
+        'Keep reading with a 7-day free trial',
     ],
 
     /*
@@ -55,14 +58,14 @@ return [
     | Paywall Selectors
     |--------------------------------------------------------------------------
     |
-    | Known paywall CSS id/class fragments. Presence of any of these strings in
-    | the page markup is treated the same as a paywall marker. Kept separate so
-    | the two lists can be tuned independently.
+    | CSS id and class fragments of paywall containers, matched against the
+    | page's HTML. A generic word like "paywall" appears in the CSS and scripts
+    | of most news sites, so each entry must be specific to a paywall vendor or
+    | template.
     |
     */
 
     'paywall_selectors'           => [
-        'paywall',
         'piano-inline',
         'gateway-content',
         'article-gate',

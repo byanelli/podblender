@@ -77,6 +77,76 @@ class PaywallDetectorTest extends TestCase
     }
 
     #[Test]
+    public function it_ignores_the_flag_when_the_json_ld_contains_the_body()
+    {
+        // Metered sites such as CNN and The Verge set the flag on pages that
+        // contain the whole article.
+        $html = $this->jsonLdPage(json_encode([
+            '@type'               => 'NewsArticle',
+            'isAccessibleForFree' => false,
+            'articleBody'         => self::LONG_BODY,
+        ]));
+
+        $this->assertFalse($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
+    }
+
+    #[Test]
+    public function it_ignores_the_flag_when_the_body_meets_the_declared_word_count()
+    {
+        $html = $this->jsonLdPage('{"@type":"NewsArticle","isAccessibleForFree":false,"wordCount":100}');
+
+        $this->assertFalse($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
+    }
+
+    #[Test]
+    public function it_ignores_a_marker_phrase_inside_the_article()
+    {
+        // From Wikipedia's article on the Enigma machine.
+        $sentence = 'Polish cryptologists developed techniques and designed mechanical devices to continue reading Enigma traffic.';
+        $html = "<html><body><p>{$sentence}</p></body></html>";
+
+        $this->assertFalse($this->detector()->isGated($html, $this->article($sentence.' '.self::LONG_BODY)));
+    }
+
+    #[Test]
+    public function it_counts_a_marker_phrase_at_the_end_of_the_article()
+    {
+        // Readability keeps Substack's prompt as the last paragraph of the body.
+        $prompt = 'Keep reading with a 7-day free trial. Subscribe to Slow Boring to keep reading this post.';
+        $html = "<html><body><p>The first paragraphs.</p><p>{$prompt}</p></body></html>";
+
+        $this->assertTrue($this->detector()->isGated($html, $this->article(self::LONG_BODY.' '.$prompt)));
+    }
+
+    #[Test]
+    public function it_ignores_marker_phrases_in_scripts_and_styles()
+    {
+        $html = '<html><head><style>.cta:after{content:"Subscribe to continue"}</style>'
+            .'<script>var copy = {"gate":"Subscribe to read"};</script></head><body><p>Body.</p></body></html>';
+
+        $this->assertFalse($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
+    }
+
+    #[Test]
+    public function it_ignores_generic_paywall_markup_and_sign_in_links()
+    {
+        // Most news sites have both on every page, including full articles.
+        $html = '<html><head><style>.paywall-bar{display:none}</style></head>'
+            .'<body><a href="/login">Already a subscriber? Sign in</a><p>Body.</p></body></html>';
+
+        $this->assertFalse($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
+    }
+
+    #[Test]
+    public function it_treats_a_substack_paid_post_as_gated()
+    {
+        $html = '<html><body><p>The first paragraphs.</p><h2>This post is for paid subscribers</h2>'
+            .'<a>Subscribe</a><a>Already a paid subscriber? Sign in</a></body></html>';
+
+        $this->assertTrue($this->detector()->isGated($html, $this->article(self::LONG_BODY)));
+    }
+
+    #[Test]
     public function it_does_not_gate_a_clean_full_article()
     {
         $html = (string) file_get_contents(__DIR__.'/fixtures/clean-full.html');
