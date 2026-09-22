@@ -2,7 +2,7 @@
 
 namespace App\Articles;
 
-use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Support\Str;
 
 /**
@@ -23,8 +23,12 @@ readonly class PaywallDetector
     private const PROMPT_WINDOW = 300;
 
     public function __construct(
-        private Config $config,
         private JsonLdParser $jsonLdParser,
+        #[Config('articles.min_body_length')] private int $minBodyLength,
+        /** @var list<string> */
+        #[Config('articles.paywall_markers')] private array $markers,
+        /** @var list<string> */
+        #[Config('articles.paywall_selectors')] private array $selectors,
     ) {}
 
     public function isGated(string $html, Article $article): bool
@@ -37,7 +41,7 @@ readonly class PaywallDetector
         }
 
         // 2. Too little body.
-        if (Str::length($article->text) < (int) $this->config->get('articles.min_body_length')) {
+        if (Str::length($article->text) < $this->minBodyLength) {
             return true;
         }
 
@@ -74,13 +78,10 @@ readonly class PaywallDetector
      */
     private function showsPaywallPrompt(string $html, Article $article): bool
     {
-        /** @var array<int, string> $markers */
-        $markers = $this->config->get('articles.paywall_markers', []);
-
         $visibleText = $this->visibleText($html);
         $body = mb_strtolower($article->text);
 
-        foreach ($markers as $marker) {
+        foreach ($this->markers as $marker) {
             if ($marker === '' || ! Str::contains($visibleText, $marker, ignoreCase: true)) {
                 continue;
             }
@@ -97,10 +98,7 @@ readonly class PaywallDetector
 
     private function containsPaywallSelector(string $html): bool
     {
-        /** @var array<int, string> $selectors */
-        $selectors = $this->config->get('articles.paywall_selectors', []);
-
-        foreach ($selectors as $selector) {
+        foreach ($this->selectors as $selector) {
             if ($selector !== '' && Str::contains($html, $selector, ignoreCase: true)) {
                 return true;
             }

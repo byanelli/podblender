@@ -4,7 +4,7 @@ namespace App\Apis\YouTubeData;
 
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
-use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -15,13 +15,8 @@ readonly class Client implements Contracts\Client
 
     public function __construct(
         private Factory $http,
-        private Config $config,
+        #[Config('services.youtube_data_api.key')] private string $apiKey,
     ) {}
-
-    private function getApiKey(): string
-    {
-        return $this->config->get('services.youtube_data_api.key');
-    }
 
     /**
      * @param  array<string, mixed>  $params
@@ -31,7 +26,7 @@ readonly class Client implements Contracts\Client
     {
         return $this->http->get(
             url: self::BASE_URL.'/'.$url,
-            query: array_merge($params, ['key' => $this->getApiKey()]),
+            query: array_merge($params, ['key' => $this->apiKey]),
         )->throw()->json();
     }
 

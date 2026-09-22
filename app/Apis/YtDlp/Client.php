@@ -4,8 +4,8 @@ namespace App\Apis\YtDlp;
 
 use App\Proxies\Contracts\ProxyConfig;
 use App\Proxies\Contracts\ResidentialProxyConfig;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Cache\Repository as Cache;
-use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Process\ProcessResult;
 use Illuminate\Process\Exceptions\ProcessFailedException;
@@ -59,7 +59,7 @@ readonly class Client
         private Factory $processFactory,
         private ResidentialProxyConfig $residentialProxy,
         private Cache $cache,
-        private Config $config,
+        #[Config('services.ytdlp.direct_block_minutes')] private int $directBlockMinutes,
     ) {}
 
     private function getVendorBinPath(): string
@@ -228,9 +228,7 @@ readonly class Client
 
     private function rememberDirectDownloadsAreBlocked(): void
     {
-        $minutes = (int) $this->config->get('services.ytdlp.direct_block_minutes');
-
-        $this->cache->put(self::DIRECT_BLOCKED_CACHE_KEY, true, now()->addMinutes($minutes));
+        $this->cache->put(self::DIRECT_BLOCKED_CACHE_KEY, true, now()->addMinutes($this->directBlockMinutes));
     }
 
     /**

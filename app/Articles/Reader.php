@@ -5,8 +5,8 @@ namespace App\Articles;
 use App\Articles\Contracts\Fetcher;
 use App\Articles\Contracts\Reader as ReaderContract;
 use App\Concerns\FixesUrls;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Contracts\Cache\Repository as Cache;
-use Illuminate\Contracts\Config\Repository as Config;
 use League\Uri\Uri;
 
 /**
@@ -23,7 +23,9 @@ readonly class Reader implements ReaderContract
         private Extractor $extractor,
         private PaywallDetector $paywallDetector,
         private Cache $cache,
-        private Config $config,
+        #[Config('articles.cache_ttl_hours')] private int $cacheTtlHours,
+        /** @var list<string> */
+        #[Config('articles.hard_paywall_domains')] private array $hardPaywallDomains,
     ) {}
 
     public function read(string $url): Article
@@ -37,7 +39,7 @@ readonly class Reader implements ReaderContract
 
         return $this->cache->remember(
             "article:$url",
-            now()->addHours((int) $this->config->get('articles.cache_ttl_hours')),
+            now()->addHours($this->cacheTtlHours),
             fn () => $this->fetchAndExtract($url, $canonical),
         );
     }
@@ -97,9 +99,6 @@ readonly class Reader implements ReaderContract
 
         $host = str_starts_with($host, 'www.') ? substr($host, strlen('www.')) : $host;
 
-        /** @var array<int, string> $domains */
-        $domains = $this->config->get('articles.hard_paywall_domains', []);
-
-        return in_array($host, $domains, strict: true);
+        return in_array($host, $this->hardPaywallDomains, strict: true);
     }
 }
