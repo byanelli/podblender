@@ -34,12 +34,13 @@ trait FakesPlatform
         ?string $audioPath = null,
         ?string $audioContent = null,
         ?\Throwable $downloadError = null,
+        ?\Throwable $clipMetadataError = null,
     ): void {
         $recordPublicationTime = function (\DateTimeInterface $time) {
             $this->platformPublicationTimeRequested = $time;
         };
 
-        $platform = new class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent, $downloadError, $recordPublicationTime) implements SubscribablePlatform
+        $platform = new class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent, $downloadError, $recordPublicationTime, $clipMetadataError) implements SubscribablePlatform
         {
             public function __construct(
                 private readonly ?ClipMetadata $clipMetadata = null,
@@ -49,10 +50,15 @@ trait FakesPlatform
                 private readonly ?string $audioContent = null,
                 private readonly ?\Throwable $downloadError = null,
                 private readonly ?\Closure $recordPublicationTime = null,
+                private readonly ?\Throwable $clipMetadataError = null,
             ) {}
 
             public function getClipMetadata(string $clipUrl): ClipMetadata
             {
+                if ($this->clipMetadataError !== null) {
+                    throw $this->clipMetadataError;
+                }
+
                 return $this->clipMetadata;
             }
 

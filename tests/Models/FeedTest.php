@@ -6,6 +6,7 @@ use App\Enums\ClipProcessingState;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
+use App\Models\InboundEmail;
 use Carbon\CarbonImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -47,5 +48,26 @@ class FeedTest extends TestCase
         // The processing clip is excluded even though its pivot date is the most recent.
         $this->assertCount(2, $finished);
         $this->assertEquals([$newer->id, $older->id], $finished->pluck('id')->all());
+    }
+
+    #[Test]
+    public function it_has_no_inbound_address_without_a_token_or_a_configured_domain()
+    {
+        config(['services.resend.inbound_domain' => 'mail.example.com']);
+        $this->assertNull(Feed::factory()->make(['inbound_email_token' => null])->inbound_email_address);
+
+        config(['services.resend.inbound_domain' => null]);
+        $this->assertNull(Feed::factory()->make(['inbound_email_token' => 'abc123'])->inbound_email_address);
+    }
+
+    #[Test]
+    public function deleting_a_feed_deletes_its_inbound_emails()
+    {
+        $feed = Feed::factory()->create();
+        InboundEmail::factory()->create(['feed_id' => $feed->id]);
+
+        $feed->delete();
+
+        $this->assertDatabaseCount('inbound_emails', 0);
     }
 }

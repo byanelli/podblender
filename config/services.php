@@ -25,7 +25,14 @@ return [
     ],
 
     'resend'            => [
-        'key' => env('RESEND_KEY'),
+        // Receiving email needs a full-access key. A sending-only key can't read received messages.
+        'key'            => env('RESEND_KEY'),
+
+        // The signing secret of the Resend webhook for received email.
+        'webhook_secret' => env('RESEND_WEBHOOK_SECRET'),
+
+        // Feeds' inbound addresses are at this domain. Blank turns the feature off.
+        'inbound_domain' => env('RESEND_INBOUND_DOMAIN'),
     ],
 
     'slack'             => [

@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Apis\Ffmpeg\Client as FfmpegClient;
 use App\Apis\Ffmpeg\Contracts\Client as FfmpegClientContract;
+use App\Apis\Resend\Client as ResendClient;
+use App\Apis\Resend\Contracts\Client as ResendClientContract;
 use App\Apis\Scrapfly\Client as ScrapflyClient;
 use App\Apis\Scraping\Contracts\Scraper;
 use App\Apis\Tts\Contracts\Client as TtsClientContract;
@@ -54,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TtsClientContract::class, TtsClient::class);
         $this->app->bind(FfmpegClientContract::class, FfmpegClient::class);
         $this->app->bind(YouTubeDataClientContract::class, YouTubeDataClient::class);
+        $this->app->bind(ResendClientContract::class, ResendClient::class);
         $this->app->bind(Scraper::class, fn () => $this->app->make($this->scraperClass()));
 
         $this->app->bind(CoverGeneratorContract::class, GdCoverGenerator::class);

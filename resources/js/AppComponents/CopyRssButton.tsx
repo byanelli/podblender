@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Check, Rss } from "lucide-react";
 
 import { Button } from "@/Components/ui/button";
+import { copyToClipboard } from "@/lib/clipboard";
 
 /**
  * Copies a feed's RSS URL to the clipboard, since the URL is what gets pasted into a podcast app. On copy, action
@@ -13,19 +14,7 @@ export default function CopyRssButton({ url }: { url: string }) {
     const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
     const copy = async () => {
-        try {
-            await navigator.clipboard.writeText(url);
-        } catch {
-            // The Clipboard API requires a secure context. Fall back to copying from a hidden textarea.
-            const textarea = document.createElement("textarea");
-            textarea.value = url;
-            textarea.style.position = "fixed";
-            textarea.style.opacity = "0";
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand("copy");
-            textarea.remove();
-        }
+        await copyToClipboard(url);
 
         // A new key remounts the burst, which restarts its animation on repeated clicks.
         setBurstKey((key) => key + 1);

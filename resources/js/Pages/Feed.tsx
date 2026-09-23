@@ -16,6 +16,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AddClipCard from '@/AppComponents/AddClipCard';
 import ClipThumbnail from '@/AppComponents/ClipThumbnail';
 import ErrorPanel from '@/AppComponents/ErrorPanel';
+import InboundEmailCard from '@/AppComponents/InboundEmailCard';
 import MetadataSeparator from '@/AppComponents/MetadataSeparator';
 import events from '@/events';
 import routes from '@/routes';
@@ -101,8 +102,9 @@ export default function Feed({ feed }: { feed: FeedType }) {
     }, []);
 
     useEffect(() => {
-        const channel = events.finishedProcessingClip(feed.id);
-        channel.listen(() => router.reload({ only: ['feed'] }));
+        const channel = events.feed(feed.id);
+        channel.onFinishedProcessingClip(() => router.reload({ only: ['feed'] }));
+        channel.onInboundEmailUpdated(() => router.reload({ only: ['feed'] }));
 
         return () => channel.leave();
     }, [feed.id]);
@@ -219,6 +221,19 @@ export default function Feed({ feed }: { feed: FeedType }) {
 
                 {feed.subscription == null && (
                     <AddClipCard feedId={feed.id} onAdded={reloadFeed} />
+                )}
+
+                {feed.subscription == null && feed.inbound_email_address && (
+                    <InboundEmailCard
+                        feedId={feed.id}
+                        address={feed.inbound_email_address}
+                        emails={feed.inbound_emails}
+                        onChanged={reloadFeed}
+                        onError={(message) => {
+                            setErrorOperation('replacing the email address');
+                            setErrorMessage(message);
+                        }}
+                    />
                 )}
 
                 {clipCount === 0 ? (

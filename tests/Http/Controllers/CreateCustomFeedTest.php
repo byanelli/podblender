@@ -47,6 +47,21 @@ class CreateCustomFeedTest extends TestCase
     }
 
     #[Test]
+    public function it_gives_the_new_feed_an_inbound_email_address()
+    {
+        config(['services.resend.inbound_domain' => 'mail.example.com']);
+
+        $this->actingAs(User::factory()->create())
+            ->postJson('/feeds', ['name' => 'Talks'])
+            ->assertOk();
+
+        $feed = Feed::query()->sole();
+
+        $this->assertMatchesRegularExpression('/^[a-z0-9]{20}$/', $feed->inbound_email_token);
+        $this->assertEquals("{$feed->inbound_email_token}@mail.example.com", $feed->inbound_email_address);
+    }
+
+    #[Test]
     public function it_gives_the_new_feed_a_cover()
     {
         $storage = Storage::fake();

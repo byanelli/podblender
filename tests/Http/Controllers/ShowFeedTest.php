@@ -5,6 +5,7 @@ namespace Tests\Http\Controllers;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
+use App\Models\InboundEmail;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -39,6 +40,27 @@ class ShowFeedTest extends TestCase
                     ->where('feed.audio_clips.0.processing_state', $clip->processing_state)
                     ->where('feed.audio_clips.0.audio_source.name', $clip->audioSource->name)
                     ->where('feed.audio_clips.0.audio_source.platform_type.name', $clip->audioSource->platform_type->name);
+            });
+    }
+
+    #[Test]
+    public function it_shows_the_inbound_address_and_the_newest_emails_but_not_the_raw_token()
+    {
+        config(['services.resend.inbound_domain' => 'mail.example.com']);
+
+        $user = User::factory()->create();
+        $feed = Feed::factory()->create(['user_id' => $user->id, 'inbound_email_token' => 'abc123']);
+        $emails = InboundEmail::factory()->count(11)->create(['feed_id' => $feed->id]);
+
+        $this->actingAs($user);
+
+        $this->get("/feeds/{$feed->id}")
+            ->assertInertia(function (Assert $page) use ($emails) {
+                $page->where('feed.inbound_email_address', 'abc123@mail.example.com')
+                    ->missing('feed.inbound_email_token')
+                    ->has('feed.inbound_emails', 10)
+                    ->where('feed.inbound_emails.0.id', $emails->last()->id)
+                    ->missing('feed.inbound_emails.0.resend_email_id');
             });
     }
 

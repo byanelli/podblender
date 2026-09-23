@@ -317,12 +317,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/byanelli/roma.git",
-                "reference": "290a22541bda2bf8058ea39b44bd4ec10a4e93f3"
+                "reference": "461fe21c341880044c57c320defba263ed587c86"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/byanelli/roma/zipball/290a22541bda2bf8058ea39b44bd4ec10a4e93f3",
-                "reference": "290a22541bda2bf8058ea39b44bd4ec10a4e93f3",
+                "url": "https://api.github.com/repos/byanelli/roma/zipball/461fe21c341880044c57c320defba263ed587c86",
+                "reference": "461fe21c341880044c57c320defba263ed587c86",
                 "shasum": ""
             },
             "require": {
@@ -416,7 +416,7 @@
                     "url": "https://github.com/billisonline"
                 }
             ],
-            "time": "2026-09-18T13:22:38+00:00"
+            "time": "2026-09-23T02:06:07+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",

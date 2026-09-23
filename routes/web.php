@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/rss/{feed:uuid}', Controllers\ShowRss::class)->name('rss');
 
+Route::post('/webhooks/resend', Controllers\ReceiveResendWebhook::class)->name('resendWebhook');
+
 Route::middleware(Authenticate::class)->group(function () {
     Route::get('/', Controllers\Home::class)->name('dashboard');
 
@@ -14,6 +16,8 @@ Route::middleware(Authenticate::class)->group(function () {
     Route::delete('/feeds/{feed}/clips/{clip}', Controllers\DeleteClip::class)->name('deleteClip');
     Route::post('/feeds/{feed}/clips/{clip}/retry', Controllers\RetryClip::class)->name('retryClip');
     Route::delete('/feeds/{feed}', Controllers\DeleteFeed::class)->name('deleteFeed');
+    Route::post('/feeds/{feed}/inbound-email-address', Controllers\RegenerateInboundEmailAddress::class)
+        ->name('regenerateInboundEmailAddress');
 
     Route::post('/feeds/subscription', Controllers\CreateSubscription::class)->name('createSubscription');
     Route::post('/feeds', Controllers\CreateCustomFeed::class)->name('createCustomFeed');

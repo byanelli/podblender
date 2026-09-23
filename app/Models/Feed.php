@@ -13,8 +13,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string $uuid
  * @property ?string $description
  * @property ?string $cover_path
+ * @property ?string $inbound_email_token
  * @property int $user_id
  * @property ?int $subscription_id
  * @property ?CarbonImmutable $subscribed_at
@@ -36,6 +39,8 @@ use Illuminate\Support\Facades\Storage;
  * @property ?AudioSource $subscription
  * @property string $author_name
  * @property ?string $cover_url {@see self::coverUrl()}
+ * @property ?string $inbound_email_address {@see self::inboundEmailAddress()}
+ * @property Collection<int, InboundEmail> $inboundEmails
  */
 class Feed extends Model
 {
@@ -64,6 +69,11 @@ class Feed extends Model
 
     protected $appends = [
         'cover_url',
+        'inbound_email_address',
+    ];
+
+    protected $hidden = [
+        'inbound_email_token',
     ];
 
     /**
@@ -94,6 +104,14 @@ class Feed extends Model
             // Newest first by the pivot date, which is the date the feed presents the clip at. The RSS and ShowFeed
             // both depend on this order.
             ->orderByPivot('published_at', 'desc');
+    }
+
+    /**
+     * @return HasMany<InboundEmail, $this>
+     */
+    public function inboundEmails(): HasMany
+    {
+        return $this->hasMany(InboundEmail::class);
     }
 
     /**
@@ -164,6 +182,33 @@ class Feed extends Model
                 ? null
                 : url(Storage::url($this->cover_path))
         );
+    }
+
+    /**
+     * The address that adds an emailed link to this feed, or null if the feed has none or inbound email isn't
+     * configured.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function inboundEmailAddress(): Attribute
+    {
+        return Attribute::make(function (): ?string {
+            $domain = config('services.resend.inbound_domain');
+
+            return $this->inbound_email_token === null || ! is_string($domain) || $domain === ''
+                ? null
+                : "{$this->inbound_email_token}@{$domain}";
+        });
+    }
+
+    /**
+     * Gives the feed a new inbound address. Mail to the old address is then ignored.
+     */
+    public function regenerateInboundEmailToken(): void
+    {
+        // Lowercase because some mail clients and servers change the case of an address's local part.
+        $this->inbound_email_token = Str::lower(Str::random(20));
+        $this->save();
     }
 
     public function markFilled(): void

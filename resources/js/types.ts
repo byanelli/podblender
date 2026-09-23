@@ -37,12 +37,28 @@ export type AudioClip = {
 
 }
 
+export type InboundEmailStatus = {
+    name: 'Pending' | 'Added' | 'Failed';
+};
+
+export type InboundEmail = {
+    id: number,
+    sender: string,
+    subject: string | null,
+    url: string | null,
+    status: InboundEmailStatus,
+    failure_reason: string | null,
+    created_at: string,
+}
+
 export type Feed = {
     id: number,
     uuid: string,
     name: string,
     description: string,
     cover_url: string | null,
+    inbound_email_address: string | null,
+    inbound_emails: InboundEmail[],
     audio_clips: AudioClip[],
     subscription: AudioSource|null,
 }

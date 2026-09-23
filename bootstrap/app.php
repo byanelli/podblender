@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // TrustProxies middleware with its own ngrok-aware subclass via a
         // container binding, so no bootstrap wiring is needed here.
 
+        // Resend authenticates its webhook with a signature.
+        $middleware->validateCsrfTokens(except: ['webhooks/*']);
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,

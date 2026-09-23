@@ -20,6 +20,8 @@ class CreateCustomFeed
             'name' => $request->name,
         ]);
 
+        $feed->regenerateInboundEmailToken();
+
         // Runs inline because it takes a fraction of a second, and the RSS
         // link may be copied straight away. Never throws.
         $generateCover($feed);
