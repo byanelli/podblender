@@ -52,7 +52,9 @@
         <env name="DATAIMPULSE_USERNAME" value="testing-user"/>
         <env name="DATAIMPULSE_PASSWORD" value="testing-password"/>
         <env name="DATAIMPULSE_COUNTRY" value="US"/>
+        <env name="SCRAPER_PROVIDER" value="scrapfly"/>
         <env name="SCRAPFLY_API_KEY" value="testing-key"/>
+        <env name="ZYTE_API_KEY" value="testing-key"/>
         <env name="YOUTUBE_DATA_API_KEY" value="testing-key"/>
         <env name="GEMINI_API_KEY" value="testing-key"/>
         <env name="OPENAI_API_KEY" value="testing-key"/>
