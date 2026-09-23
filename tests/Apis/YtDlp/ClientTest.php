@@ -6,6 +6,8 @@ namespace Tests\Apis\YtDlp;
 
 use App\Apis\YtDlp\BotWallException;
 use App\Apis\YtDlp\Client;
+use App\Apis\YtDlp\Site;
+use App\Apis\YtDlp\UnavailableContentException;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Process\Exceptions\ProcessFailedException;
 use Illuminate\Process\PendingProcess;
@@ -30,6 +32,19 @@ class ClientTest extends TestCase
     private const DIRECT_DOWNLOAD = "*'--sleep-requests=1.5' '--extract-audio'*";
 
     private const PROXIED_DOWNLOAD = "*'--proxy=*";
+
+    /**
+     * YouTube's settings, since its bot wall is the one these tests simulate.
+     */
+    private function site(): Site
+    {
+        return new Site(
+            name: 'YouTube',
+            botWallMarkers: ["confirm you're not a bot", 'confirm you’re not a bot'],
+            unavailableMarkers: ['members-only'],
+            secondsBetweenRequests: 1.5,
+        );
+    }
 
     protected function setUp(): void
     {
@@ -107,7 +122,7 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $client->downloadAudio(self::URL);
+        $client->downloadAudio(self::URL, $this->site());
 
         $this->assertFileExists($file);
 
@@ -147,7 +162,7 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $client->downloadAudio(self::URL);
+        $client->downloadAudio(self::URL, $this->site());
 
         $this->assertFileExists($file);
 
@@ -173,7 +188,7 @@ class ClientTest extends TestCase
         $this->expectException(ProcessFailedException::class);
 
         try {
-            $client->downloadAudio(self::URL);
+            $client->downloadAudio(self::URL, $this->site());
         } finally {
             Process::assertNotRan(fn (PendingProcess $process) => collect($process->command)
                 ->contains(fn (string $a) => Str::startsWith($a, '--proxy=')));
@@ -201,7 +216,7 @@ class ClientTest extends TestCase
         $client = $this->app->make(Client::class);
 
         try {
-            $client->downloadAudio(self::URL);
+            $client->downloadAudio(self::URL, $this->site());
         } catch (ProcessFailedException) {
             // Expected. The assertions below are about the retries.
         }
@@ -230,7 +245,7 @@ class ClientTest extends TestCase
 
         $this->expectException(ProcessFailedException::class);
 
-        $client->downloadAudio(self::URL);
+        $client->downloadAudio(self::URL, $this->site());
     }
 
     #[Test]
@@ -248,7 +263,7 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $client->downloadAudio(self::URL);
+        $client->downloadAudio(self::URL, $this->site());
 
         $this->assertFileExists($file);
 
@@ -256,7 +271,7 @@ class ClientTest extends TestCase
         $this->assertDirectDownloadsRan(1);
 
         $this->assertTrue(
-            Cache::has(Client::DIRECT_BLOCKED_CACHE_KEY),
+            Cache::has(Client::directBlockedCacheKey($this->site())),
             'The refusal was not remembered, so the next download would discover it the slow way.',
         );
     }
@@ -266,7 +281,7 @@ class ClientTest extends TestCase
     {
         Sleep::fake();
 
-        Cache::put(Client::DIRECT_BLOCKED_CACHE_KEY, true, now()->addHour());
+        Cache::put(Client::directBlockedCacheKey($this->site()), true, now()->addHour());
 
         $file = null;
 
@@ -275,7 +290,7 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $client->downloadAudio(self::URL);
+        $client->downloadAudio(self::URL, $this->site());
 
         $this->assertFileExists($file);
 
@@ -297,14 +312,14 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $client->downloadAudio(self::URL);
+        $client->downloadAudio(self::URL, $this->site());
 
         $this->assertDirectDownloadsRan(1);
 
         // Travel past the block's expiry.
         $this->travel((int) config('services.ytdlp.direct_block_minutes') + 1)->minutes();
 
-        $client->downloadAudio(self::URL);
+        $client->downloadAudio(self::URL, $this->site());
 
         $this->assertDirectDownloadsRan(2);
     }
@@ -322,7 +337,7 @@ class ClientTest extends TestCase
         $client = $this->app->make(Client::class);
 
         try {
-            $client->downloadAudio(self::URL);
+            $client->downloadAudio(self::URL, $this->site());
 
             $this->fail('Expected a BotWallException.');
         } catch (BotWallException) {
@@ -330,7 +345,7 @@ class ClientTest extends TestCase
         }
 
         // The block is cached even with no proxy, so the next download fails without running yt-dlp.
-        $this->assertTrue(Cache::has(Client::DIRECT_BLOCKED_CACHE_KEY));
+        $this->assertTrue(Cache::has(Client::directBlockedCacheKey($this->site())));
     }
 
     #[Test]
@@ -338,7 +353,7 @@ class ClientTest extends TestCase
     {
         $this->withoutAResidentialProxy();
 
-        Cache::put(Client::DIRECT_BLOCKED_CACHE_KEY, true, now()->addHour());
+        Cache::put(Client::directBlockedCacheKey($this->site()), true, now()->addHour());
 
         Process::fake();
 
@@ -348,7 +363,7 @@ class ClientTest extends TestCase
         $this->expectException(BotWallException::class);
 
         try {
-            $client->downloadAudio(self::URL);
+            $client->downloadAudio(self::URL, $this->site());
         } finally {
             // The outcome is already known, so the download fails at once and not after minutes of attempts.
             Process::assertNothingRan();
@@ -366,7 +381,7 @@ class ClientTest extends TestCase
         $client = $this->app->make(Client::class);
 
         try {
-            $client->downloadAudio(self::URL);
+            $client->downloadAudio(self::URL, $this->site());
         } catch (ProcessFailedException) {
             // Expected. The assertion below is about the number of attempts.
         }
@@ -389,7 +404,7 @@ class ClientTest extends TestCase
         $client = $this->app->make(Client::class);
 
         try {
-            $client->downloadAudio(self::URL);
+            $client->downloadAudio(self::URL, $this->site());
         } catch (ProcessFailedException $e) {
             $this->assertNotInstanceOf(BotWallException::class, $e);
         }
@@ -397,7 +412,103 @@ class ClientTest extends TestCase
         // An age check is retried with backoff like any other failure and is not cached as a block.
         $this->assertDirectDownloadsRan(3);
 
-        $this->assertFalse(Cache::has(Client::DIRECT_BLOCKED_CACHE_KEY));
+        $this->assertFalse(Cache::has(Client::directBlockedCacheKey($this->site())));
+    }
+
+    #[Test]
+    public function it_reports_unavailable_content_without_retrying()
+    {
+        Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'ERROR: [youtube] abc: This video is available to this channel\'s members-only')]);
+
+        try {
+            $this->app->make(Client::class)->downloadAudio(self::URL, $this->site());
+
+            $this->fail('No exception was thrown');
+        } catch (UnavailableContentException) {
+        }
+
+        Process::assertRanTimes(fn () => true, 1);
+    }
+
+    #[Test]
+    public function it_reads_an_items_info()
+    {
+        Process::fake(['*' => Process::result(output: json_encode([
+            '_type'        => 'video',
+            'title'        => 'Flickermood',
+            'webpage_url'  => 'https://soundcloud.com/forss/flickermood',
+            'timestamp'    => 1190472346,
+            'duration'     => 213.886,
+            'uploader'     => 'Forss',
+            'uploader_url' => 'https://soundcloud.com/forss',
+            'thumbnails'   => [['id' => 't500x500', 'url' => 'https://i1.sndcdn.com/a-t500x500.jpg']],
+        ]))]);
+
+        $info = $this->app->make(Client::class)->getInfo('https://soundcloud.com/forss/flickermood', $this->site(), ['--flat-playlist']);
+
+        $this->assertFalse($info->isPlaylist);
+        $this->assertEquals('Flickermood', $info->title);
+        $this->assertEquals(1190472346, $info->timestamp?->getTimestamp());
+        $this->assertEquals(213.886, $info->durationSeconds);
+        $this->assertEquals('Forss', $info->uploader);
+        $this->assertEquals(['t500x500' => 'https://i1.sndcdn.com/a-t500x500.jpg'], $info->thumbnails);
+
+        Process::assertRan(fn (PendingProcess $process) => in_array('--dump-single-json', $process->command)
+            && in_array('--flat-playlist', $process->command)
+            && ! $this->isProxied($process));
+    }
+
+    #[Test]
+    public function it_reads_a_listing_that_a_filter_stopped_early()
+    {
+        $lines = collect(['one', 'two'])
+            ->map(fn (string $title) => json_encode(['title' => $title, 'webpage_url' => "https://soundcloud.com/u/$title"]))
+            ->join("\n");
+
+        // yt-dlp's exit code when --break-match-filters stops a playlist.
+        Process::fake(['*' => Process::result(output: $lines."\n", exitCode: 101)]);
+
+        $entries = $this->app->make(Client::class)->getEntries('https://soundcloud.com/u/tracks', $this->site());
+
+        $this->assertEquals(['one', 'two'], collect($entries)->pluck('title')->all());
+    }
+
+    #[Test]
+    public function it_fails_a_listing_that_exited_with_an_error()
+    {
+        Process::fake(['*' => Process::result(exitCode: 1, errorOutput: 'ERROR: Unable to download JSON metadata')]);
+
+        $this->expectException(ProcessFailedException::class);
+
+        $this->app->make(Client::class)->getEntries('https://soundcloud.com/u/tracks', $this->site());
+    }
+
+    #[Test]
+    public function it_repeats_a_query_through_the_proxy_after_a_bot_wall()
+    {
+        Process::fake(['*' => fn (PendingProcess $process) => $this->isProxied($process)
+            ? Process::result(output: json_encode(['title' => 'Video', 'webpage_url' => self::URL]))
+            : Process::result(exitCode: 1, errorOutput: self::BOT_WALL_ERROR)]);
+
+        $info = $this->app->make(Client::class)->getInfo(self::URL, $this->site());
+
+        $this->assertEquals('Video', $info->title);
+
+        // A query may come from a web request, so the direct attempt isn't retried.
+        $this->assertDirectDownloadsRan(1);
+        $this->assertTrue(Cache::has(Client::directBlockedCacheKey($this->site())));
+    }
+
+    #[Test]
+    public function it_remembers_a_block_for_that_site_only()
+    {
+        Cache::put(Client::directBlockedCacheKey($this->site()), true, now()->addHour());
+
+        Process::fake(['*' => Process::result(output: json_encode(['title' => 'Track', 'webpage_url' => 'https://soundcloud.com/u/t']))]);
+
+        $this->app->make(Client::class)->getInfo('https://soundcloud.com/u/t', new Site(name: 'SoundCloud'));
+
+        $this->assertDirectDownloadsRan(1);
     }
 
     /**

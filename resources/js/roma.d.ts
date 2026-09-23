@@ -11,6 +11,7 @@ export const PlatformTypeEnum = {
   YouTube: { name: 'YouTube', value: 1 },
   Web: { name: 'Web', value: 2 },
   Rss: { name: 'Rss', value: 3 },
+  SoundCloud: { name: 'SoundCloud', value: 4 },
 } as const;
 
 export type PlatformTypeEnum = typeof PlatformTypeEnum[keyof typeof PlatformTypeEnum];
@@ -40,6 +41,15 @@ export interface CreateSubscriptionRequestBody {
   tracksNewEpisodes?: boolean;
 }
 
+export interface EmailEventData {
+  email_id: string;
+  from?: string | null;
+  subject?: string | null;
+  to?: string[];
+  cc?: string[];
+  received_for?: string[];
+}
+
 export interface MetadataResponseBody {
   metadata: ClipMetadata;
   platformType: PlatformTypeEnum;
@@ -60,4 +70,15 @@ export interface SourceMetadata {
 export interface SourceMetadataResponseBody {
   metadata: SourceMetadata;
   platformType: PlatformTypeEnum;
+}
+
+export interface WebhookRequestBody {
+  type: string;
+  data: EmailEventData;
+}
+
+export interface WebhookRequestHeaders {
+  'svix-id': string;
+  'svix-timestamp': string;
+  'svix-signature': string;
 }

@@ -26,8 +26,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     use Dispatchable, InjectsFailureDependencies, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Name of both the WithoutOverlapping lock and the rate limiter. The limiter is registered in
-     * App\Providers\AppServiceProvider.
+     * Name of the rate limiter, and the prefix of the WithoutOverlapping lock. The limiter is registered in
+     * App\Providers\AppServiceProvider. Both are per platform, since a platform blocks by its own measure.
      */
     public const string THROTTLE = 'audio-clip-downloads';
 
@@ -69,8 +69,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     }
 
     /**
-     * A burst of downloads can get this host blocked by YouTube, and subscribing to a channel can create many clips at
-     * once. Horizon runs several worker processes, so without these middlewares the backlog would download
+     * A burst of downloads can get this host blocked by a platform, and subscribing to a channel can create many clips
+     * at once. Horizon runs several worker processes, so without these middlewares the backlog would download
      * concurrently from one IP address.
      *
      * @return array<int, object>
@@ -78,12 +78,20 @@ class DownloadAndStoreAudioClip implements ShouldQueue
     public function middleware(): array
     {
         return [
-            // One download at a time across all workers.
-            (new WithoutOverlapping(self::THROTTLE))->releaseAfter(30)->expireAfter($this->timeout),
+            // One download per platform at a time across all workers.
+            (new WithoutOverlapping($this->throttleKey()))->releaseAfter(30)->expireAfter($this->timeout),
 
             // Space consecutive downloads apart.
             new RateLimited(self::THROTTLE),
         ];
+    }
+
+    /**
+     * The key that the lock and the rate limiter count downloads under.
+     */
+    public function throttleKey(): string
+    {
+        return self::THROTTLE.':'.$this->clip->platform_type->name;
     }
 
     /**

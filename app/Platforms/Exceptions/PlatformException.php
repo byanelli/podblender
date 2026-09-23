@@ -30,6 +30,7 @@ class PlatformException extends \Exception
      */
     private static function isSafeToReport(Throwable $previous): bool
     {
-        return $previous instanceof ResourceNotFoundException;
+        return $previous instanceof ResourceNotFoundException
+            || $previous instanceof UnusableLinkException;
     }
 }

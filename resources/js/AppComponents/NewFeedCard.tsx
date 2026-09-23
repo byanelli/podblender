@@ -317,7 +317,7 @@ export default function NewFeedCard({
             {newFeedType === 'subscription' && (
                 <div className="space-y-2">
                     <Label htmlFor="feed-url">
-                        Channel, playlist, or RSS feed URL
+                        Channel, profile, playlist, or RSS feed URL
                     </Label>
                     <div className="relative">
                         <Link2 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />

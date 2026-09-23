@@ -119,8 +119,8 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the rate limiter used by App\Jobs\DownloadAndStoreAudioClip: one download per N minutes. N is
-     * configurable because the rate YouTube tolerates changes over time.
+     * Register the rate limiter used by App\Jobs\DownloadAndStoreAudioClip: one download per platform per N minutes.
+     * N is configurable because the rate YouTube tolerates changes over time.
      */
     private function registerDownloadRateLimiter(): void
     {
@@ -128,7 +128,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->make(RateLimiter::class)->for(
             DownloadAndStoreAudioClip::THROTTLE,
-            fn () => Limit::perMinutes($minutes, 1),
+            fn (DownloadAndStoreAudioClip $job) => Limit::perMinutes($minutes, 1)->by($job->throttleKey()),
         );
     }
 }

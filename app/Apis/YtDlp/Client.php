@@ -15,9 +15,11 @@ use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 
 /**
- * Downloads audio with yt-dlp.
+ * Downloads audio and reads metadata with yt-dlp. Each call takes the Site it's for, which provides the site's format
+ * selector and error phrases.
  *
- * YouTube decides whether to serve a request based on three things, roughly in order of importance:
+ * The notes below are about YouTube, the site most likely to refuse this host. YouTube decides whether to serve a
+ * request based on three things, roughly in order of importance:
  *
  *   1. Whether the request carries a valid proof-of-origin token (see scripts/install-bgutil-pot.php).
  *   2. The reputation of the source IP. Datacenter ranges, which include every commercial VPN endpoint, are flagged
@@ -32,26 +34,19 @@ readonly class Client
     const int DOWNLOAD_TIMEOUT = 1800;
 
     /**
-     * Seconds to wait between the individual requests yt-dlp makes while extracting a single video. Pacing between
-     * videos is done by the job (App\Jobs\DownloadAndStoreAudioClip).
+     * Seconds allowed for a query of one item's metadata. The caller may be a web request.
      */
-    const string SLEEP_BETWEEN_REQUESTS = '1.5';
+    const int INFO_TIMEOUT = 120;
 
     /**
-     * Cache key for the flag that YouTube is refusing this host's address.
+     * Seconds allowed for listing a source's items, which fetches each item. The subscription job's timeout is 1800.
      */
-    const string DIRECT_BLOCKED_CACHE_KEY = 'yt-dlp:direct-blocked';
+    const int ENTRIES_TIMEOUT = 1500;
 
     /**
-     * Phrases in yt-dlp's error output that indicate YouTube refused the source address. Matched case-insensitively.
-     * yt-dlp writes the apostrophe as a curly one in some places and versions, so both forms are listed.
-     *
-     * @var array<int, string>
+     * yt-dlp's exit code when --break-match-filters stopped a playlist early.
      */
-    const array BOT_WALL_MARKERS = [
-        'confirm you’re not a bot',
-        "confirm you're not a bot",
-    ];
+    const int EXIT_CODE_BROKE_OFF_PLAYLIST = 101;
 
     public function __construct(
         private Application $app,
@@ -73,29 +68,45 @@ readonly class Client
     }
 
     /**
-     * @param  array<int, string>  $args
+     * Cache key for the flag that the site is refusing this host's address.
      */
-    private function run(int $timeout, array $args): ProcessResult
+    public static function directBlockedCacheKey(Site $site): string
     {
-        return $this->processFactory
-            ->newPendingProcess()
-            ->timeout($timeout)
-            ->path($this->getVendorBinPath())
-            ->run(array_merge(['./yt-dlp'], $args))
-            ->throw();
+        return "yt-dlp:direct-blocked:{$site->name}";
     }
 
     /**
-     * Arguments for every call to yt-dlp. They matter only to the YouTube extractor and are harmless elsewhere.
+     * @param  array<int, string>  $args
+     * @param  array<int, int>  $successExitCodes
+     *
+     * @throws ProcessFailedException
+     */
+    private function run(int $timeout, array $args, array $successExitCodes = [0]): ProcessResult
+    {
+        $result = $this->processFactory
+            ->newPendingProcess()
+            ->timeout($timeout)
+            ->path($this->getVendorBinPath())
+            ->run(array_merge(['./yt-dlp'], $args));
+
+        if (! in_array($result->exitCode(), $successExitCodes, true)) {
+            throw new ProcessFailedException($result);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Arguments for every call to yt-dlp. The paths matter only to the YouTube extractor and are harmless elsewhere.
      *
      * All three paths are absolute: yt-dlp otherwise looks for Deno and the token provider on the PATH, and the queue
      * worker's PATH may not include this project's directories.
      *
      * @return array<int, string>
      */
-    private function getCommonArgs(): array
+    private function getCommonArgs(Site $site): array
     {
-        return [
+        return array_filter([
             // Without an external JavaScript runtime, yt-dlp can't solve YouTube's challenges and silently falls back
             // to a limited set of formats.
             "--js-runtimes=deno:{$this->getVendoredPath('bin/deno')}",
@@ -104,8 +115,8 @@ readonly class Client
             "--plugin-dirs={$this->getVendoredPath('yt-dlp-plugins')}",
             "--extractor-args=youtubepot-bgutilcli:cli_path={$this->getVendoredPath('bin/bgutil-pot')}",
 
-            '--sleep-requests='.self::SLEEP_BETWEEN_REQUESTS,
-        ];
+            is_null($site->secondsBetweenRequests) ? null : "--sleep-requests=$site->secondsBetweenRequests",
+        ]);
     }
 
     /**
@@ -133,54 +144,50 @@ readonly class Client
         return array_filter([
             "--proxy={$proxy->getUrlForDownload()}",
 
-            // Only for proxies that can't leave TLS end-to-end. Never passed when talking to YouTube directly.
+            // Only for proxies that can't leave TLS end-to-end. Never passed when talking to the site directly.
             $proxy->requiresInsecureTls() ? '--no-check-certificates' : null,
         ]);
     }
 
-    private function downloadFailedDueToMembersOnlyContent(ProcessResult $result): bool
-    {
-        // todo: more accurate detection?
-        return str_contains($result->errorOutput(), 'members-only');
-    }
-
     /**
-     * Whether YouTube refused the request because of its source address. "Confirm your age" is a different refusal
-     * and must not match here.
-     */
-    private function downloadFailedDueToBotWall(ProcessResult $result): bool
-    {
-        return Str::contains($result->errorOutput(), self::BOT_WALL_MARKERS, ignoreCase: true);
-    }
-
-    /**
-     * Download the audio at $url, optionally through a proxy. Without a proxy the request goes to YouTube directly
-     * from this host.
+     * Run yt-dlp and classify a failure by the site's error phrases.
+     *
+     * @param  array<int, string>  $args
+     * @param  array<int, int>  $successExitCodes
      *
      * @throws ProcessFailedException
-     * @throws MembersOnlyContentException
+     * @throws UnavailableContentException
      * @throws BotWallException
      */
-    private function runDownload(string $url, string $outputPath, ?ProxyConfig $proxy = null): ProcessResult
-    {
+    private function runForSite(
+        Site $site,
+        string $url,
+        int $timeout,
+        array $args,
+        ?ProxyConfig $proxy = null,
+        array $successExitCodes = [0],
+    ): ProcessResult {
         try {
             return $this->run(
-                // Double the download timeout when proxied, because a proxy may be slower.
-                is_null($proxy) ? self::DOWNLOAD_TIMEOUT : self::DOWNLOAD_TIMEOUT * 2,
+                // Double the timeout when proxied, because a proxy may be slower.
+                is_null($proxy) ? $timeout : $timeout * 2,
                 array_merge(
-                    $this->getCommonArgs(),
+                    $this->getCommonArgs($site),
                     is_null($proxy) ? [] : $this->getProxyArgs($proxy),
-                    $this->getAudioArgs($outputPath),
+                    $args,
                     [$url],
                 ),
+                $successExitCodes,
             );
         } catch (ProcessFailedException $e) {
-            if ($this->downloadFailedDueToMembersOnlyContent($e->result)) {
-                $this->logger->error("Couldn't download $url because it's a members-only video");
+            $errorOutput = $e->result->errorOutput();
 
-                throw new MembersOnlyContentException;
-            } elseif ($this->downloadFailedDueToBotWall($e->result)) {
-                $this->logger->warning("Couldn't download $url because YouTube refused the address it came from");
+            if ($site->unavailableMarkers !== [] && Str::contains($errorOutput, $site->unavailableMarkers, ignoreCase: true)) {
+                $this->logger->error("Couldn't get $url from $site->name because the content is unavailable");
+
+                throw new UnavailableContentException($errorOutput, previous: $e);
+            } elseif ($site->botWallMarkers !== [] && Str::contains($errorOutput, $site->botWallMarkers, ignoreCase: true)) {
+                $this->logger->warning("Couldn't get $url because $site->name refused the address it came from");
 
                 throw new BotWallException($e->result);
             } else {
@@ -190,12 +197,34 @@ readonly class Client
     }
 
     /**
+     * Download the audio at $url, optionally through a proxy. Without a proxy the request goes to the site directly
+     * from this host.
+     *
+     * @throws ProcessFailedException
+     * @throws UnavailableContentException
+     * @throws BotWallException
+     */
+    private function runDownload(Site $site, string $url, string $outputPath, ?ProxyConfig $proxy = null): ProcessResult
+    {
+        return $this->runForSite(
+            $site,
+            $url,
+            self::DOWNLOAD_TIMEOUT,
+            array_merge(
+                is_null($site->format) ? [] : ['--format', $site->format],
+                $this->getAudioArgs($outputPath),
+            ),
+            $proxy,
+        );
+    }
+
+    /**
      * $retryOnBotWall is false for the direct attempt and true for the proxied one. A bot wall applies to the source
      * address, so a retry from this host's single address will fail again, while a rotating residential pool uses a
      * new address per attempt.
      *
      * @throws ProcessFailedException
-     * @throws MembersOnlyContentException
+     * @throws UnavailableContentException
      * @throws BotWallException
      */
     private function retryWithExponentialBackoff(
@@ -209,8 +238,7 @@ readonly class Client
             callback: $callback,
             sleepMilliseconds: fn (int $attempts) => $baseSleepSeconds * pow(2, $attempts - 1) * 1000,
             when: fn (\Throwable $t) => match (true) {
-                // No point in retrying if the content is members-only.
-                $t instanceof MembersOnlyContentException => false,
+                $t instanceof UnavailableContentException => false,
                 $t instanceof BotWallException            => $retryOnBotWall,
                 default                                   => true,
             },
@@ -218,29 +246,29 @@ readonly class Client
     }
 
     /**
-     * Whether YouTube is known to be refusing this host's address. The flag expires, so a block that outlasts it costs
-     * one failed direct attempt.
+     * Whether the site is known to be refusing this host's address. The flag expires, so a block that outlasts it
+     * costs one failed direct attempt.
      */
-    private function directDownloadsAreBlocked(): bool
+    private function directRequestsAreBlocked(Site $site): bool
     {
-        return (bool) $this->cache->get(self::DIRECT_BLOCKED_CACHE_KEY, false);
+        return (bool) $this->cache->get(self::directBlockedCacheKey($site), false);
     }
 
-    private function rememberDirectDownloadsAreBlocked(): void
+    private function rememberDirectRequestsAreBlocked(Site $site): void
     {
-        $this->cache->put(self::DIRECT_BLOCKED_CACHE_KEY, true, now()->addMinutes($this->directBlockMinutes));
+        $this->cache->put(self::directBlockedCacheKey($site), true, now()->addMinutes($this->directBlockMinutes));
     }
 
     /**
      * @throws ProcessFailedException
-     * @throws MembersOnlyContentException
+     * @throws UnavailableContentException
      * @throws BotWallException
      */
-    private function downloadThroughResidentialProxy(string $url, string $outputPath): void
+    private function downloadThroughResidentialProxy(Site $site, string $url, string $outputPath): void
     {
         try {
             $this->retryWithExponentialBackoff(
-                fn () => $this->runDownload($url, $outputPath, $this->residentialProxy)
+                fn () => $this->runDownload($site, $url, $outputPath, $this->residentialProxy)
             );
 
             $this->logger->info("Successfully downloaded $url with residential proxy");
@@ -253,49 +281,49 @@ readonly class Client
 
     /**
      * @throws ProcessFailedException
-     * @throws MembersOnlyContentException
+     * @throws UnavailableContentException
      * @throws BotWallException
      */
-    public function downloadAudio(string $url): string
+    public function downloadAudio(string $url, Site $site): string
     {
         $filename = Uuid::uuid4()->toString();
 
         $outputPath = sys_get_temp_dir()."/$filename.mp3";
 
-        if ($this->directDownloadsAreBlocked()) {
+        if ($this->directRequestsAreBlocked($site)) {
             $this->logger->info(
-                "Not downloading $url directly: YouTube is refusing this host's address until the block expires"
+                "Not downloading $url directly: $site->name is refusing this host's address until the block expires"
             );
 
             // No proxy to fall back to, and a direct attempt is known to fail, so skip the yt-dlp run.
             if (! $this->residentialProxy->isConfigured()) {
                 $this->logger->error(
-                    "Can't download $url: YouTube is refusing this host's address and no residential proxy is "
+                    "Can't download $url: $site->name is refusing this host's address and no residential proxy is "
                     .'configured to fall back to'
                 );
 
-                throw BotWallException::withoutRunningYtDlp($url);
+                throw BotWallException::withoutRunningYtDlp($url, $site);
             }
 
-            $this->downloadThroughResidentialProxy($url, $outputPath);
+            $this->downloadThroughResidentialProxy($site, $url, $outputPath);
 
             return $outputPath;
         }
 
         try {
             $this->retryWithExponentialBackoff(
-                fn () => $this->runDownload($url, $outputPath),
+                fn () => $this->runDownload($site, $url, $outputPath),
                 retryOnBotWall: false,
             );
 
             $this->logger->info("Successfully downloaded $url directly");
         } catch (BotWallException $e) {
             // Cache the refusal whether or not a proxy is configured. It lasts for hours.
-            $this->rememberDirectDownloadsAreBlocked();
+            $this->rememberDirectRequestsAreBlocked($site);
 
             if (! $this->residentialProxy->isConfigured()) {
                 $this->logger->error(
-                    "Failed to download $url: YouTube is refusing this host's address and no residential proxy is "
+                    "Failed to download $url: $site->name is refusing this host's address and no residential proxy is "
                     .'configured to fall back to'
                 );
 
@@ -303,10 +331,10 @@ readonly class Client
             }
 
             $this->logger->warning(
-                "YouTube is refusing this host's address; downloading $url through the residential proxy instead"
+                "$site->name is refusing this host's address; downloading $url through the residential proxy instead"
             );
 
-            $this->downloadThroughResidentialProxy($url, $outputPath);
+            $this->downloadThroughResidentialProxy($site, $url, $outputPath);
         } catch (ProcessFailedException $e) {
             // The proxy is optional. Without one, rethrow the direct failure.
             if (! $this->residentialProxy->isConfigured()) {
@@ -319,9 +347,100 @@ readonly class Client
 
             $this->logger->warning("Failed to download $url directly; trying residential proxy");
 
-            $this->downloadThroughResidentialProxy($url, $outputPath);
+            $this->downloadThroughResidentialProxy($site, $url, $outputPath);
         }
 
         return $outputPath;
+    }
+
+    /**
+     * The info JSON for $url. $args select what to extract, e.g. --flat-playlist for a playlist without its items.
+     *
+     * @param  array<int, string>  $args
+     *
+     * @throws ProcessFailedException
+     * @throws UnavailableContentException
+     * @throws BotWallException
+     */
+    public function getInfo(string $url, Site $site, array $args = []): Info
+    {
+        $result = $this->runQuery($site, $url, self::INFO_TIMEOUT, array_merge(['--dump-single-json'], $args));
+
+        return Info::fromJson($this->decodeJson($result->output()));
+    }
+
+    /**
+     * The info JSON for each item of the playlist at $url, one yt-dlp line per item. $args may stop the listing early
+     * with --break-match-filters.
+     *
+     * @param  array<int, string>  $args
+     * @return array<int, Info>
+     *
+     * @throws ProcessFailedException
+     * @throws UnavailableContentException
+     * @throws BotWallException
+     */
+    public function getEntries(string $url, Site $site, array $args = []): array
+    {
+        $result = $this->runQuery(
+            $site,
+            $url,
+            self::ENTRIES_TIMEOUT,
+            array_merge(['--dump-json'], $args),
+            successExitCodes: [0, self::EXIT_CODE_BROKE_OFF_PLAYLIST],
+        );
+
+        return collect(explode("\n", $result->output()))
+            ->filter(fn (string $line) => trim($line) !== '')
+            ->map(fn (string $line) => Info::fromJson($this->decodeJson($line)))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Runs a query directly, or through the residential proxy while the site is known to be refusing this host. A
+     * query isn't retried, since the caller may be a web request, but a new bot wall is remembered and the query is
+     * repeated once through the proxy.
+     *
+     * @param  array<int, string>  $args
+     * @param  array<int, int>  $successExitCodes
+     *
+     * @throws ProcessFailedException
+     * @throws UnavailableContentException
+     * @throws BotWallException
+     */
+    private function runQuery(Site $site, string $url, int $timeout, array $args, array $successExitCodes = [0]): ProcessResult
+    {
+        $proxied = fn () => $this->runForSite($site, $url, $timeout, $args, $this->residentialProxy, $successExitCodes);
+
+        if ($this->directRequestsAreBlocked($site) && $this->residentialProxy->isConfigured()) {
+            return $proxied();
+        }
+
+        try {
+            return $this->runForSite($site, $url, $timeout, $args, successExitCodes: $successExitCodes);
+        } catch (BotWallException $e) {
+            $this->rememberDirectRequestsAreBlocked($site);
+
+            if (! $this->residentialProxy->isConfigured()) {
+                throw $e;
+            }
+
+            return $proxied();
+        }
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private function decodeJson(string $json): array
+    {
+        $decoded = json_decode($json, true, flags: JSON_THROW_ON_ERROR);
+
+        if (! is_array($decoded)) {
+            throw new \UnexpectedValueException('yt-dlp printed JSON that is not an object');
+        }
+
+        return $decoded;
     }
 }

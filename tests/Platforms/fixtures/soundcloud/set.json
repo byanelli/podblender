@@ -1,0 +1,24 @@
+{
+  "_type": "playlist",
+  "id": "18",
+  "title": "Soulhack",
+  "description": "My 2003 debut album made on the road with a laptop and fake tickets.",
+  "webpage_url": "https://soundcloud.com/forss/sets/soulhack",
+  "timestamp": 1209518475,
+  "duration": 3247.119,
+  "thumbnails": [
+    {
+      "id": "t500x500",
+      "url": "https://i1.sndcdn.com/artworks-000067273270-uinyvw-t500x500.jpg"
+    },
+    {
+      "id": "original",
+      "url": "https://i1.sndcdn.com/artworks-000067273270-uinyvw-original.jpg"
+    }
+  ],
+  "uploader": "Forss",
+  "uploader_id": "183",
+  "uploader_url": "https://soundcloud.com/forss",
+  "playlist_count": 11,
+  "extractor_key": "SoundcloudSet"
+}

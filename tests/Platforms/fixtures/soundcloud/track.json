@@ -1,0 +1,24 @@
+{
+  "_type": "video",
+  "id": "293",
+  "title": "Flickermood",
+  "description": "From the Soulhack album,&nbsp;recently featured in this ad <a href=\"https://www.dswshoes.com/tv_commercial.jsp?m=october2007\">https://www.dswshoes.com/tv_commercial.jsp?m=october2007</a> ",
+  "webpage_url": "https://soundcloud.com/forss/flickermood",
+  "timestamp": 1190472346,
+  "duration": 213.886,
+  "thumbnail": "https://i1.sndcdn.com/artworks-000067273316-smsiqx-original.jpg",
+  "thumbnails": [
+    {
+      "id": "t500x500",
+      "url": "https://i1.sndcdn.com/artworks-000067273316-smsiqx-t500x500.jpg"
+    },
+    {
+      "id": "original",
+      "url": "https://i1.sndcdn.com/artworks-000067273316-smsiqx-original.jpg"
+    }
+  ],
+  "uploader": "Forss",
+  "uploader_id": "183",
+  "uploader_url": "https://soundcloud.com/forss",
+  "extractor_key": "Soundcloud"
+}

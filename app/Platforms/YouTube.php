@@ -7,28 +7,46 @@ use App\Apis\YouTubeData\Contracts\Client as YouTubeDataClient;
 use App\Apis\YouTubeData\PlaylistMetadata;
 use App\Apis\YouTubeData\VideoMetadata;
 use App\Apis\YtDlp\Client as YtDlpClient;
-use App\Apis\YtDlp\MembersOnlyContentException;
-use App\Concerns\FixesUrls;
+use App\Apis\YtDlp\Site;
 use App\Enums\AudioSourceType;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Contracts\SubscribablePlatform;
-use App\Platforms\Exceptions\ContentUnavailableException;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Exceptions\PlatformOperation;
 use Illuminate\Support\Collection;
 use League\Uri\Uri;
 
-readonly class YouTube implements SubscribablePlatform
+readonly class YouTube extends YtDlpPlatform implements SubscribablePlatform
 {
-    use FixesUrls;
-
     public function __construct(
-        private YtDlpClient $ytDlp,
+        YtDlpClient $ytDlp,
         private YouTubeDataClient $youTubeData,
-    ) {}
+    ) {
+        parent::__construct($ytDlp);
+    }
+
+    protected function type(): PlatformType
+    {
+        return PlatformType::YouTube;
+    }
+
+    protected function site(): Site
+    {
+        return new Site(
+            name: 'YouTube',
+            // yt-dlp writes the apostrophe as a curly one in some places and versions, so both forms are listed.
+            botWallMarkers: [
+                'confirm you’re not a bot',
+                "confirm you're not a bot",
+            ],
+            unavailableMarkers: ['members-only'],
+            // A burst of requests is one of the signals YouTube uses to refuse an address.
+            secondsBetweenRequests: 1.5,
+        );
+    }
 
     private function convertVideoMetadataToClipMetadata(VideoMetadata $video): ClipMetadata
     {
@@ -38,36 +56,12 @@ readonly class YouTube implements SubscribablePlatform
             canonicalUrl: "https://youtube.com/watch?v=$video->id",
             publishedAt: $video->publishedAt,
             source: $this->channelSourceMetadata($video->channel->id, $video->channel->name),
-            estimatedDownloadTime: $this->estimateDownloadTime($video),
+            estimatedDownloadTime: $this->estimateDownloadTime($video->durationSeconds),
             thumbnail: $video->thumbnailUrl === null
                 ? null
                 : new RemoteImageThumbnail($video->thumbnailUrl),
         );
     }
-
-    /**
-     * A conservative estimate of one download's wall-clock time, in seconds.
-     * yt-dlp downloads the audio track (~160 kbps) and throttles its requests,
-     * so this assumes 2 Mbps plus fixed overhead. Null when the API reported
-     * no duration.
-     */
-    private function estimateDownloadTime(VideoMetadata $video): ?int
-    {
-        if ($video->durationSeconds === null) {
-            return null;
-        }
-
-        $audioBytes = $video->durationSeconds * self::AUDIO_BITRATE_BYTES_PER_SECOND;
-
-        return (int) ceil($audioBytes / self::ASSUMED_DOWNLOAD_BYTES_PER_SECOND)
-            + self::DOWNLOAD_OVERHEAD_SECONDS;
-    }
-
-    private const AUDIO_BITRATE_BYTES_PER_SECOND = 20_000; // ~160 kbps
-
-    private const ASSUMED_DOWNLOAD_BYTES_PER_SECOND = 250_000; // ~2 Mbps
-
-    private const DOWNLOAD_OVERHEAD_SECONDS = 60;
 
     public function getClipMetadata(string $clipUrl): ClipMetadata
     {
@@ -118,19 +112,6 @@ readonly class YouTube implements SubscribablePlatform
         }
 
         throw new \RuntimeException("Cannot parse URL: $url");
-    }
-
-    public function downloadAudio(string $clipUrl): string
-    {
-        try {
-            $clipUrl = $this->fixUrlSchemeAndHost($clipUrl);
-
-            return $this->ytDlp->downloadAudio($clipUrl);
-        } catch (MembersOnlyContentException $e) {
-            throw new ContentUnavailableException;
-        } catch (\Exception $e) {
-            throw new PlatformException(PlatformType::YouTube, PlatformOperation::Download, $e);
-        }
     }
 
     /**

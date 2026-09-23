@@ -3,6 +3,7 @@
 namespace Tests\Jobs;
 
 use App\Enums\ClipProcessingState;
+use App\Enums\PlatformType;
 use App\Events\FinishedProcessingClip;
 use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
@@ -36,6 +37,25 @@ class DownloadAndStoreAudioClipTest extends TestCase
         ]);
 
         return $clip;
+    }
+
+    #[Test]
+    public function it_throttles_each_platforms_downloads_separately(): void
+    {
+        $clipFrom = fn (PlatformType $type) => AudioClip::factory()->create([
+            'audio_source_id' => AudioSource::factory()->create(['platform_type' => $type])->id,
+        ]);
+
+        // A YouTube backlog mustn't hold up SoundCloud downloads, or the reverse.
+        $this->assertNotEquals(
+            (new DownloadAndStoreAudioClip($clipFrom(PlatformType::YouTube)))->throttleKey(),
+            (new DownloadAndStoreAudioClip($clipFrom(PlatformType::SoundCloud)))->throttleKey(),
+        );
+
+        $this->assertEquals(
+            (new DownloadAndStoreAudioClip($clipFrom(PlatformType::YouTube)))->throttleKey(),
+            (new DownloadAndStoreAudioClip($clipFrom(PlatformType::YouTube)))->throttleKey(),
+        );
     }
 
     #[Test]
