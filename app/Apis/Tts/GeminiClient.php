@@ -217,6 +217,16 @@ readonly class GeminiClient implements ClientContract
                     continue;
                 }
 
+                // A refused request, e.g. a rate limit, is an error event in
+                // the stream with HTTP 200.
+                if (is_array($payload['error'] ?? null)) {
+                    throw new \RuntimeException(sprintf(
+                        'Gemini TTS returned an error: %s (%s)',
+                        $payload['error']['message'] ?? 'no message',
+                        $payload['error']['code'] ?? 'no code',
+                    ));
+                }
+
                 $delta = $payload['delta'] ?? null;
 
                 if (! is_array($delta)) {

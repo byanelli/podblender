@@ -190,4 +190,31 @@ class GeminiClientTest extends TestCase
 
         app(GeminiClient::class)->convertTextToSpeech('hello world');
     }
+
+    #[Test]
+    public function it_reports_an_error_event_in_the_stream()
+    {
+        config()->set('services.gemini.api_key', 'test-key');
+
+        // A refused request arrives as an error event with HTTP 200.
+        $error = json_encode(['error' => [
+            'message' => 'Rate limit exceeded for model gemini-3.1-flash-tts (limit: 10 requests per day on Free Tier).',
+            'code'    => 'rate_limit_exceeded',
+        ], 'event_type' => 'error']);
+
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response(
+                "event: interaction.created\ndata: {\"interaction\":{\"status\":\"in_progress\"}}\n\n"
+                ."event: error\ndata: $error\n\n"
+            ),
+        ]);
+
+        $this->fakeFfmpeg();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Rate limit exceeded');
+        $this->expectExceptionMessage('rate_limit_exceeded');
+
+        app(GeminiClient::class)->convertTextToSpeech('hello world');
+    }
 }
