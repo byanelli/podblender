@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import axios from "axios";
-import { ExternalLink, ListMusic, Rss, Trash2 } from "lucide-react";
+import { ExternalLink, ListMusic, Mail, Rss, Trash2 } from "lucide-react";
 import RadioWaves from "@/Components/RadioWaves";
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import NewFeedCard from "@/AppComponents/NewFeedCard";
-import CopyRssButton from "@/AppComponents/CopyRssButton";
+import CopyButton from "@/AppComponents/CopyButton";
 import ErrorPanel from "@/AppComponents/ErrorPanel";
 import MetadataSeparator from "@/AppComponents/MetadataSeparator";
 import routes from "@/routes";
@@ -31,6 +31,7 @@ type Feed = {
     name: string;
     description: string;
     cover_url: string | null;
+    inbound_email_address: string | null;
     subscription_id: number | null;
     subscription: { name: string; platform_url: string } | null;
     audio_clips_count: number;
@@ -175,8 +176,18 @@ export default function Dashboard({ user }: { user: User }) {
                                             </div>
 
                                             <div className="relative z-10 flex flex-none items-center gap-2">
-                                                <CopyRssButton
-                                                    url={routes.rss(feed.uuid)}
+                                                {feed.inbound_email_address && (
+                                                    <CopyButton
+                                                        text={feed.inbound_email_address}
+                                                        icon={Mail}
+                                                        label="Email"
+                                                    />
+                                                )}
+
+                                                <CopyButton
+                                                    text={routes.rss(feed.uuid)}
+                                                    icon={Rss}
+                                                    label="RSS"
                                                 />
 
                                                 {feed.subscription != null && (

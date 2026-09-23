@@ -39,6 +39,21 @@ class HomeTest extends TestCase
     }
 
     #[Test]
+    public function it_gives_each_feed_its_inbound_email_address_for_the_copy_button()
+    {
+        config(['services.resend.inbound_domain' => 'mail.example.com']);
+
+        $user = User::factory()->create();
+        Feed::factory()->create(['user_id' => $user->id, 'inbound_email_token' => 'abc123']);
+
+        $this->actingAs($user)
+            ->get('/')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('user.feeds.0.inbound_email_address', 'abc123@mail.example.com')
+                ->missing('user.feeds.0.inbound_email_token'));
+    }
+
+    #[Test]
     public function it_is_not_reachable_by_a_guest()
     {
         $this->expectException(AuthenticationException::class);

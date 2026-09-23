@@ -1,20 +1,28 @@
 import { useRef, useState } from "react";
-import { Check, Rss } from "lucide-react";
+import { Check, LucideIcon } from "lucide-react";
 
 import { Button } from "@/Components/ui/button";
 import { copyToClipboard } from "@/lib/clipboard";
 
 /**
- * Copies a feed's RSS URL to the clipboard, since the URL is what gets pasted into a podcast app. On copy, action
- * lines animate around the button and the label reads "Copied!" briefly.
+ * Copies text to the clipboard, such as a feed's RSS URL or its email address. On copy, action lines animate around
+ * the button and the label reads "Copied!" briefly.
  */
-export default function CopyRssButton({ url }: { url: string }) {
+export default function CopyButton({
+    text,
+    icon: Icon,
+    label,
+}: {
+    text: string;
+    icon: LucideIcon;
+    label: string;
+}) {
     const [copied, setCopied] = useState(false);
     const [burstKey, setBurstKey] = useState(0);
     const resetTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
     const copy = async () => {
-        await copyToClipboard(url);
+        await copyToClipboard(text);
 
         // A new key remounts the burst, which restarts its animation on repeated clicks.
         setBurstKey((key) => key + 1);
@@ -31,8 +39,8 @@ export default function CopyRssButton({ url }: { url: string }) {
                 onClick={copy}
                 aria-live="polite"
             >
-                {copied ? <Check /> : <Rss />}
-                {copied ? "Copied!" : "RSS"}
+                {copied ? <Check /> : <Icon />}
+                {copied ? "Copied!" : label}
             </Button>
 
             {copied && (
