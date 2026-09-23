@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Apis\Ffmpeg\Contracts\Client as Ffmpeg;
+use App\Jobs\Concerns\InjectsFailureDependencies;
 use App\Models\AudioClip;
 use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\ThumbnailSource;
@@ -27,7 +28,7 @@ use Ramsey\Uuid\Uuid;
  */
 class DownloadAndStoreThumbnail implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InjectsFailureDependencies, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
 
@@ -134,9 +135,9 @@ class DownloadAndStoreThumbnail implements ShouldQueue
      * Called once the retries are exhausted. thumbnail_path stays null, so the
      * episode is served without artwork.
      */
-    public function failed(?\Throwable $e): void
+    public function handleFailure(?\Throwable $e, LoggerInterface $logger): void
     {
-        app(LoggerInterface::class)->error(
+        $logger->error(
             "Gave up downloading a thumbnail for clip {$this->clip->id}: ".($e?->getMessage() ?? 'no reason given')
         );
     }

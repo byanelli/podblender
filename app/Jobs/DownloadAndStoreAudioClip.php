@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Apis\Ffmpeg\Contracts\Client as Ffmpeg;
 use App\Enums\ClipProcessingState;
 use App\Events\FinishedProcessingClip;
+use App\Jobs\Concerns\InjectsFailureDependencies;
 use App\Models\AudioClip;
 use App\Platforms\Exceptions\ContentUnavailableException;
 use App\Platforms\Exceptions\PlatformException;
@@ -22,7 +23,7 @@ use Illuminate\Queue\SerializesModels;
 
 class DownloadAndStoreAudioClip implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InjectsFailureDependencies, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
      * Name of both the WithoutOverlapping lock and the rate limiter. The limiter is registered in
@@ -167,12 +168,12 @@ class DownloadAndStoreAudioClip implements ShouldQueue
      * Called once the retries are exhausted or the job otherwise fails permanently. Marks the clip Failed and tells the
      * UI to stop showing it as processing.
      */
-    public function failed(?\Throwable $e): void
+    public function handleFailure(?\Throwable $e, Dispatcher $events): void
     {
         $this->clip->processing_state = ClipProcessingState::Failed;
         $this->clip->save();
 
-        $this->broadcastFinishedProcessing(app(Dispatcher::class));
+        $this->broadcastFinishedProcessing($events);
     }
 
     /**
