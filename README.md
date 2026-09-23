@@ -9,6 +9,8 @@ Podblender lets you add audio clips from around the Web to a custom podcast feed
 * **YouTube channels and playlists** — subscribe once and new uploads show up in your feed on their own
 * **RSS feeds** — subscribe to a text feed and each new item is narrated the same way
 
+You can also add a clip by emailing its link to the feed's own address, which works from the share menu of almost any app. See [Adding clips by email](#adding-clips-by-email).
+
 Why would you want this? It turns out there's a lot of interesting audio content (lectures, interviews, etc.) trapped on video sharing sites. I would prefer to listen to this content in my podcast player, with all its affordances for listening to long audio files: controls to scrub forward/back 30s, dynamic range compression for when speakers are recorded at inconsistent levels, ability to skip silences, etc. Also, even when a video platform (e.g., YouTube) lets you cache videos on mobile devices, it often forces you to cache the video along with the audio track even if you don't intend to watch, wasting space on your device.
 
 ## Requirements
@@ -24,7 +26,10 @@ You'll also need API keys, depending on what you want to add to your feeds:
 | --- | --- |
 | [Gemini](https://aistudio.google.com/apikey) | Narrating web articles and RSS items |
 | [YouTube Data API](https://developers.google.com/youtube/v3/getting-started) | Adding YouTube videos, channels, and playlists |
-| [Scrapfly](https://scrapfly.io/) | Optional. Only used to reach articles behind a paywall |
+| [Zyte](https://www.zyte.com/) or [Scrapfly](https://scrapfly.io/) | Optional. Used to fetch an archive.is copy of a paywalled article. See `SCRAPER_PROVIDER` under [Configuration](#configuration) |
+| [Resend](https://resend.com/) | Optional. Receiving clips by email |
+
+If YouTube blocks your server's IP address, which is common for addresses in data centers, you'll also need a residential proxy from [Oxylabs](https://oxylabs.io/) or [DataImpulse](https://dataimpulse.com/). See [Configuration](#configuration).
 
 ## Installation
 
@@ -33,18 +38,19 @@ You'll also need API keys, depending on what you want to add to your feeds:
 
 * Clone the repo
 * `composer install`
-  * This installs the executables Podblender runs into `vendor/bin`: `yt-dlp` and `ffmpeg` to download and transcode audio, plus two helpers that YouTube downloads depend on. It also installs a small yt-dlp plugin into `vendor/yt-dlp-plugins`. If any of these fail, downloading and storing audio clips won't work
+  * This installs the executables Podblender runs into `vendor/bin`: `yt-dlp` and `ffmpeg` to download and transcode audio, plus `deno` and `bgutil-pot`, which yt-dlp needs to answer YouTube's JavaScript challenges and to get a proof-of-origin token. It also installs a small yt-dlp plugin into `vendor/yt-dlp-plugins` that calls `bgutil-pot`. If any of these fail, downloading and storing audio clips won't work
 * `npm install` followed by `npm run build`
 * `cp .env.example .env` and `php artisan key:generate`
 * `php artisan reverb:install` to generate the credentials behind the feed page's live updates
 * In the `.env` file, add whichever API keys you need from the table above:
   * `GEMINI_API_KEY`
   * `YOUTUBE_DATA_API_KEY`
-  * `SCRAPFLY_API_KEY`
+  * `ZYTE_API_KEY` or `SCRAPFLY_API_KEY`
 * Create the database and run the migrations:
   * `touch database/database.sqlite`
   * `php artisan migrate`
 * `php artisan storage:link`
+* Start the app (see below), open it in a browser, and register an account. To stop anyone else registering on a public server, set `ALLOWED_REGISTRATION_EMAILS`
 
 ## Running it
 
@@ -75,6 +81,23 @@ Subscriptions are checked every two hours, and new episodes are added to your fe
 
 Either way, copy the feed's RSS link into your podcast player and enjoy.
 
+### Adding clips by email
+
+Each custom feed has its own email address, shown on the feed page and the dashboard. Email or forward a link to that address and the clip is added to the feed. Podblender takes the first link it finds, looking in the subject, then the body. Each received email is listed on the feed page with its result, and a feed accepts at most 30 emails an hour. If the address leaks, click **New address** on the feed page; mail sent to the old address is then ignored.
+
+Subscription feeds don't have an address.
+
+This requires a [Resend](https://resend.com/) account and a domain, or subdomain, that Resend receives mail for. To set it up:
+
+* In Resend, add the domain and enable receiving for it. Resend lists the MX record to add.
+* In Resend, create a webhook for the `email.received` event that points at `https://<your host>/webhooks/resend`. Locally, use your ngrok URL.
+* In `.env`, set:
+  * `RESEND_KEY`, an API key with full access. Podblender uses it to fetch each email's body
+  * `RESEND_WEBHOOK_SECRET`, the webhook's signing secret
+  * `RESEND_INBOUND_DOMAIN`, the domain from the first step, e.g. `mail.example.com`
+
+Until `RESEND_INBOUND_DOMAIN` is set, feeds don't show an email address. Until `RESEND_WEBHOOK_SECRET` is set, the webhook route responds with a 404.
+
 ### Listening on your phone
 
 Your podcast app needs to be able to reach the feed, which it can't do if the app is only listening on `localhost`. `php artisan dev` starts an ngrok tunnel for exactly this, so the RSS link you copy from the UI is already a public URL that works from your phone.
@@ -96,3 +119,12 @@ A few things worth knowing about, all settable in `.env`:
 | `AUDIO_PREVIEW_ENABLED` | `true` | In-browser playback of stored clips on the feed page |
 | `NGROK_HOST` | empty | Your static ngrok domain, if you have one |
 | `NGROK_BINARY` | `ngrok` | The ngrok agent, if it isn't on your `PATH` |
+| `ALLOWED_REGISTRATION_EMAILS` | empty | Comma-separated list of email addresses allowed to register. Empty means anyone can register |
+| `GEMINI_TTS_VOICE` | `Aoede` | The [Gemini voice](https://ai.google.dev/gemini-api/docs/speech-generation#voices) that narrates articles |
+| `SCRAPER_PROVIDER` | `zyte` | `zyte` (pay as you go) or `scrapfly` (monthly plans). Only the chosen service's key is read. Each paywalled article costs one request |
+| `RESIDENTIAL_PROXY_PROVIDER` | `oxylabs` | `oxylabs` or `dataimpulse`. Set that provider's `_USERNAME`, `_PASSWORD`, and optionally `_COUNTRY` (see `.env.example`). Without credentials, downloads that YouTube refuses fail |
+| `YTDLP_DIRECT_BLOCK_MINUTES` | `60` | After YouTube refuses a download from your server's address, how long to send every download through the residential proxy |
+
+## License
+
+Podblender is source-available under the [Elastic License 2.0](LICENSE.md). You may run it yourself, including at a business, and modify and redistribute the source. You may not offer it to others as a hosted service.
