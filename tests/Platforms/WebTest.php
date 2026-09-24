@@ -3,6 +3,8 @@
 namespace Tests\Platforms;
 
 use App\Apis\Tts\Contracts\Client;
+use App\Articles\Article;
+use App\Articles\Contracts\Reader;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Web;
 use Carbon\CarbonImmutable;
@@ -107,6 +109,70 @@ class WebTest extends TestCase
 
         $this->assertFileExists($mp3);
         $this->assertStringContainsString('harvest festival', (string) file_get_contents($mp3));
+    }
+
+    private function fakeReader(Article $article): void
+    {
+        $this->app->instance(Reader::class, new readonly class($article) implements Reader
+        {
+            public function __construct(private Article $article) {}
+
+            public function read(string $url): Article
+            {
+                return $this->article;
+            }
+        });
+    }
+
+    #[Test]
+    public function it_introduces_the_article_before_narrating_it()
+    {
+        $this->fakeReader(new Article(
+            url: 'https://riversidegazette.com/park',
+            title: 'City Council Approves Riverside Park.',
+            publisher: 'The Riverside Gazette',
+            publicationDate: CarbonImmutable::parse('2021-06-15T09:30:00+00:00'),
+            authors: ['Ada Reporter', 'Ben Writer', 'Cy Editor'],
+            text: 'The vote was unanimous.',
+        ));
+
+        $this->fakeTts();
+
+        $mp3 = $this->app->make(Web::class)->downloadAudio('https://riversidegazette.com/park')->path;
+
+        // The fake TTS backend writes the text it was given.
+        $this->assertEquals(
+            'City Council Approves Riverside Park... By Ada Reporter, Ben Writer and Cy Editor... '
+            .'Published in The Riverside Gazette on June 15, 2021... The vote was unanimous.',
+            file_get_contents($mp3),
+        );
+    }
+
+    #[Test]
+    public function it_leaves_unknown_details_out_of_the_introduction()
+    {
+        $this->fakeReader(new Article(
+            url: 'https://example.com/almanac',
+            title: 'The Undated Almanac',
+            publisher: 'The Timeless Register',
+            publicationDate: null,
+            authors: [],
+            text: 'No one knows when this was written.',
+        ));
+
+        $this->fakeTts();
+
+        $web = $this->app->make(Web::class);
+
+        $this->assertEquals(
+            'The Undated Almanac... Published in The Timeless Register... No one knows when this was written.',
+            file_get_contents($web->downloadAudio('https://example.com/almanac')->path),
+        );
+
+        // The feed still needs a date for the clip.
+        $this->assertTrue(
+            CarbonImmutable::now()->diffInSeconds($web->getClipMetadata('https://example.com/almanac')->publishedAt, absolute: true) < 60
+        );
     }
 
     #[Test]

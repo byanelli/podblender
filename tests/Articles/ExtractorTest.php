@@ -152,10 +152,8 @@ class ExtractorTest extends TestCase
     }
 
     #[Test]
-    public function it_defaults_the_publication_date_to_now_when_none_is_published()
+    public function it_leaves_the_publication_date_empty_when_none_is_published()
     {
-        $before = CarbonImmutable::now()->subMinute();
-
         $article = $this->extract('no-date', 'https://example.com/the-undated-almanac');
 
         // A missing date does not fail the rest of the extraction.
@@ -164,7 +162,6 @@ class ExtractorTest extends TestCase
         $this->assertEquals(['Morgan Undated'], $article->authors);
 
         // The fixture has no date in its JSON-LD or meta tags.
-        $this->assertTrue($article->publicationDate->greaterThanOrEqualTo($before));
-        $this->assertTrue($article->publicationDate->lessThanOrEqualTo(CarbonImmutable::now()->addMinute()));
+        $this->assertNull($article->publicationDate);
     }
 }

@@ -20,7 +20,8 @@ readonly class Article implements Arrayable
         public string $url,
         public string $title,
         public string $publisher,
-        public DateTimeInterface $publicationDate,
+        // Null when the page gives no publication date.
+        public ?DateTimeInterface $publicationDate,
         public array $authors,
         public string $text,
     ) {}

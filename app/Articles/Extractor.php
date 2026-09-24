@@ -2,7 +2,6 @@
 
 namespace App\Articles;
 
-use Carbon\CarbonImmutable;
 use fivefilters\Readability\Configuration;
 use fivefilters\Readability\ParseException;
 use fivefilters\Readability\Readability;
@@ -33,11 +32,9 @@ readonly class Extractor
             url: $url,
             title: $this->extractTitle($url, $jsonLd, $meta, $html, $readability),
             publisher: $this->extractPublisher($url, $jsonLd, $meta),
-            // The current time when the page gives no publication date.
             publicationDate: $jsonLd->datePublished
                 ?? $meta->articlePublishedTime
-                ?? $meta->ogPublishedTime
-                ?? CarbonImmutable::now(),
+                ?? $meta->ogPublishedTime,
             authors: $this->extractAuthors($jsonLd, $meta),
             text: $this->extractBody($jsonLd, $readability),
         );

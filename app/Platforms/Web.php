@@ -13,6 +13,7 @@ use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\Exceptions\PlatformOperation;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Factory;
 use League\Uri\Uri;
 use Spatie\Regex\Regex;
@@ -60,7 +61,8 @@ readonly class Web implements Platform
                 title: $article->title,
                 description: 'Article by '.collect($article->authors)->join(' and '),
                 canonicalUrl: $clipUrl,
-                publishedAt: $article->publicationDate,
+                // An undated article is treated as published when it's added.
+                publishedAt: $article->publicationDate ?? CarbonImmutable::now(),
                 source: new SourceMetadata(
                     name: $article->publisher,
                     canonicalUrl: 'https://'.Uri::new($clipUrl)->getHost(),
@@ -88,6 +90,31 @@ readonly class Web implements Platform
         );
     }
 
+    /**
+     * The article's text preceded by its headline, authors, publisher and date. The ellipses make the TTS model pause
+     * between them. Gemini 3.8 also accepts pause tags, but not every provider does.
+     */
+    private function narrationScript(Article $article): string
+    {
+        $byline = collect($article->authors)->join(', ', ' and ');
+
+        $published = collect([
+            $article->publisher === '' ? null : "in $article->publisher",
+            $article->publicationDate === null ? null : 'on '.$article->publicationDate->format('F j, Y'),
+        ])->filter()->join(' ');
+
+        $intro = collect([
+            rtrim($article->title, '.'),
+            $byline === '' ? null : "By $byline",
+            $published === '' ? null : "Published $published",
+        ])
+            ->filter()
+            ->map(fn (string $part) => "$part...")
+            ->join(' ');
+
+        return "$intro $article->text";
+    }
+
     public function downloadAudio(string $clipUrl): DownloadedAudio
     {
         try {
@@ -95,7 +122,7 @@ readonly class Web implements Platform
 
             $article = $this->reader->read($clipUrl);
 
-            $narration = $this->tts->convertTextToSpeech($article->text);
+            $narration = $this->tts->convertTextToSpeech($this->narrationScript($article));
 
             return new DownloadedAudio($narration->path, $narration->usage);
         } catch (\Exception $e) {
