@@ -2,6 +2,7 @@
 
 namespace Tests\Jobs;
 
+use App\Apis\Tts\Usage;
 use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
 use App\Events\FinishedProcessingClip;
@@ -123,6 +124,47 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         // The broadcast is how the UI stops showing the clip as processing.
         Event::assertDispatched(FinishedProcessingClip::class);
+    }
+
+    #[Test]
+    public function it_stores_what_narrating_the_clip_cost(): void
+    {
+        Event::fake(FinishedProcessingClip::class);
+
+        $this->fakePlatform(ttsUsage: new Usage('gemini-3.8-flash-lite-tts', 1200, 36000, 0.2166));
+
+        $this->fakeFfmpeg();
+
+        Storage::fake();
+
+        dispatch(new DownloadAndStoreAudioClip($clip = $this->clipAttachedToFeed()));
+
+        $clip = $clip->fresh();
+
+        $this->assertEquals('gemini-3.8-flash-lite-tts', $clip->tts_model);
+        $this->assertEquals(1200, $clip->tts_input_tokens);
+        $this->assertEquals(36000, $clip->tts_output_tokens);
+        $this->assertEquals(0.2166, $clip->tts_cost);
+    }
+
+    #[Test]
+    public function it_stores_no_cost_for_a_clip_that_was_not_narrated(): void
+    {
+        Event::fake(FinishedProcessingClip::class);
+
+        $this->fakePlatform();
+
+        $this->fakeFfmpeg();
+
+        Storage::fake();
+
+        dispatch(new DownloadAndStoreAudioClip($clip = $this->clipAttachedToFeed()));
+
+        $clip = $clip->fresh();
+
+        $this->assertEquals(ClipProcessingState::Processed, $clip->processing_state);
+        $this->assertNull($clip->tts_model);
+        $this->assertNull($clip->tts_cost);
     }
 
     #[Test]

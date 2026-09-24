@@ -8,6 +8,7 @@ use App\Articles\Contracts\Reader as ArticleReader;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
+use App\Platforms\Contracts\DownloadedAudio;
 use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Exceptions\PlatformException;
@@ -87,14 +88,16 @@ readonly class Web implements Platform
         );
     }
 
-    public function downloadAudio(string $clipUrl): string
+    public function downloadAudio(string $clipUrl): DownloadedAudio
     {
         try {
             $clipUrl = $this->fixUrlSchemeAndHost($clipUrl);
 
             $article = $this->reader->read($clipUrl);
 
-            return $this->tts->convertTextToSpeech($article->text);
+            $narration = $this->tts->convertTextToSpeech($article->text);
+
+            return new DownloadedAudio($narration->path, $narration->usage);
         } catch (\Exception $e) {
             throw new PlatformException($this->type(), PlatformOperation::Download, $e);
         }

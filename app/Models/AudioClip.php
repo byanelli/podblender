@@ -30,6 +30,10 @@ use Illuminate\Support\Traits\Tappable;
  * @property string $storage_path
  * @property string|null $thumbnail_path
  * @property string $title
+ * @property string|null $tts_model
+ * @property int|null $tts_input_tokens
+ * @property int|null $tts_output_tokens
+ * @property float|null $tts_cost USD
  * @property CarbonImmutable $created_at
  * @property CarbonImmutable $updated_at
  * @property AudioSource $audioSource
@@ -52,10 +56,20 @@ class AudioClip extends Model
 
         // Uncast, published_at is a string, and comparing it against a date evaluates to false without an error.
         'published_at'     => 'datetime',
+
+        'tts_cost'         => 'float',
     ];
 
     protected $with = [
         'audioSource',
+    ];
+
+    // Internal cost data, kept out of the feed pages' props.
+    protected $hidden = [
+        'tts_model',
+        'tts_input_tokens',
+        'tts_output_tokens',
+        'tts_cost',
     ];
 
     protected $appends = [

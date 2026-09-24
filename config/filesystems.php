@@ -30,13 +30,13 @@ return [
 
     'disks'   => [
 
-        'local'  => [
+        'local'        => [
             'driver' => 'local',
             'root'   => storage_path('app'),
             'throw'  => true,
         ],
 
-        'public' => [
+        'public'       => [
             'driver'     => 'local',
             'root'       => storage_path('app/public'),
             // Relative so Storage::url() (used for enclosure/audio URLs) is
@@ -49,7 +49,15 @@ return [
             'throw'      => true,
         ],
 
-        's3'     => [
+        // Per-segment narration cache. See App\Apis\Tts\SegmentCache. With several app instances this must be a shared
+        // disk such as S3, because a job's retry can run on another instance.
+        'tts-segments' => [
+            'driver' => 'local',
+            'root'   => storage_path('app/tts-segments'),
+            'throw'  => true,
+        ],
+
+        's3'           => [
             'driver'                  => 's3',
             'key'                     => env('AWS_ACCESS_KEY_ID'),
             'secret'                  => env('AWS_SECRET_ACCESS_KEY'),

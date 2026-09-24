@@ -39,6 +39,6 @@ class OpenAiClientTest extends TestCase
         /** @var OpenAiClient $client */
         $client = app(OpenAiClient::class);
 
-        $this->assertEquals($text, $client->convertTextToSpeech($text));
+        $this->assertEquals($text, $client->convertTextToSpeech($text)->path);
     }
 }

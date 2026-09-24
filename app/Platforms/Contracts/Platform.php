@@ -21,5 +21,5 @@ interface Platform
      * @throws PlatformException
      * @throws ContentUnavailableException
      */
-    public function downloadAudio(string $clipUrl): string;
+    public function downloadAudio(string $clipUrl): DownloadedAudio;
 }

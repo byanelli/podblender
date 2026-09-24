@@ -103,7 +103,7 @@ class WebTest extends TestCase
         /** @var Web $web */
         $web = $this->app->make(Web::class);
 
-        $mp3 = $web->downloadAudio('https://theopenpress.com/harvest-festival');
+        $mp3 = $web->downloadAudio('https://theopenpress.com/harvest-festival')->path;
 
         $this->assertFileExists($mp3);
         $this->assertStringContainsString('harvest festival', (string) file_get_contents($mp3));

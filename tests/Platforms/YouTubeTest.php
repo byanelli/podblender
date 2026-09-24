@@ -356,7 +356,7 @@ class YouTubeTest extends TestCase
         /** @var YouTube $youtube */
         $youtube = $this->app->make(YouTube::class);
 
-        $mp3 = $youtube->downloadAudio($url);
+        $mp3 = $youtube->downloadAudio($url)->path;
 
         $this->assertFileExists($mp3);
         $this->assertEquals($content, file_get_contents($mp3));

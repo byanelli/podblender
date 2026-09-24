@@ -51,8 +51,24 @@ return [
         // text-to-speech via App\Apis\Tts\GeminiClient.
         'api_key' => env('GEMINI_API_KEY'),
         'tts'     => [
-            'model' => env('GEMINI_TTS_MODEL', 'gemini-3.1-flash-tts-preview'),
-            'voice' => env('GEMINI_TTS_VOICE', 'Aoede'),
+            'model'  => env('GEMINI_TTS_MODEL', 'gemini-3.8-flash-lite-tts'),
+            'voice'  => env('GEMINI_TTS_VOICE', 'Aoede'),
+
+            // USD per million tokens, from ai.google.dev/gemini-api/docs/pricing.
+            // Each price applies from its date until the next one.
+            'prices' => [
+                'gemini-3.8-flash-lite-tts'    => [
+                    '2026-01-01' => ['input' => 0.50, 'output' => 6.00],
+                    '2027-01-01' => ['input' => 1.00, 'output' => 12.00],
+                ],
+                'gemini-3.8-flash-tts'         => [
+                    '2026-01-01' => ['input' => 0.50, 'output' => 9.00],
+                    '2027-01-01' => ['input' => 1.00, 'output' => 18.00],
+                ],
+                'gemini-3.1-flash-tts-preview' => [
+                    '2026-01-01' => ['input' => 1.00, 'output' => 20.00],
+                ],
+            ],
         ],
     ],
 

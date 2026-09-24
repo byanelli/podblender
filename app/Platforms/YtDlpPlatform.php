@@ -9,6 +9,7 @@ use App\Apis\YtDlp\UnavailableContentException;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
+use App\Platforms\Contracts\DownloadedAudio;
 use App\Platforms\Contracts\Platform;
 use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\SourceMetadata;
@@ -30,10 +31,10 @@ abstract readonly class YtDlpPlatform implements Platform
 
     abstract protected function site(): Site;
 
-    public function downloadAudio(string $clipUrl): string
+    public function downloadAudio(string $clipUrl): DownloadedAudio
     {
         try {
-            return $this->ytDlp->downloadAudio($this->fixUrlSchemeAndHost($clipUrl), $this->site());
+            return new DownloadedAudio($this->ytDlp->downloadAudio($this->fixUrlSchemeAndHost($clipUrl), $this->site()));
         } catch (UnavailableContentException $e) {
             throw new ContentUnavailableException;
         } catch (\Exception $e) {

@@ -2,12 +2,11 @@
 
 namespace App\Apis\Tts\Contracts;
 
+use App\Apis\Tts\Narration;
+
 interface Client
 {
-    /**
-     * @return string -- returns the path to an MP3 file
-     */
-    public function convertTextToSpeech(string $text): string;
+    public function convertTextToSpeech(string $text): Narration;
 
     /**
      * A high estimate, in seconds, of how long convertTextToSpeech() will take

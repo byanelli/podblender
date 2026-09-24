@@ -8,6 +8,7 @@ use App\Apis\Tts\Contracts\Client as ClientContract;
 use Illuminate\Http\Client\Factory as Http;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Carbon;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -22,6 +23,9 @@ use Ramsey\Uuid\Uuid;
  * streaming, the API sends audio-delta events continuously. The flag only
  * changes the server's behavior, so no streaming Guzzle handler is needed and
  * the requests can go through a pool.
+ *
+ * Each narrated segment is cached until the whole narration succeeds, so a
+ * retry after a failure requests only the segments that are missing.
  *
  * Segments are sent CONCURRENCY at a time; a three-segment article measured
  * 2.78x faster than sequential requests. Each batch is transcoded before the
@@ -53,42 +57,110 @@ readonly class GeminiClient implements ClientContract
         private Http $http,
         private FfmpegClient $ffmpeg,
         private GeminiClientConfig $config,
+        private SegmentCache $cache,
     ) {}
 
-    /**
-     * @return string -- returns the path to an MP3 file
-     */
-    public function convertTextToSpeech(string $text): string
+    public function convertTextToSpeech(string $text): Narration
     {
-        $pcms = [];
+        $segments = iterator_to_array($this->segmentText($text, self::SEGMENT_LENGTH), preserve_keys: false);
+        $ids = array_map($this->cacheId(...), $segments);
+
+        // Each segment's MP3 and usage, by segment index.
         $mp3s = [];
+        $usages = [];
+
+        // Local files to delete once the segments are combined.
+        $temporary = [];
 
         try {
-            $segments = collect($this->segmentText($text, self::SEGMENT_LENGTH));
-
-            // Transcode each batch before requesting the next, to limit the
-            // decoded audio in memory.
-            foreach ($segments->chunk(self::CONCURRENCY) as $chunk) {
-                foreach ($this->requestAudioForSegments($chunk->values()->all()) as [$pcmBytes, $sampleRate]) {
-                    $pcms[] = $pcm = $this->writePcmToFile($pcmBytes);
-                    $mp3s[] = $this->ffmpeg->pcmToMp3($pcm, $sampleRate);
+            foreach ($ids as $index => $id) {
+                if (($cached = $this->cache->get($id)) !== null) {
+                    [$mp3s[$index], $usages[$index]] = $cached;
+                    $temporary[] = $mp3s[$index];
                 }
             }
 
-            $combined = $this->ffmpeg->combineMp3s($mp3s);
+            // Segments with no cached audio, keyed by their index in $segments.
+            $uncached = array_diff_key($segments, $mp3s);
 
-            // Delete the intermediates. With a single segment the combined
-            // result is one of them, so it is excluded.
-            collect($pcms)->merge($mp3s)
+            // Transcode each batch before requesting the next, to limit the
+            // decoded audio in memory.
+            foreach (array_chunk($uncached, self::CONCURRENCY, preserve_keys: true) as $batch) {
+                $failure = null;
+
+                foreach ($this->requestAudioForSegments($batch) as $index => $result) {
+                    if ($result instanceof \Throwable) {
+                        $failure ??= $result;
+
+                        continue;
+                    }
+
+                    [$pcmBytes, $sampleRate, $usages[$index]] = $result;
+
+                    $temporary[] = $pcm = $this->writePcmToFile($pcmBytes);
+                    $temporary[] = $mp3s[$index] = $this->ffmpeg->pcmToMp3($pcm, $sampleRate);
+
+                    $this->cache->put($ids[$index], $mp3s[$index], $usages[$index]);
+                }
+
+                // Fail rather than omit a segment. The batch's other segments
+                // are cached, so a retry doesn't pay for them again.
+                if ($failure !== null) {
+                    throw $failure;
+                }
+            }
+
+            ksort($mp3s);
+
+            $combined = $this->ffmpeg->combineMp3s(array_values($mp3s));
+
+            foreach ($ids as $id) {
+                $this->cache->forget($id);
+            }
+
+            // With a single segment the combined result is that segment's
+            // file, so it is kept.
+            collect($temporary)
                 ->reject(fn ($path) => $path === $combined)
                 ->each(fn ($path) => @unlink($path));
 
-            return $combined;
+            return new Narration($combined, $this->totalUsage($usages));
         } catch (\Throwable $e) {
-            collect($pcms)->merge($mp3s)->each(fn ($path) => @unlink($path));
+            collect($temporary)->each(fn ($path) => @unlink($path));
 
             throw $e;
         }
+    }
+
+    /**
+     * Identifies a segment's audio in the cache. The model and voice are part
+     * of it because they change the audio.
+     */
+    private function cacheId(string $segment): string
+    {
+        return implode("\n", [$this->config->model, $this->config->voice, $segment]);
+    }
+
+    /**
+     * @param  array<int, array{0: int, 1: int}|null>  $usages
+     */
+    private function totalUsage(array $usages): ?Usage
+    {
+        // A total that omits a segment would understate the cost.
+        if (in_array(null, $usages, strict: true)) {
+            return null;
+        }
+
+        /** @var array<int, array{0: int, 1: int}> $usages */
+        $inputTokens = array_sum(array_column($usages, 0));
+        $outputTokens = array_sum(array_column($usages, 1));
+
+        return new Usage(
+            model: $this->config->model,
+            inputTokens: $inputTokens,
+            outputTokens: $outputTokens,
+            cost: $this->cost($inputTokens, $outputTokens),
+        );
     }
 
     /**
@@ -105,6 +177,23 @@ readonly class GeminiClient implements ClientContract
      * to twelve segments. Rounded up because it is used for a timeout.
      */
     private const FFMPEG_SECONDS_PER_SEGMENT = 3;
+
+    /**
+     * USD for the given tokens at the current price, or null if the model has none configured.
+     */
+    private function cost(int $inputTokens, int $outputTokens): ?float
+    {
+        $today = Carbon::today()->toDateString();
+
+        $price = collect($this->config->prices[$this->config->model] ?? [])
+            ->filter(fn (array $price, string $from) => $from <= $today)
+            ->sortKeys()
+            ->last();
+
+        return $price === null
+            ? null
+            : ($inputTokens * $price['input'] + $outputTokens * $price['output']) / 1_000_000;
+    }
 
     public function estimateNarrationTime(string $text): int
     {
@@ -133,11 +222,12 @@ readonly class GeminiClient implements ClientContract
     }
 
     /**
-     * Narrate several segments concurrently, returning each one's decoded PCM
-     * and sample rate in the order the segments were given.
+     * Narrate several segments concurrently. Returns each one's decoded PCM,
+     * sample rate and usage, or the exception it failed with, keyed like
+     * $segments.
      *
      * @param  array<int, string>  $segments
-     * @return array<int, array{0: string, 1: int}>
+     * @return array<int, array{0: string, 1: int, 2: array{0: int, 1: int}|null}|\Throwable>
      */
     private function requestAudioForSegments(array $segments): array
     {
@@ -154,21 +244,22 @@ readonly class GeminiClient implements ClientContract
         // Pool results are keyed by segment index, so reading them in segment
         // order gives the narration in order regardless of completion order.
         return collect($segments)
-            ->keys()
-            ->map(function (int $index) use ($responses) {
+            ->map(function (string $segment, int $index) use ($responses) {
                 $response = $responses[$index] ?? null;
 
-                // A segment that failed every retry is returned as the
-                // exception. Rethrow it so the narration fails instead of
-                // omitting that segment.
+                // A segment that failed every retry is returned as the exception.
                 if ($response instanceof \Throwable) {
-                    throw $response;
+                    return $response;
                 }
 
-                ($response instanceof Response)
-                    || throw new \RuntimeException("Gemini TTS returned no response for segment $index");
+                try {
+                    ($response instanceof Response)
+                        || throw new \RuntimeException("Gemini TTS returned no response for segment $index");
 
-                return $this->decodePcmFromSse($response->throw()->body());
+                    return $this->decodePcmFromSse($response->throw()->body());
+                } catch (\Throwable $e) {
+                    return $e;
+                }
             })
             ->all();
     }
@@ -195,15 +286,18 @@ readonly class GeminiClient implements ClientContract
 
     /**
      * Parse a server-sent event body and concatenate its audio deltas into one
-     * PCM blob, returning [pcmBytes, sampleRate]. The audio is in the step.delta
-     * events with an audio payload, one per "data: {json}" line.
+     * PCM blob, returning [pcmBytes, sampleRate, usage]. The audio is in the
+     * step.delta events with an audio payload, one per "data: {json}" line.
+     * Usage is [inputTokens, outputTokens] from the interaction.completed
+     * event, or null if the stream didn't include it.
      *
-     * @return array{0: string, 1: int}
+     * @return array{0: string, 1: int, 2: array{0: int, 1: int}|null}
      */
     private function decodePcmFromSse(string $sse): array
     {
         $pcm = '';
         $sampleRate = self::DEFAULT_SAMPLE_RATE;
+        $usage = null;
 
         foreach (preg_split('/\r?\n\r?\n/', $sse) ?: [] as $event) {
             foreach (preg_split('/\r?\n/', $event) ?: [] as $line) {
@@ -225,6 +319,15 @@ readonly class GeminiClient implements ClientContract
                         $payload['error']['message'] ?? 'no message',
                         $payload['error']['code'] ?? 'no code',
                     ));
+                }
+
+                $reported = $payload['interaction']['usage'] ?? null;
+
+                if (is_array($reported)) {
+                    $usage = [
+                        (int) ($reported['total_input_tokens'] ?? 0),
+                        (int) ($reported['total_output_tokens'] ?? 0),
+                    ];
                 }
 
                 $delta = $payload['delta'] ?? null;
@@ -250,6 +353,6 @@ readonly class GeminiClient implements ClientContract
 
         ($pcm !== '') || throw new \RuntimeException('Gemini TTS response contained no audio data');
 
-        return [$pcm, $sampleRate];
+        return [$pcm, $sampleRate, $usage];
     }
 }

@@ -132,7 +132,8 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
             $platform = $platforms->for($this->clip->platform_type);
 
-            $downloadPath = $platform->downloadAudio($this->clip->platform_url);
+            $download = $platform->downloadAudio($this->clip->platform_url);
+            $downloadPath = $download->path;
             $downloadHandle = fopen($downloadPath, 'r');
 
             $duration = $ffmpeg->getDuration($downloadPath);
@@ -151,6 +152,14 @@ class DownloadAndStoreAudioClip implements ShouldQueue
             $this->clip->processing_state = ClipProcessingState::Processed;
             $this->clip->duration = $duration;
             $this->clip->size = $storage->size($this->clip->storage_path);
+
+            if ($download->ttsUsage !== null) {
+                $this->clip->tts_model = $download->ttsUsage->model;
+                $this->clip->tts_input_tokens = $download->ttsUsage->inputTokens;
+                $this->clip->tts_output_tokens = $download->ttsUsage->outputTokens;
+                $this->clip->tts_cost = $download->ttsUsage->cost;
+            }
+
             $this->clip->save();
 
             $this->broadcastFinishedProcessing($events);

@@ -2,7 +2,9 @@
 
 namespace Tests\Concerns;
 
+use App\Apis\Tts\Usage;
 use App\Platforms\Contracts\ClipMetadata;
+use App\Platforms\Contracts\DownloadedAudio;
 use App\Platforms\Contracts\SourceMetadata;
 use App\Platforms\Contracts\SubscribablePlatform;
 use App\Platforms\Web;
@@ -35,12 +37,13 @@ trait FakesPlatform
         ?string $audioContent = null,
         ?\Throwable $downloadError = null,
         ?\Throwable $clipMetadataError = null,
+        ?Usage $ttsUsage = null,
     ): void {
         $recordPublicationTime = function (\DateTimeInterface $time) {
             $this->platformPublicationTimeRequested = $time;
         };
 
-        $platform = new class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent, $downloadError, $recordPublicationTime, $clipMetadataError) implements SubscribablePlatform
+        $platform = new class($clipMetadata, $sourceMetadata, $clipMetadataList, $audioPath, $audioContent, $downloadError, $recordPublicationTime, $clipMetadataError, $ttsUsage) implements SubscribablePlatform
         {
             public function __construct(
                 private readonly ?ClipMetadata $clipMetadata = null,
@@ -51,6 +54,7 @@ trait FakesPlatform
                 private readonly ?\Throwable $downloadError = null,
                 private readonly ?\Closure $recordPublicationTime = null,
                 private readonly ?\Throwable $clipMetadataError = null,
+                private readonly ?Usage $ttsUsage = null,
             ) {}
 
             public function getClipMetadata(string $clipUrl): ClipMetadata
@@ -62,7 +66,7 @@ trait FakesPlatform
                 return $this->clipMetadata;
             }
 
-            public function downloadAudio(string $clipUrl): string
+            public function downloadAudio(string $clipUrl): DownloadedAudio
             {
                 if ($this->downloadError !== null) {
                     throw $this->downloadError;
@@ -73,7 +77,7 @@ trait FakesPlatform
                     $this->audioContent ?: Uuid::uuid4()->toString(),
                 );
 
-                return $path;
+                return new DownloadedAudio($path, $this->ttsUsage);
             }
 
             public function getSourceMetadata(string $sourceUrl): SourceMetadata

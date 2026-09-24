@@ -50,10 +50,7 @@ readonly class OpenAiClient implements TtsClientContract
         fclose($handle) || throw new \RuntimeException("Error closing file: $file");
     }
 
-    /**
-     * @return string -- returns the path to an MP3 file
-     */
-    public function convertTextToSpeech(string $text): string
+    public function convertTextToSpeech(string $text): Narration
     {
         $mp3s = [];
 
@@ -74,7 +71,8 @@ readonly class OpenAiClient implements TtsClientContract
                 ->reject(fn ($mp3) => $mp3 === $combined)
                 ->each(fn ($mp3) => unlink($mp3));
 
-            return $combined;
+            // The speech endpoint doesn't report usage.
+            return new Narration($combined);
         } catch (\Throwable $e) {
             collect($mp3s)->each(fn ($mp3) => @unlink($mp3));
 
