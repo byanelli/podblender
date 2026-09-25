@@ -72,6 +72,17 @@
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php -r \"if (! preg_match('/^APP_KEY=\\S/m', file_get_contents('.env'))) { passthru(PHP_BINARY.' artisan key:generate --ansi', \\$code); exit(\\$code); }\"",
+            "@php artisan reverb:install --no-interaction",
+            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
+            "@php artisan migrate --force",
+            "@php artisan storage:link",
+            "npm install",
+            "npm run build"
+        ],
         "test": [
             "./vendor/bin/phpunit"
         ],

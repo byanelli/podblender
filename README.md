@@ -37,19 +37,18 @@ If YouTube blocks your server's IP address, which is common for addresses in dat
 > Podblender vendors the executables it needs into `vendor/bin` rather than expecting them on your `PATH`. It supports Linux and macOS, on both x86-64 and arm64.
 
 * Clone the repo
-* `composer install`
-  * This installs the executables Podblender runs into `vendor/bin`: `yt-dlp` and `ffmpeg` to download and transcode audio, plus `deno` and `bgutil-pot`, which yt-dlp needs to answer YouTube's JavaScript challenges and to get a proof-of-origin token. It also installs a small yt-dlp plugin into `vendor/yt-dlp-plugins` that calls `bgutil-pot`. If any of these fail, downloading and storing audio clips won't work
-* `npm install` followed by `npm run build`
-* `cp .env.example .env` and `php artisan key:generate`
-* `php artisan reverb:install` to generate the credentials behind the feed page's live updates
+* `composer setup`, which:
+  * Runs `composer install`. This also installs the executables Podblender runs into `vendor/bin`: `yt-dlp` and `ffmpeg` to download and transcode audio, plus `deno` and `bgutil-pot`, which yt-dlp needs to answer YouTube's JavaScript challenges and to get a proof-of-origin token. It also installs a small yt-dlp plugin into `vendor/yt-dlp-plugins` that calls `bgutil-pot`. If any of these fail, downloading and storing audio clips won't work
+  * Copies `.env.example` to `.env` and fills in `APP_KEY` and the Reverb credentials behind the feed page's live updates
+  * Creates the SQLite database and runs the migrations
+  * Runs `php artisan storage:link`
+  * Runs `npm install` and `npm run build`
+
+  It's safe to rerun: it leaves an existing `.env` and any secrets already set in it alone.
 * In the `.env` file, add whichever API keys you need from the table above:
   * `GEMINI_API_KEY`
   * `YOUTUBE_DATA_API_KEY`
   * `ZYTE_API_KEY` or `SCRAPFLY_API_KEY`
-* Create the database and run the migrations:
-  * `touch database/database.sqlite`
-  * `php artisan migrate`
-* `php artisan storage:link`
 * Start the app (see below), open it in a browser, and register an account. To stop anyone else registering on a public server, set `ALLOWED_REGISTRATION_EMAILS`
 
 ## Running it
