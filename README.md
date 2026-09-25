@@ -27,7 +27,7 @@ You'll also need API keys, depending on what you want to add to your feeds:
 | [Gemini](https://aistudio.google.com/apikey) | Narrating web articles and RSS items |
 | [YouTube Data API](https://developers.google.com/youtube/v3/getting-started) | Adding YouTube videos, channels, and playlists |
 | [Zyte](https://www.zyte.com/) or [Scrapfly](https://scrapfly.io/) | Optional. Used to fetch an archive.is copy of a paywalled article. See `SCRAPER_PROVIDER` under [Configuration](#configuration) |
-| [Resend](https://resend.com/) | Optional. Receiving clips by email |
+| [Resend](https://resend.com/) | Optional. Receiving clips by email, and sending the app's email (or use any other [Laravel mailer](https://laravel.com/docs/13.x/mail#configuration)) |
 
 If YouTube blocks your server's IP address, which is common for addresses in data centers, you'll also need a residential proxy from [Oxylabs](https://oxylabs.io/) or [DataImpulse](https://dataimpulse.com/). See [Configuration](#configuration).
 
@@ -50,6 +50,7 @@ If YouTube blocks your server's IP address, which is common for addresses in dat
   * `YOUTUBE_DATA_API_KEY`
   * `ZYTE_API_KEY` or `SCRAPFLY_API_KEY`
 * Start the app (see below), open it in a browser, and register an account. To stop anyone else registering on a public server, set `ALLOWED_REGISTRATION_EMAILS`
+* Verify your email address. New accounts must follow the link in a verification email before they can use the app. With the default `MAIL_MAILER=log`, the email is written to `storage/logs/laravel.log` rather than sent. On a public server, set `MAIL_MAILER` and `MAIL_FROM_ADDRESS` to a working mailer, e.g. `resend` with an address on a domain verified in Resend
 
 ## Running it
 

@@ -3,7 +3,9 @@
 namespace Tests\Http\Controllers\Auth;
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegisteredUserControllerTest extends TestCase
@@ -19,6 +21,8 @@ class RegisteredUserControllerTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
+        Notification::fake();
+
         $response = $this->post('/register', [
             'name'                  => 'Test User',
             'email'                 => 'test@example.com',
@@ -28,6 +32,7 @@ class RegisteredUserControllerTest extends TestCase
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+        Notification::assertSentTo(User::where('email', 'test@example.com')->sole(), VerifyEmail::class);
     }
 
     public function test_anyone_can_register_when_the_allowlist_is_empty(): void

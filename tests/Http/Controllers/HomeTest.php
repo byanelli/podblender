@@ -54,6 +54,14 @@ class HomeTest extends TestCase
     }
 
     #[Test]
+    public function it_sends_a_user_with_an_unverified_email_address_to_the_verification_prompt()
+    {
+        $this->actingAs(User::factory()->unverified()->create())
+            ->get('/')
+            ->assertRedirect(route('verification.notice'));
+    }
+
+    #[Test]
     public function it_is_not_reachable_by_a_guest()
     {
         $this->expectException(AuthenticationException::class);
