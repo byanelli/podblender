@@ -74,7 +74,7 @@ return [
 
     // Which scraping service fetches pages a plain HTTP client can't, such as archive.is behind Cloudflare.
     'scraper'           => [
-        'provider' => env('SCRAPER_PROVIDER', 'scrapfly'),
+        'provider' => env('SCRAPER_PROVIDER', 'zyte'),
     ],
 
     'scrapfly'          => [
