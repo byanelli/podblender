@@ -77,7 +77,7 @@ abstract readonly class YtDlpPlatform implements Platform
                 ?? throw new \UnexpectedValueException("yt-dlp reported no publication time for $info->webpageUrl"),
             source: $source,
             estimatedDownloadTime: $this->estimateDownloadTime($info->durationSeconds),
-            thumbnail: $thumbnailUrl === null ? null : new RemoteImageThumbnail($thumbnailUrl),
+            thumbnail: $thumbnailUrl === null ? null : new RemoteImageThumbnail([$thumbnailUrl]),
         );
     }
 

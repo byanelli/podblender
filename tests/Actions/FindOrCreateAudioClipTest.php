@@ -75,7 +75,7 @@ class FindOrCreateAudioClipTest extends TestCase
                 canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
                 authorName: 'bar',
             ),
-            thumbnail: new RemoteImageThumbnail($thumbnailUrl = 'https://i.ytimg.com/vi/withart/maxresdefault.jpg'),
+            thumbnail: new RemoteImageThumbnail($thumbnailUrls = ['https://i.ytimg.com/vi/withart/maxresdefault.jpg']),
         );
 
         Bus::fake();
@@ -89,7 +89,7 @@ class FindOrCreateAudioClipTest extends TestCase
             DownloadAndStoreThumbnail::class,
             fn (DownloadAndStoreThumbnail $job) => $job->clip->is($clip)
                 && $job->source instanceof RemoteImageThumbnail
-                && $job->source->url === $thumbnailUrl
+                && $job->source->urls === $thumbnailUrls
         );
     }
 
@@ -113,7 +113,7 @@ class FindOrCreateAudioClipTest extends TestCase
             ),
             // Included so the test can check that no thumbnail job is queued
             // for an existing clip.
-            thumbnail: new RemoteImageThumbnail('https://i.ytimg.com/vi/already/maxresdefault.jpg'),
+            thumbnail: new RemoteImageThumbnail(['https://i.ytimg.com/vi/already/maxresdefault.jpg']),
         );
 
         Bus::fake();

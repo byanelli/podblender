@@ -6,6 +6,9 @@ use DateTimeInterface;
 
 readonly class VideoMetadata
 {
+    /**
+     * @param  list<string>  $thumbnailUrls  Largest first.
+     */
     public function __construct(
         public string $id,
         public string $title,
@@ -14,7 +17,6 @@ readonly class VideoMetadata
         public ChannelReference $channel,
         /** Length of the video in seconds, when the API reports it. */
         public ?int $durationSeconds = null,
-        /** The largest thumbnail the API listed for the video, if any. */
-        public ?string $thumbnailUrl = null,
+        public array $thumbnailUrls = [],
     ) {}
 }

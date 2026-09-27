@@ -57,9 +57,9 @@ readonly class YouTube extends YtDlpPlatform implements SubscribablePlatform
             publishedAt: $video->publishedAt,
             source: $this->channelSourceMetadata($video->channel->id, $video->channel->name),
             estimatedDownloadTime: $this->estimateDownloadTime($video->durationSeconds),
-            thumbnail: $video->thumbnailUrl === null
+            thumbnail: $video->thumbnailUrls === []
                 ? null
-                : new RemoteImageThumbnail($video->thumbnailUrl),
+                : new RemoteImageThumbnail($video->thumbnailUrls),
         );
     }
 

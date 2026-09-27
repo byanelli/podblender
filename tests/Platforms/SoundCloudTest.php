@@ -68,7 +68,7 @@ class SoundCloudTest extends TestCase
         $this->assertStringStartsWith('From the Soulhack album, recently featured in this ad https://', $metadata->description);
         $this->assertNotNull($metadata->estimatedDownloadTime);
         $this->assertEquals(
-            new RemoteImageThumbnail('https://i1.sndcdn.com/artworks-000067273316-smsiqx-t500x500.jpg'),
+            new RemoteImageThumbnail(['https://i1.sndcdn.com/artworks-000067273316-smsiqx-t500x500.jpg']),
             $metadata->thumbnail,
         );
 

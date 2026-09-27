@@ -80,7 +80,7 @@ class ShowMetadataTest extends TestCase
                     authorName: 'Some channel',
                 ),
                 thumbnail: new RemoteImageThumbnail(
-                    $thumbnailUrl = "https://i.ytimg.com/vi/{$id}/maxresdefault.jpg"
+                    $thumbnailUrls = ["https://i.ytimg.com/vi/{$id}/maxresdefault.jpg"]
                 ),
             ),
         );
@@ -90,6 +90,6 @@ class ShowMetadataTest extends TestCase
         $response = $this->actingAs($user)->post('api/fetch-metadata', ['url' => $url]);
 
         // The thumbnail must serialize as a nested object, not an empty value.
-        $response->assertJsonPath('metadata.thumbnail', ['url' => $thumbnailUrl]);
+        $response->assertJsonPath('metadata.thumbnail', ['urls' => $thumbnailUrls]);
     }
 }

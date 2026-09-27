@@ -34,15 +34,28 @@ class ClientTest extends TestCase
         return $input !== false && $command->count() === $input + 2;
     }
 
-    /**
-     * Fake an encode that writes $contents to the output file, and a duration
-     * probe that reports $duration.
-     */
-    private function fakeEncodeProducing(string $contents, string $duration = '00:00:05.06'): \Closure
+    private function isCropDetection(PendingProcess $process): bool
     {
-        return function (PendingProcess $process) use ($contents, $duration) {
+        return collect((array) $process->command)->contains(fn (string $argument) => Str::contains($argument, 'cropdetect'));
+    }
+
+    /**
+     * Fake an encode that writes $contents to the output file, a duration
+     * probe that reports $duration, and a crop detection that prints
+     * $cropDetectOutput.
+     */
+    private function fakeEncodeProducing(
+        string $contents,
+        string $duration = '00:00:05.06',
+        string $cropDetectOutput = '',
+    ): \Closure {
+        return function (PendingProcess $process) use ($contents, $duration, $cropDetectOutput) {
             if ($this->isDurationProbe($process)) {
                 return Process::result(errorOutput: "  Duration: $duration, start: 0.000000, bitrate: 128 kb/s");
+            }
+
+            if ($this->isCropDetection($process)) {
+                return Process::result(errorOutput: $cropDetectOutput);
             }
 
             $file = Str::replace("'", '', Arr::last($process->command));
@@ -217,6 +230,59 @@ class ClientTest extends TestCase
 
         // The crop takes the shorter side, and the scale sets both sides to
         // 1400, the minimum Apple Podcasts accepts.
+        Process::assertRan(fn (PendingProcess $process) => collect($process->command)
+            ->map(fn (string $argument) => Str::replace("'", '', $argument))
+            ->contains('crop=min(iw,ih):min(iw,ih),scale=1400:1400:flags=lanczos'));
+    }
+
+    /**
+     * cropdetect's stderr for a 480x360 image, reporting $crop.
+     */
+    private function cropDetectOutput(string $crop): string
+    {
+        return <<<HEREDOC
+  Stream #0:0: Video: mjpeg (Baseline), yuvj420p(pc, bt470bg/unknown/unknown), 480x360 [SAR 1:1 DAR 4:3], 25 tbr, 25 tbn
+[Parsed_cropdetect_0 @ 0x600000] x1:0 x2:479 y1:46 y2:313 w:480 h:268 x:0 y:46 pts:0 t:0.000000 limit:0.094118 crop=$crop
+HEREDOC;
+    }
+
+    #[Test]
+    public function it_crops_off_black_bars_before_squaring_an_image()
+    {
+        $png = sys_get_temp_dir().'/'.Uuid::uuid4().'.png';
+
+        // YouTube's hqdefault thumbnail letterboxes a 16:9 frame in a 4:3 image.
+        Process::fake(['*' => $this->fakeEncodeProducing(
+            'jpeg bytes',
+            cropDetectOutput: $this->cropDetectOutput('480:268:0:46'),
+        )]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $client->imageToSquareJpeg($png, 1400);
+
+        Process::assertRan(fn (PendingProcess $process) => collect($process->command)
+            ->map(fn (string $argument) => Str::replace("'", '', $argument))
+            ->contains('crop=480:268:0:46,crop=min(iw,ih):min(iw,ih),scale=1400:1400:flags=lanczos'));
+    }
+
+    #[Test]
+    public function it_ignores_a_detected_area_too_small_to_be_bars()
+    {
+        $png = sys_get_temp_dir().'/'.Uuid::uuid4().'.png';
+
+        // A mostly dark image, where cropdetect finds only a small bright area.
+        Process::fake(['*' => $this->fakeEncodeProducing(
+            'jpeg bytes',
+            cropDetectOutput: $this->cropDetectOutput('100:268:190:46'),
+        )]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $client->imageToSquareJpeg($png, 1400);
+
         Process::assertRan(fn (PendingProcess $process) => collect($process->command)
             ->map(fn (string $argument) => Str::replace("'", '', $argument))
             ->contains('crop=min(iw,ih):min(iw,ih),scale=1400:1400:flags=lanczos'));

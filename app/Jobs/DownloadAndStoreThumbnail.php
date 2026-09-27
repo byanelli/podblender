@@ -108,27 +108,43 @@ class DownloadAndStoreThumbnail implements ShouldQueue
     }
 
     /**
-     * Fetch artwork the platform hosts into a temporary file.
+     * Fetch artwork the platform hosts into a temporary file, from the first of
+     * the source's URLs that has an image. Other errors fail the attempt, so the
+     * job is retried.
      */
     private function downloadRemoteImage(Http $http, RemoteImageThumbnail $source): string
     {
-        $response = $http->timeout(30)->get($source->url)->throw();
+        $missing = [];
 
-        // For a missing image, platforms often return a 200 with an HTML
-        // page, which ffmpeg would report as an unclear decode failure.
-        $contentType = (string) $response->header('Content-Type');
+        foreach ($source->urls as $url) {
+            $response = $http->timeout(30)->get($url);
 
-        if (! Str::startsWith($contentType, 'image/')) {
-            throw new \RuntimeException(
-                "Expected an image at {$source->url} but the response was \"{$contentType}\""
-            );
+            if ($response->notFound()) {
+                $missing[] = "$url returned 404";
+
+                continue;
+            }
+
+            $response->throw();
+
+            // For a missing image, platforms often return a 200 with an HTML
+            // page, which ffmpeg would report as an unclear decode failure.
+            $contentType = (string) $response->header('Content-Type');
+
+            if (! Str::startsWith($contentType, 'image/')) {
+                $missing[] = "Expected an image at $url but the response was \"$contentType\"";
+
+                continue;
+            }
+
+            $path = sys_get_temp_dir().'/'.Uuid::uuid4()->toString();
+
+            file_put_contents($path, $response->body());
+
+            return $path;
         }
 
-        $path = sys_get_temp_dir().'/'.Uuid::uuid4()->toString();
-
-        file_put_contents($path, $response->body());
-
-        return $path;
+        throw new \RuntimeException(implode('; ', $missing));
     }
 
     /**

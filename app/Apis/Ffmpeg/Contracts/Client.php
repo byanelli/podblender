@@ -16,8 +16,8 @@ interface Client
     public function pcmToMp3(string $pcm, int $sampleRate): string;
 
     /**
-     * Crop an image to a centered square and re-encode it as a JPEG exactly
-     * $maxSide on a side, returning the path to the new file.
+     * Remove an image's black bars, crop it to a centered square, and re-encode
+     * it as a JPEG exactly $maxSide on a side, returning the path to the new file.
      *
      * Smaller sources are enlarged as well as larger ones scaled down, because
      * Apple Podcasts rejects artwork under 1400 pixels square.

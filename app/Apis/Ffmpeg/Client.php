@@ -137,8 +137,8 @@ readonly class Client implements ClientContract
     }
 
     /**
-     * Crop an image to a centered square and re-encode it as a JPEG $maxSide on a
-     * side. Returns the path to the new file.
+     * Remove an image's black bars, crop it to a centered square, and re-encode
+     * it as a JPEG $maxSide on a side. Returns the path to the new file.
      *
      * Smaller images are enlarged: Apple Podcasts requires artwork between 1400
      * and 3000 pixels square, and YouTube's largest thumbnail is 1280x720.
@@ -151,11 +151,14 @@ readonly class Client implements ClientContract
     {
         $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.jpg';
 
+        $barsCrop = $this->detectBlackBars($inputPath);
+
         $this->runProducingFile(120, [
             '-i',
             $inputPath,
             '-vf',
-            "crop='min(iw,ih)':'min(iw,ih)',scale=$maxSide:$maxSide:flags=lanczos",
+            ($barsCrop === null ? '' : "$barsCrop,")
+                ."crop='min(iw,ih)':'min(iw,ih)',scale=$maxSide:$maxSide:flags=lanczos",
             '-frames:v',
             '1',
             // 2 is ffmpeg's near-best JPEG quality. Artwork is displayed at a
@@ -166,6 +169,46 @@ readonly class Client implements ClientContract
         ], $outputPath);
 
         return $outputPath;
+    }
+
+    /**
+     * A crop filter that removes an image's black bars, or null if it has none.
+     *
+     * YouTube's hqdefault thumbnail is 4:3 with a 16:9 frame letterboxed inside
+     * it, and a portrait video's thumbnail is pillarboxed. A detected area under
+     * a third of either side is taken to be a mostly dark image and ignored.
+     */
+    private function detectBlackBars(string $inputPath): ?string
+    {
+        // skip=0: cropdetect skips the first two frames by default, and an image has one.
+        $output = $this->run(30, [
+            '-i',
+            $inputPath,
+            '-vf',
+            'cropdetect=limit=24:round=2:skip=0',
+            '-f',
+            'null',
+            '-',
+        ])->errorOutput();
+
+        if (! preg_match('/Video: .*?(\d{2,})x(\d{2,})/', $output, $size)
+            || ! preg_match_all('/crop=(\d+):(\d+):\d+:\d+/', $output, $crops, PREG_SET_ORDER)
+        ) {
+            return null;
+        }
+
+        $crop = $crops[array_key_last($crops)];
+        [$width, $height] = [(int) $size[1], (int) $size[2]];
+        [$cropWidth, $cropHeight] = [(int) $crop[1], (int) $crop[2]];
+
+        if (($cropWidth === $width && $cropHeight === $height)
+            || $cropWidth * 3 < $width
+            || $cropHeight * 3 < $height
+        ) {
+            return null;
+        }
+
+        return $crop[0];
     }
 
     /**

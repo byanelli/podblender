@@ -10,6 +10,8 @@ use App\Models\AudioSource;
 use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\ThumbnailSource;
 use App\Support\AudioClipStoragePath;
+use Illuminate\Http\Client\Request;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
@@ -80,9 +82,9 @@ class DownloadAndStoreThumbnailTest extends TestCase
         return $clip;
     }
 
-    private function source(string $url = 'https://i.ytimg.com/vi/abc123/maxresdefault.jpg'): RemoteImageThumbnail
+    private function source(string ...$urls): RemoteImageThumbnail
     {
-        return new RemoteImageThumbnail($url);
+        return new RemoteImageThumbnail($urls === [] ? ['https://i.ytimg.com/vi/abc123/maxresdefault.jpg'] : array_values($urls));
     }
 
     private function runJob(AudioClip $clip, ?ThumbnailSource $source = null): void
@@ -111,6 +113,55 @@ class DownloadAndStoreThumbnailTest extends TestCase
         );
         $storage->assertExists($clip->thumbnail_path);
         $this->assertEquals('jpeg bytes', $storage->get($clip->thumbnail_path));
+    }
+
+    #[Test]
+    public function it_falls_back_to_a_smaller_size_when_a_larger_one_is_missing(): void
+    {
+        // For some older videos, the YouTube API lists maxres and standard URLs that return 404.
+        Http::fake([
+            '*/maxresdefault.jpg' => Http::response('gone', status: 404),
+            '*/sddefault.jpg'     => Http::response('<html>not found</html>', headers: ['Content-Type' => 'text/html']),
+            '*/hqdefault.jpg'     => Http::response('hq bytes', headers: ['Content-Type' => 'image/jpeg']),
+        ]);
+
+        $storage = Storage::fake();
+
+        $clip = $this->clip();
+
+        $this->runJob($clip, $this->source(
+            'https://i.ytimg.com/vi/abc123/maxresdefault.jpg',
+            'https://i.ytimg.com/vi/abc123/sddefault.jpg',
+            'https://i.ytimg.com/vi/abc123/hqdefault.jpg',
+        ));
+
+        $this->assertEquals('hq bytes', $storage->get($clip->fresh()->thumbnail_path));
+    }
+
+    #[Test]
+    public function it_fails_the_attempt_on_a_server_error_without_trying_a_smaller_size(): void
+    {
+        Http::fake([
+            '*/maxresdefault.jpg' => Http::response('unavailable', status: 503),
+            '*/hqdefault.jpg'     => Http::response('hq bytes', headers: ['Content-Type' => 'image/jpeg']),
+        ]);
+
+        Storage::fake();
+
+        $clip = $this->clip();
+
+        try {
+            $this->runJob($clip, $this->source(
+                'https://i.ytimg.com/vi/abc123/maxresdefault.jpg',
+                'https://i.ytimg.com/vi/abc123/hqdefault.jpg',
+            ));
+            $this->fail('Expected the server error to propagate so the job is retried.');
+        } catch (RequestException) {
+            // expected
+        }
+
+        $this->assertNull($clip->fresh()->thumbnail_path);
+        Http::assertNotSent(fn (Request $request) => str_ends_with($request->url(), 'hqdefault.jpg'));
     }
 
     #[Test]

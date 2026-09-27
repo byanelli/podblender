@@ -72,14 +72,20 @@ class ClientTest extends TestCase
         $this->assertEquals($sourceName, $metadata->channel->name);
         $this->assertEquals($sourceId, $metadata->channel->id);
         $this->assertSame(253, $metadata->durationSeconds);
-        $this->assertSame("https://i.ytimg.com/vi/{$clipId}/maxresdefault.jpg", $metadata->thumbnailUrl);
+        $this->assertSame(
+            [
+                "https://i.ytimg.com/vi/{$clipId}/maxresdefault.jpg",
+                "https://i.ytimg.com/vi/{$clipId}/hqdefault.jpg",
+                "https://i.ytimg.com/vi/{$clipId}/default.jpg",
+            ],
+            $metadata->thumbnailUrls
+        );
     }
 
     #[Test]
-    public function it_takes_the_largest_thumbnail_the_api_listed()
+    public function it_lists_the_thumbnails_largest_first()
     {
-        // Many videos have no maxres image, so the client takes the widest size
-        // listed.
+        // The API lists sizes in no guaranteed order.
         Http::fake(['*' => Http::response([
             'items' => [
                 [
@@ -90,7 +96,7 @@ class ClientTest extends TestCase
                         'channelId'    => 'eiorjg90ej',
                         'channelTitle' => 'some channel',
                         'publishedAt'  => now()->format(DateTimeInterface::RFC3339),
-                        'thumbnails'   => $this->thumbnails($clipId, ['default', 'medium', 'high']),
+                        'thumbnails'   => $this->thumbnails($clipId, ['high', 'default', 'medium']),
                     ],
                 ],
             ],
@@ -100,8 +106,12 @@ class ClientTest extends TestCase
         $client = $this->app->make(Client::class);
 
         $this->assertSame(
-            "https://i.ytimg.com/vi/{$clipId}/hqdefault.jpg",
-            $client->getVideoMetadata($clipId)->thumbnailUrl
+            [
+                "https://i.ytimg.com/vi/{$clipId}/hqdefault.jpg",
+                "https://i.ytimg.com/vi/{$clipId}/mqdefault.jpg",
+                "https://i.ytimg.com/vi/{$clipId}/default.jpg",
+            ],
+            $client->getVideoMetadata($clipId)->thumbnailUrls
         );
     }
 
@@ -131,13 +141,16 @@ class ClientTest extends TestCase
         $client = $this->app->make(Client::class);
 
         $this->assertSame(
-            "https://i.ytimg.com/vi/{$clipId}/hqdefault.jpg",
-            $client->getVideoMetadata($clipId)->thumbnailUrl
+            [
+                "https://i.ytimg.com/vi/{$clipId}/hqdefault.jpg",
+                "https://i.ytimg.com/vi/{$clipId}/default.jpg",
+            ],
+            $client->getVideoMetadata($clipId)->thumbnailUrls
         );
     }
 
     #[Test]
-    public function it_returns_a_null_thumbnail_when_the_api_lists_none()
+    public function it_returns_no_thumbnails_when_the_api_lists_none()
     {
         Http::fake(['*' => Http::response([
             'items' => [
@@ -157,7 +170,7 @@ class ClientTest extends TestCase
         /** @var Client $client */
         $client = $this->app->make(Client::class);
 
-        $this->assertNull($client->getVideoMetadata('leirjieljrg')->thumbnailUrl);
+        $this->assertSame([], $client->getVideoMetadata('leirjieljrg')->thumbnailUrls);
     }
 
     #[Test]
@@ -318,7 +331,7 @@ class ClientTest extends TestCase
     #[Test]
     public function it_reads_a_playlist_videos_thumbnail()
     {
-        // The fixture lists default and high only, so high is the largest.
+        // The fixture lists default and high only.
         Http::fake(['*' => Http::response($this->playlistItemsPage([
             ['id' => 'v1', 'title' => 'A talk', 'videoPublishedAt' => '2024-05-05T10:00:00Z'],
         ]))]);
@@ -328,7 +341,10 @@ class ClientTest extends TestCase
 
         $videos = $client->getAllVideoMetadataForPlaylist('PLabc');
 
-        $this->assertSame('https://i.ytimg.com/vi/v1/hqdefault.jpg', $videos[0]->thumbnailUrl);
+        $this->assertSame(
+            ['https://i.ytimg.com/vi/v1/hqdefault.jpg', 'https://i.ytimg.com/vi/v1/default.jpg'],
+            $videos[0]->thumbnailUrls
+        );
     }
 
     #[Test]

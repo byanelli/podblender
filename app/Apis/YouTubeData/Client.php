@@ -298,7 +298,7 @@ readonly class Client implements Contracts\Client
                 id: $snippet['videoOwnerChannelId'] ?? $snippet['channelId'],
                 name: html_entity_decode($snippet['videoOwnerChannelTitle'] ?? $snippet['channelTitle']),
             ),
-            thumbnailUrl: $this->getLargestThumbnailUrl($snippet),
+            thumbnailUrls: $this->getThumbnailUrls($snippet),
         );
     }
 
@@ -325,33 +325,34 @@ readonly class Client implements Contracts\Client
                 name: $snippet['channelTitle'],
             ),
             durationSeconds: $this->parseIso8601Duration($video['contentDetails']['duration'] ?? null),
-            thumbnailUrl: $this->getLargestThumbnailUrl($snippet),
+            thumbnailUrls: $this->getThumbnailUrls($snippet),
         );
     }
 
     /**
-     * The largest thumbnail the API listed for a video, or null if it listed
-     * none.
+     * The thumbnails the API listed for a video, largest first.
      *
      * snippet.thumbnails maps a size name ("default", "medium", "high",
      * "standard", "maxres") to a {url, width, height} object. Which sizes are
-     * present varies by video, and maxres is often missing. Entries are ranked
-     * by reported width, then by size name for entries without dimensions.
+     * present varies by video. For some older videos the API lists standard and
+     * maxres URLs that return 404, so the smaller sizes are kept as fallbacks.
+     * Entries are ranked by reported width, then by size name for entries
+     * without dimensions.
      *
      * @param  array<string, mixed>  $snippet
+     * @return list<string>
      */
-    private function getLargestThumbnailUrl(array $snippet): ?string
+    private function getThumbnailUrls(array $snippet): array
     {
         $thumbnails = $snippet['thumbnails'] ?? null;
 
         if (! is_array($thumbnails)) {
-            return null;
+            return [];
         }
 
         $sizeOrder = ['default', 'medium', 'high', 'standard', 'maxres'];
 
-        $bestUrl = null;
-        $bestRank = [-1, -1];
+        $ranked = [];
 
         foreach ($thumbnails as $name => $thumbnail) {
             if (! is_array($thumbnail) || ! isset($thumbnail['url']) || ! is_string($thumbnail['url'])) {
@@ -360,18 +361,18 @@ readonly class Client implements Contracts\Client
 
             $index = array_search($name, $sizeOrder, true);
 
-            $rank = [
-                isset($thumbnail['width']) && is_numeric($thumbnail['width']) ? (int) $thumbnail['width'] : 0,
-                $index === false ? -1 : $index,
+            $ranked[] = [
+                'url'  => $thumbnail['url'],
+                'rank' => [
+                    isset($thumbnail['width']) && is_numeric($thumbnail['width']) ? (int) $thumbnail['width'] : 0,
+                    $index === false ? -1 : $index,
+                ],
             ];
-
-            if ($rank > $bestRank) {
-                $bestRank = $rank;
-                $bestUrl = $thumbnail['url'];
-            }
         }
 
-        return $bestUrl;
+        usort($ranked, fn (array $a, array $b) => $b['rank'] <=> $a['rank']);
+
+        return array_column($ranked, 'url');
     }
 
     /**

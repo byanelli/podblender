@@ -123,6 +123,29 @@ class SquareJpegTest extends TestCase
     }
 
     #[Test]
+    public function it_removes_letterbox_bars()
+    {
+        // A 480x360 image with 46-pixel black bars above and below, like YouTube's hqdefault thumbnail.
+        $image = imagecreatetruecolor(480, 360);
+        imagefill($image, 0, 0, imagecolorallocate($image, 0, 0, 0));
+        imagefilledrectangle($image, 0, 46, 479, 313, imagecolorallocate($image, 20, 120, 200));
+        imagepng($image, $png = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.png');
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $jpeg = imagecreatefromjpeg($client->imageToSquareJpeg($png));
+
+        $this->assertNotFalse($jpeg);
+
+        foreach ([[700, 5], [700, 1394]] as [$x, $y]) {
+            $color = imagecolorsforindex($jpeg, imagecolorat($jpeg, $x, $y));
+
+            $this->assertEqualsWithDelta(200, $color['blue'], 12, "The pixel at $x,$y is part of a bar.");
+        }
+    }
+
+    #[Test]
     public function its_output_is_an_rgb_jpeg_with_no_alpha_channel()
     {
         // Apple's spec requires RGB. Some clients won't render a CMYK JPEG or

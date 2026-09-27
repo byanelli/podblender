@@ -31,7 +31,7 @@ class YouTubeTest extends TestCase
             publishedAt: $publishedAt,
             channel: new ChannelReference(id: $channelId, name: $channelName),
             durationSeconds: 600,
-            thumbnailUrl: "https://i.ytimg.com/vi/{$id}/maxresdefault.jpg",
+            thumbnailUrls: ["https://i.ytimg.com/vi/{$id}/maxresdefault.jpg"],
         );
     }
 
@@ -217,7 +217,10 @@ class YouTubeTest extends TestCase
                 name: $channelName = 'some channel',
             ),
             durationSeconds: 600,
-            thumbnailUrl: $thumbnailUrl = "https://i.ytimg.com/vi/{$videoId}/maxresdefault.jpg",
+            thumbnailUrls: $thumbnailUrls = [
+                "https://i.ytimg.com/vi/{$videoId}/maxresdefault.jpg",
+                "https://i.ytimg.com/vi/{$videoId}/hqdefault.jpg",
+            ],
         ));
 
         /** @var YouTube $youtube */
@@ -232,7 +235,7 @@ class YouTubeTest extends TestCase
         $this->assertEquals($channelUrl, $metadata->source->canonicalUrl);
         $this->assertEquals($channelName, $metadata->source->name);
         $this->assertInstanceOf(RemoteImageThumbnail::class, $metadata->thumbnail);
-        $this->assertEquals($thumbnailUrl, $metadata->thumbnail->url);
+        $this->assertEquals($thumbnailUrls, $metadata->thumbnail->urls);
     }
 
     #[Test]
@@ -246,7 +249,7 @@ class YouTubeTest extends TestCase
             description: 'some description',
             publishedAt: now(),
             channel: new ChannelReference(id: 'channel-id', name: 'some channel'),
-            thumbnailUrl: null,
+            thumbnailUrls: [],
         ));
 
         /** @var YouTube $youtube */
@@ -271,7 +274,7 @@ class YouTubeTest extends TestCase
         );
 
         $this->assertInstanceOf(RemoteImageThumbnail::class, $clips[0]->thumbnail);
-        $this->assertEquals('https://i.ytimg.com/vi/v1/maxresdefault.jpg', $clips[0]->thumbnail->url);
+        $this->assertEquals(['https://i.ytimg.com/vi/v1/maxresdefault.jpg'], $clips[0]->thumbnail->urls);
     }
 
     #[Test]
