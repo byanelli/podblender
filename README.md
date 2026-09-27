@@ -34,7 +34,7 @@ If YouTube blocks your server's IP address, which is common for addresses in dat
 ## Installation
 
 > [!NOTE]
-> Podblender vendors the executables it needs into `vendor/bin` rather than expecting them on your `PATH`. It supports Linux and macOS, on both x86-64 and arm64.
+> Podblender vendors the executables it needs into `vendor/bin` rather than expecting them on your `PATH`. It supports Linux and macOS, on both x86-64 and arm64. WSL2 should work but hasn't been tested. You are welcome to open a PR for native Windows support.
 
 * Clone the repo
 * `composer setup`, which:
