@@ -3,6 +3,7 @@
 namespace App\Apis\Ffmpeg;
 
 use App\Apis\Ffmpeg\Contracts\Client as ClientContract;
+use App\Platforms\Contracts\Chapter;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Process\ProcessResult;
 use Illuminate\Process\Factory;
@@ -134,6 +135,61 @@ readonly class Client implements ClientContract
         ], $outputPath);
 
         return $outputPath;
+    }
+
+    public function addChapters(string $mp3, array $chapters, int $durationSeconds): string
+    {
+        $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
+        $metadataPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.txt';
+
+        file_put_contents($metadataPath, $this->chapterMetadata($chapters, $durationSeconds));
+
+        try {
+            $this->runProducingAudio(300, [
+                '-i',
+                $mp3,
+                '-i',
+                $metadataPath,
+                '-map',
+                '0',
+                '-map_metadata',
+                '0',
+                '-map_chapters',
+                '1',
+                '-c',
+                'copy',
+                // ID3v2.3 is the version podcast apps read most reliably. ffmpeg writes v2.4 by default.
+                '-id3v2_version',
+                '3',
+                $outputPath,
+            ], $outputPath);
+        } finally {
+            @unlink($metadataPath);
+        }
+
+        return $outputPath;
+    }
+
+    /**
+     * Chapters in ffmpeg's FFMETADATA1 format. Each chapter ends where the next starts, and the last at the end of the
+     * audio. In a value, "=", ";", "#", "\" and newlines must be escaped with a backslash.
+     *
+     * @param  list<Chapter>  $chapters
+     */
+    private function chapterMetadata(array $chapters, int $durationSeconds): string
+    {
+        $chapters = array_values(array_filter($chapters, fn (Chapter $c) => $c->startSeconds < $durationSeconds));
+
+        $metadata = ";FFMETADATA1\n";
+
+        foreach ($chapters as $i => $chapter) {
+            $end = $chapters[$i + 1]->startSeconds ?? $durationSeconds;
+            $title = preg_replace('/([=;#\\\\\n])/', '\\\\$1', $chapter->title);
+
+            $metadata .= "[CHAPTER]\nTIMEBASE=1/1\nSTART={$chapter->startSeconds}\nEND=$end\ntitle=$title\n";
+        }
+
+        return $metadata;
     }
 
     /**

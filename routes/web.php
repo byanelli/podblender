@@ -6,6 +6,9 @@ use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/rss/{feed:uuid}', Controllers\ShowRss::class)->name('rss');
+Route::get('/rss/{feed:uuid}/clips/{audioClip}/chapters.json', Controllers\ShowChapters::class)
+    ->scopeBindings()
+    ->name('chapters');
 
 Route::post('/webhooks/resend', Controllers\ReceiveResendWebhook::class)->name('resendWebhook');
 

@@ -8,6 +8,7 @@ use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
 use App\Models\User;
+use App\Platforms\Contracts\Chapter;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Http\Request;
@@ -144,6 +145,43 @@ class ShowRssTest extends TestCase
         $item = Str::between($body, '<item>', '</item>');
 
         $this->assertStringNotContainsString('<itunes:image', $item);
+    }
+
+    #[Test]
+    public function it_links_an_episode_with_chapters_to_its_chapters_json()
+    {
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id]);
+
+        /** @var AudioClip $clip */
+        $clip = AudioClip::factory()->create([
+            'audio_source_id'  => AudioSource::factory()->create()->id,
+            'processing_state' => ClipProcessingState::Processed,
+            'chapters'         => [new Chapter(0, 'Intro'), new Chapter(60, 'Main')],
+        ]);
+
+        $feed->audioClips()->attach($clip);
+
+        $body = $this->get("rss/{$feed->uuid}")->content();
+
+        $url = url("rss/{$feed->uuid}/clips/{$clip->id}/chapters.json");
+
+        $this->assertStringContainsString("<podcast:chapters url=\"$url\" type=\"application/json+chapters\"/>", $body);
+        $this->assertNotFalse(simplexml_load_string($body));
+    }
+
+    #[Test]
+    public function it_leaves_the_chapters_link_out_for_an_episode_without_chapters()
+    {
+        /** @var Feed $feed */
+        $feed = Feed::factory()->create(['user_id' => User::factory()->create()->id]);
+
+        $feed->audioClips()->attach(AudioClip::factory()->create([
+            'audio_source_id'  => AudioSource::factory()->create()->id,
+            'processing_state' => ClipProcessingState::Processed,
+        ]));
+
+        $this->assertStringNotContainsString('<podcast:chapters', $this->get("rss/{$feed->uuid}")->content());
     }
 
     #[Test]

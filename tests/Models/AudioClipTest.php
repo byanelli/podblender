@@ -153,4 +153,17 @@ class AudioClipTest extends TestCase
             'audio_source_id' => AudioSource::factory()->create()->id,
         ]);
     }
+
+    #[Test]
+    public function its_chapters_are_empty_and_stored_as_null_when_it_has_none()
+    {
+        /** @var AudioClip $clip */
+        $clip = AudioClip::factory()->create([
+            'audio_source_id' => AudioSource::factory()->create()->id,
+            'chapters'        => [],
+        ]);
+
+        $this->assertNull($clip->getRawOriginal('chapters'));
+        $this->assertSame([], $clip->fresh()->chapters);
+    }
 }

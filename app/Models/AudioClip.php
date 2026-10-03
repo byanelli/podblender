@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ClipProcessingState;
 use App\Enums\PlatformType;
+use App\Platforms\Contracts\Chapter;
 use App\Support\AudioPreview;
 use Carbon\CarbonImmutable;
 use Database\Factories\AudioClipFactory;
@@ -19,6 +20,7 @@ use Illuminate\Support\Traits\Tappable;
 /**
  * @property int $id
  * @property int $audio_source_id
+ * @property list<Chapter> $chapters {@see self::chapters()}
  * @property string $description
  * @property CarbonImmutable $published_at
  * @property int $duration
@@ -95,6 +97,23 @@ class AudioClip extends Model
 
         return Attribute::make(
             fn () => now()->diff(now()->addSeconds($this->duration))->format($format)
+        );
+    }
+
+    /**
+     * A clip without chapters stores null.
+     *
+     * @return Attribute<list<Chapter>, list<Chapter>>
+     */
+    protected function chapters(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value === null
+                ? []
+                : array_map(Chapter::fromArray(...), json_decode($value, true, flags: JSON_THROW_ON_ERROR)),
+            set: fn (array $chapters) => $chapters === []
+                ? null
+                : json_encode(array_map(fn (Chapter $c) => $c->toArray(), $chapters), JSON_THROW_ON_ERROR),
         );
     }
 

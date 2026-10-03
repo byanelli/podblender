@@ -10,6 +10,7 @@ use App\Jobs\DownloadAndStoreAudioClip;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
 use App\Models\Feed;
+use App\Platforms\Contracts\Chapter;
 use App\Platforms\Exceptions\ContentUnavailableException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Event;
@@ -124,6 +125,29 @@ class DownloadAndStoreAudioClipTest extends TestCase
 
         // The broadcast is how the UI stops showing the clip as processing.
         Event::assertDispatched(FinishedProcessingClip::class);
+    }
+
+    #[Test]
+    public function it_stores_the_audio_with_the_clips_chapters_written_in(): void
+    {
+        Event::fake(FinishedProcessingClip::class);
+
+        $this->fakePlatform(
+            audioPath: $downloadPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3',
+            audioContent: 'foo',
+        );
+
+        $this->fakeFfmpeg();
+
+        $storage = Storage::fake();
+
+        $clip = $this->clipAttachedToFeed();
+        $clip->update(['chapters' => [new Chapter(0, 'Intro'), new Chapter(60, 'Main')]]);
+
+        dispatch(new DownloadAndStoreAudioClip($clip));
+
+        $this->assertEquals('foo|Intro|Main', $storage->get($clip->storage_path));
+        $this->assertFileDoesNotExist($downloadPath);
     }
 
     #[Test]

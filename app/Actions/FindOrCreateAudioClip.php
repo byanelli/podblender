@@ -50,6 +50,7 @@ readonly class FindOrCreateAudioClip
                 'audio_source_id'         => $source->id,
                 'title'                   => Str::limit($metadata->title, 500 - 3),
                 'description'             => Str::limit($metadata->description, 1000 - 3),
+                'chapters'                => $metadata->chapters,
                 'published_at'            => $metadata->publishedAt,
                 'duration'                => 0,
                 'estimated_download_time' => $metadata->estimatedDownloadTime,

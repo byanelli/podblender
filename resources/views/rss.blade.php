@@ -4,7 +4,8 @@
 
 @php echo '<?xml version="1.0" encoding="UTF-8"?>'."\n"; @endphp
 <rss version="2.0"
-     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:podcast="https://podcastindex.org/namespace/1.0">
     <channel>
         <title>{{$feed->name}}</title>
         <link>{{route('rss', [$feed])}}</link>
@@ -42,6 +43,10 @@
                      channel's artwork. --}}
                 @if($clip->thumbnail_url)
                     <itunes:image href="{{$clip->thumbnail_url}}"/>
+                @endif
+                {{-- The same chapters are written into the MP3's ID3 tags. Some apps read only one of the two. --}}
+                @if($clip->chapters !== [])
+                    <podcast:chapters url="{{route('chapters', [$feed, $clip])}}" type="application/json+chapters"/>
                 @endif
                 <guid isPermaLink="false">{{$clip->guid}}</guid>
             </item>

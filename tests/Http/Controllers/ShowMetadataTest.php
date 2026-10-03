@@ -55,6 +55,7 @@ class ShowMetadataTest extends TestCase
                 ],
                 'estimatedDownloadTime' => $estimatedDownloadTime,
                 'thumbnail'             => null,
+                'chapters'              => [],
             ],
             'platformType' => [
                 'name'  => 'YouTube',

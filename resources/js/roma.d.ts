@@ -20,6 +20,20 @@ export interface AudioClipUrlRequestBody {
   url: string;
 }
 
+export interface Chapter {
+  startSeconds: number;
+  title: string;
+}
+
+export interface ChaptersResponseBody {
+  chapters: PodcastChapter[];
+  version: string;
+}
+
+export interface ChaptersResponseHeaders {
+  'Content-Type': string;
+}
+
 export interface ClipMetadata {
   title: string;
   description: string;
@@ -28,6 +42,7 @@ export interface ClipMetadata {
   source: SourceMetadata;
   estimatedDownloadTime: number | null;
   thumbnail: RemoteImageThumbnail | null;
+  chapters: Chapter[];
 }
 
 export interface CreateCustomFeedRequestBody {
@@ -55,8 +70,13 @@ export interface MetadataResponseBody {
   platformType: PlatformTypeEnum;
 }
 
+export interface PodcastChapter {
+  startTime: number;
+  title: string;
+}
+
 export interface RemoteImageThumbnail {
-  url: string;
+  urls: string[];
 }
 
 export interface SourceMetadata {

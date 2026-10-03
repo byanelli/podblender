@@ -11,6 +11,7 @@ use App\Jobs\DownloadAndStoreAudioClip;
 use App\Jobs\DownloadAndStoreThumbnail;
 use App\Models\AudioClip;
 use App\Models\AudioSource;
+use App\Platforms\Contracts\Chapter;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Contracts\SourceMetadata;
@@ -156,6 +157,29 @@ class FindOrCreateAudioClipTest extends TestCase
         $this->assertEquals(500, strlen($clip->title));
         $this->assertEquals(str_repeat('b', 997).'...', $clip->description);
         $this->assertEquals(1000, strlen($clip->description));
+    }
+
+    #[Test]
+    public function it_stores_the_chapters()
+    {
+        $metadata = new ClipMetadata(
+            title: 'foo',
+            description: 'zzz',
+            canonicalUrl: 'https://youtube.com/watch?v=lijwliejfwlef',
+            publishedAt: now(),
+            source: new SourceMetadata(
+                name: 'bar',
+                canonicalUrl: 'https://youtube.com/channel/9340e9tjh490e5',
+                authorName: 'bar',
+            ),
+            chapters: $chapters = [new Chapter(0, 'Intro'), new Chapter(90, 'Main')],
+        );
+
+        Bus::fake();
+
+        $clip = $this->app->make(FindOrCreateAudioClip::class)(PlatformType::YouTube, $metadata);
+
+        $this->assertEquals($chapters, $clip->fresh()->chapters);
     }
 
     #[Test]

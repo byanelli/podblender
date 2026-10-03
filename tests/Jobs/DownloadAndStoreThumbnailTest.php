@@ -63,6 +63,11 @@ class DownloadAndStoreThumbnailTest extends TestCase
                 return $pcm;
             }
 
+            public function addChapters(string $mp3, array $chapters, int $durationSeconds): string
+            {
+                return $mp3;
+            }
+
             public function getDuration(string $path): int
             {
                 return 1;

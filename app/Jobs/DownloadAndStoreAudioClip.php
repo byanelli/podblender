@@ -134,9 +134,16 @@ class DownloadAndStoreAudioClip implements ShouldQueue
 
             $download = $platform->downloadAudio($this->clip->platform_url);
             $downloadPath = $download->path;
-            $downloadHandle = fopen($downloadPath, 'r');
 
             $duration = $ffmpeg->getDuration($downloadPath);
+
+            if ($this->clip->chapters !== []) {
+                $chapteredPath = $ffmpeg->addChapters($downloadPath, $this->clip->chapters, $duration);
+                unlink($downloadPath);
+                $downloadPath = $chapteredPath;
+            }
+
+            $downloadHandle = fopen($downloadPath, 'r');
 
             if (! $downloadHandle) {
                 throw new \Exception("Couldn't open $downloadPath as resource");

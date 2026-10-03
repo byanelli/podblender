@@ -3,6 +3,7 @@
 namespace Tests\Apis\Ffmpeg;
 
 use App\Apis\Ffmpeg\Client;
+use App\Platforms\Contracts\Chapter;
 use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Process;
@@ -84,6 +85,40 @@ class ClientTest extends TestCase
         $file = $client->combineMp3s($mp3s);
 
         $this->assertFileExists($file);
+    }
+
+    #[Test]
+    public function it_writes_chapters_ending_where_the_next_starts_and_drops_those_past_the_end()
+    {
+        $metadata = null;
+
+        Process::fake(['*' => function (PendingProcess $process) use (&$metadata) {
+            $command = collect((array) $process->command)->map(fn (string $a) => Str::replace("'", '', $a));
+
+            if (! $this->isDurationProbe($process)) {
+                // The second input is the chapter metadata file.
+                $metadata = file_get_contents($command[$command->search('-i') + 3]);
+                $this->assertContains('-map_chapters', $command);
+            }
+
+            return $this->fakeEncodeProducing('chaptered audio')($process);
+        }]);
+
+        /** @var Client $client */
+        $client = $this->app->make(Client::class);
+
+        $client->addChapters('in.mp3', [
+            new Chapter(0, 'Intro'),
+            new Chapter(60, 'A=B; #1 \\ done'),
+            new Chapter(200, 'Past the end'),
+        ], 120);
+
+        $this->assertEquals(
+            ";FFMETADATA1\n"
+            ."[CHAPTER]\nTIMEBASE=1/1\nSTART=0\nEND=60\ntitle=Intro\n"
+            ."[CHAPTER]\nTIMEBASE=1/1\nSTART=60\nEND=120\ntitle=A\\=B\\; \\#1 \\\\ done\n",
+            $metadata,
+        );
     }
 
     #[Test]

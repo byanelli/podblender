@@ -7,6 +7,7 @@ use App\Apis\YouTubeData\ChannelReference;
 use App\Apis\YouTubeData\PlaylistMetadata;
 use App\Apis\YouTubeData\VideoMetadata;
 use App\Enums\AudioSourceType;
+use App\Platforms\Contracts\Chapter;
 use App\Platforms\Contracts\RemoteImageThumbnail;
 use App\Platforms\Exceptions\PlatformException;
 use App\Platforms\YouTube;
@@ -256,6 +257,28 @@ class YouTubeTest extends TestCase
         $youtube = $this->app->make(YouTube::class);
 
         $this->assertNull($youtube->getClipMetadata($videoUrl)->thumbnail);
+    }
+
+    #[Test]
+    public function it_reads_chapters_from_the_full_description()
+    {
+        $this->fakeYouTubeData(videoMetadata: new VideoMetadata(
+            id: 'abc',
+            title: 'some video',
+            // Longer than the 1000 characters stored, with the chapters at the end.
+            description: str_repeat('x', 1200)."\n0:00 Intro\n1:00 Middle\n2:00 End",
+            publishedAt: now(),
+            channel: new ChannelReference(id: 'channel-id', name: 'some channel'),
+        ));
+
+        /** @var YouTube $youtube */
+        $youtube = $this->app->make(YouTube::class);
+
+        $this->assertEquals([
+            new Chapter(0, 'Intro'),
+            new Chapter(60, 'Middle'),
+            new Chapter(120, 'End'),
+        ], $youtube->getClipMetadata('https://youtube.com/watch?v=abc')->chapters);
     }
 
     #[Test]

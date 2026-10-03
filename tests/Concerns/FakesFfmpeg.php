@@ -38,6 +38,17 @@ trait FakesFfmpeg
                 return $outputPath;
             }
 
+            public function addChapters(string $mp3, array $chapters, int $durationSeconds): string
+            {
+                // Appends the chapter titles to a copy, so a test can check
+                // that the stored file is the chaptered one.
+                $outputPath = sys_get_temp_dir().'/'.Uuid::uuid4()->toString().'.mp3';
+
+                file_put_contents($outputPath, file_get_contents($mp3).'|'.collect($chapters)->pluck('title')->implode('|'));
+
+                return $outputPath;
+            }
+
             public function pcmToMp3(string $pcm, int $sampleRate): string
             {
                 // Copies the bytes to a new .mp3 path, so a convertTextToSpeech

@@ -13,6 +13,9 @@ readonly class ClipMetadata implements Arrayable
 {
     use IsArrayable;
 
+    /**
+     * @param  list<Chapter>  $chapters  Empty when the platform has no chapters for the clip.
+     */
     public function __construct(
         public string $title,
         public string $description,
@@ -29,5 +32,6 @@ readonly class ClipMetadata implements Arrayable
          * {@see ThumbnailSource}
          */
         public ?ThumbnailSource $thumbnail = null,
+        public array $chapters = [],
     ) {}
 }

@@ -60,6 +60,8 @@ readonly class YouTube extends YtDlpPlatform implements SubscribablePlatform
             thumbnail: $video->thumbnailUrls === []
                 ? null
                 : new RemoteImageThumbnail($video->thumbnailUrls),
+            // The Data API has no chapters field. YouTube itself reads them from the description.
+            chapters: DescriptionChapterParser::parse($video->description),
         );
     }
 

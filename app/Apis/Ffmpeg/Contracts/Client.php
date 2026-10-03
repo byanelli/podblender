@@ -2,6 +2,8 @@
 
 namespace App\Apis\Ffmpeg\Contracts;
 
+use App\Platforms\Contracts\Chapter;
+
 interface Client
 {
     /**
@@ -23,6 +25,14 @@ interface Client
      * Apple Podcasts rejects artwork under 1400 pixels square.
      */
     public function imageToSquareJpeg(string $inputPath, int $maxSide = 1400): string;
+
+    /**
+     * Copy an MP3 with the chapters written as ID3 CHAP frames, returning the path to the new file. Chapters that start
+     * at or after $durationSeconds are dropped.
+     *
+     * @param  non-empty-list<Chapter>  $chapters
+     */
+    public function addChapters(string $mp3, array $chapters, int $durationSeconds): string;
 
     public function getDuration(string $path): int;
 }
