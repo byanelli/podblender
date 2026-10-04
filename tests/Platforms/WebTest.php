@@ -131,9 +131,9 @@ class WebTest extends TestCase
         /** @var Web $web */
         $web = $this->app->make(Web::class);
 
-        $metadata = $web->getClipMetadata('https://www.theatlantic.com/politics/story/?utm_source=x');
+        $metadata = $web->getClipMetadata('http://www.theatlantic.com/politics/story/?utm_source=x');
 
-        $this->assertEquals('https://www.theatlantic.com/politics/story/?utm_source=x', $reader->url);
+        $this->assertEquals('https://www.theatlantic.com/politics/story/', $reader->url);
         $this->assertEquals('https://theatlantic.com/politics/story/', $metadata->canonicalUrl);
     }
 
