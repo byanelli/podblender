@@ -53,9 +53,11 @@ readonly class Web implements Platform
     public function getClipMetadata(string $clipUrl): ClipMetadata
     {
         try {
-            $clipUrl = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($clipUrl));
-
+            // The Reader gets the URL with "www." because the archives index
+            // pages by their published URL.
             $article = $this->reader->read($clipUrl);
+
+            $clipUrl = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($clipUrl));
 
             return new ClipMetadata(
                 title: $article->title,
@@ -118,8 +120,6 @@ readonly class Web implements Platform
     public function downloadAudio(string $clipUrl): DownloadedAudio
     {
         try {
-            $clipUrl = $this->fixUrlSchemeAndHost($clipUrl);
-
             $article = $this->reader->read($clipUrl);
 
             $narration = $this->tts->convertTextToSpeech($this->narrationScript($article));

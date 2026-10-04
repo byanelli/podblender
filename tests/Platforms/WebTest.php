@@ -111,6 +111,32 @@ class WebTest extends TestCase
         $this->assertStringContainsString('harvest festival', (string) file_get_contents($mp3));
     }
 
+    #[Test]
+    public function it_passes_the_reader_the_url_with_www()
+    {
+        $reader = new class implements Reader
+        {
+            public ?string $url = null;
+
+            public function read(string $url): Article
+            {
+                $this->url = $url;
+
+                return new Article(url: $url, title: 'Title', publisher: 'The Atlantic', publicationDate: null, authors: [], text: 'Text.');
+            }
+        };
+        $this->app->instance(Reader::class, $reader);
+        $this->fakeTts();
+
+        /** @var Web $web */
+        $web = $this->app->make(Web::class);
+
+        $metadata = $web->getClipMetadata('https://www.theatlantic.com/politics/story/?utm_source=x');
+
+        $this->assertEquals('https://www.theatlantic.com/politics/story/?utm_source=x', $reader->url);
+        $this->assertEquals('https://theatlantic.com/politics/story/', $metadata->canonicalUrl);
+    }
+
     private function fakeReader(Article $article): void
     {
         $this->app->instance(Reader::class, new readonly class($article) implements Reader
