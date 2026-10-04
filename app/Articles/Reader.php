@@ -31,16 +31,16 @@ readonly class Reader implements ReaderContract
     public function read(string $url): Article
     {
         // $url has "www." removed and is the cache key and the input to the
-        // hard-paywall-domain check. $canonical keeps "www." because archive.is
-        // indexes pages by their published URL (NYT is www.nytimes.com), and a
-        // lookup without it finds nothing.
-        $canonical = $this->removeUtmCodesFromUrl($this->ensureSchemeIsHttps($url));
+        // hard-paywall-domain check. $archiveLookupUrl keeps any "www." because
+        // archive.is indexes pages by their published URL (NYT is
+        // www.nytimes.com), and a lookup without it finds nothing.
+        $archiveLookupUrl = $this->removeUtmCodesFromUrl($this->ensureSchemeIsHttps($url));
         $url = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($url));
 
         return $this->cache->remember(
             "article:$url",
             now()->addHours($this->cacheTtlHours),
-            fn () => $this->fetchAndExtract($url, $canonical),
+            fn () => $this->fetchAndExtract($url, $archiveLookupUrl),
         );
     }
 
@@ -51,11 +51,11 @@ readonly class Reader implements ReaderContract
      *      a usable page to a logged-out reader. Used only if not paywalled.
      *   2. Wayback (free). Its snapshot is often a capture of the paywalled
      *      page, so it is used only if the PaywallDetector passes it.
-     *   3. archive.is (paid, one scraper request). Its snapshots are
+     *   3. archive.is (paid, one or two scraper requests). Its snapshots are
      *      user-submitted captures without the paywall, and it is the last
      *      tier, so its result is not checked.
      */
-    private function fetchAndExtract(string $url, string $canonical): Article
+    private function fetchAndExtract(string $url, string $archiveLookupUrl): Article
     {
         if (! $this->isHardPaywallDomain($url)) {
             $direct = $this->extractor->extract($url, $html = $this->fetcher->fetchDirect($url));
@@ -66,13 +66,34 @@ readonly class Reader implements ReaderContract
         }
 
         // Wayback indexes pages by the published URL, as archive.is does.
-        $wayback = $this->tryWaybackTier($url, $canonical);
+        $wayback = $this->tryWaybackTier($url, $archiveLookupUrl);
 
         if ($wayback !== null) {
             return $wayback;
         }
 
-        return $this->extractor->extract($url, $this->fetcher->fetchFromArchive($canonical));
+        return $this->extractor->extract($url, $this->fetchFromArchive($archiveLookupUrl));
+    }
+
+    /**
+     * Looks up the URL on archive.is, then, if it has no snapshot and the host
+     * lacks "www.", the same URL with "www." added. The second lookup is
+     * another paid scraper request.
+     */
+    private function fetchFromArchive(string $archiveLookupUrl): string
+    {
+        try {
+            return $this->fetcher->fetchFromArchive($archiveLookupUrl);
+        } catch (ArchiveSnapshotNotFoundException $e) {
+            $uri = Uri::new($archiveLookupUrl);
+            $host = $uri->getHost() ?? '';
+
+            if ($host === '' || str_starts_with($host, 'www.')) {
+                throw $e;
+            }
+
+            return $this->fetcher->fetchFromArchive($uri->withHost("www.$host")->toString());
+        }
     }
 
     /**
@@ -80,10 +101,10 @@ readonly class Reader implements ReaderContract
      * snapshot or the snapshot is still paywalled. Null means the caller should
      * continue to archive.is.
      */
-    private function tryWaybackTier(string $url, string $canonical): ?Article
+    private function tryWaybackTier(string $url, string $archiveLookupUrl): ?Article
     {
         try {
-            $html = $this->fetcher->fetchFromWayback($canonical);
+            $html = $this->fetcher->fetchFromWayback($archiveLookupUrl);
         } catch (WaybackSnapshotNotFoundException) {
             return null;
         }

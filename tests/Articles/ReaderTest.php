@@ -2,6 +2,7 @@
 
 namespace Tests\Articles;
 
+use App\Articles\ArchiveSnapshotNotFoundException;
 use App\Articles\Contracts\Reader;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Http\Client\Request;
@@ -26,13 +27,13 @@ class ReaderTest extends TestCase
     /**
      * A Scrapfly scrape JSON envelope wrapping the given target HTML.
      */
-    private function scrapfly(string $content): PromiseInterface
+    private function scrapfly(string $content, int $statusCode = 200): PromiseInterface
     {
         return Http::response([
             'result' => [
                 'content'     => $content,
                 'url'         => 'https://archive.is/final',
-                'status_code' => 200,
+                'status_code' => $statusCode,
                 'success'     => true,
             ],
         ]);
@@ -223,6 +224,57 @@ class ReaderTest extends TestCase
             return str_starts_with($request->url(), 'https://api.scrapfly.io')
                 && str_contains((string) ($query['url'] ?? ''), 'www.nytimes.com');
         });
+    }
+
+    /**
+     * Fake a hard-paywall read in which Wayback has no snapshot and archive.is
+     * has one only for the www. form of the URL.
+     */
+    private function fakeArchiveWithOnlyWwwSnapshot(): void
+    {
+        Http::fake(function (Request $request) {
+            if (str_starts_with($request->url(), 'https://archive.org/wayback/available')) {
+                return Http::response(['archived_snapshots' => []]);
+            }
+
+            $query = [];
+            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+
+            return str_contains((string) ($query['url'] ?? ''), 'www.nytimes.com')
+                ? $this->scrapfly($this->cleanHtml())
+                : $this->scrapfly('<html>No results</html>', statusCode: 404);
+        });
+    }
+
+    private function scrapflyRequestCount(): int
+    {
+        return Http::recorded(fn (Request $request) => str_starts_with($request->url(), 'https://api.scrapfly.io'))->count();
+    }
+
+    #[Test]
+    public function it_retries_the_archive_lookup_with_www_when_the_bare_host_has_no_snapshot()
+    {
+        $this->fakeArchiveWithOnlyWwwSnapshot();
+
+        $article = $this->reader()->read('https://nytimes.com/some-article');
+
+        $this->assertEquals('A Complete, Freely Readable Article', $article->title);
+        $this->assertEquals(2, $this->scrapflyRequestCount());
+    }
+
+    #[Test]
+    public function it_does_not_retry_the_archive_lookup_when_the_url_already_has_www()
+    {
+        Http::fake(fn (Request $request) => str_starts_with($request->url(), 'https://api.scrapfly.io')
+            ? $this->scrapfly('<html>No results</html>', statusCode: 404)
+            : Http::response(['archived_snapshots' => []]));
+
+        try {
+            $this->reader()->read('https://www.nytimes.com/some-article');
+            $this->fail('Expected ArchiveSnapshotNotFoundException.');
+        } catch (ArchiveSnapshotNotFoundException) {
+            $this->assertEquals(1, $this->scrapflyRequestCount());
+        }
     }
 
     #[Test]
