@@ -137,6 +137,32 @@ class WebTest extends TestCase
         $this->assertEquals('https://theatlantic.com/politics/story/', $metadata->canonicalUrl);
     }
 
+    #[Test]
+    public function it_removes_the_gift_parameter_from_the_canonical_url_but_not_from_the_url_it_reads()
+    {
+        $reader = new class implements Reader
+        {
+            public ?string $url = null;
+
+            public function read(string $url): Article
+            {
+                $this->url = $url;
+
+                return new Article(url: $url, title: 'Title', publisher: 'The Atlantic', publicationDate: null, authors: [], text: 'Text.');
+            }
+        };
+        $this->app->instance(Reader::class, $reader);
+        $this->fakeTts();
+
+        /** @var Web $web */
+        $web = $this->app->make(Web::class);
+
+        $metadata = $web->getClipMetadata('https://www.theatlantic.com/politics/story/?gift=abc');
+
+        $this->assertEquals('https://www.theatlantic.com/politics/story/?gift=abc', $reader->url);
+        $this->assertEquals('https://theatlantic.com/politics/story/', $metadata->canonicalUrl);
+    }
+
     private function fakeReader(Article $article): void
     {
         $this->app->instance(Reader::class, new readonly class($article) implements Reader

@@ -152,6 +152,23 @@ readonly class Fetcher implements FetcherContract
         return $result->content;
     }
 
+    public function fetchGiftLink(string $url): string
+    {
+        // Publishers behind Cloudflare, like The Atlantic, ban the scraper's
+        // plain HTTP requests but let a rendered browser through.
+        try {
+            $result = $this->scraper->scrape($url, renderJs: true);
+        } catch (ScraperException $e) {
+            throw new GiftLinkFetchFailedException('Gift link fetch failed: '.$e->getMessage());
+        }
+
+        if ($result->statusCode >= 400) {
+            throw new GiftLinkFetchFailedException("Gift link fetch failed (HTTP {$result->statusCode}) for: $url");
+        }
+
+        return $result->content;
+    }
+
     private function scrape(string $url, bool $renderJs): ScrapeResult
     {
         try {

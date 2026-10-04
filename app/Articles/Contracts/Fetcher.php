@@ -4,6 +4,7 @@ namespace App\Articles\Contracts;
 
 use App\Articles\ArchiveBlockedException;
 use App\Articles\ArchiveSnapshotNotFoundException;
+use App\Articles\GiftLinkFetchFailedException;
 use App\Articles\WaybackSnapshotNotFoundException;
 
 interface Fetcher
@@ -33,4 +34,14 @@ interface Fetcher
      * @throws ArchiveBlockedException when the archive is blocked or errors
      */
     public function fetchFromArchive(string $url): string;
+
+    /**
+     * Retrieve a publisher's gift link through the configured Scraper with
+     * JavaScript rendering. An expired gift link may return the paywalled
+     * page, so the caller must check it.
+     *
+     * @throws GiftLinkFetchFailedException when the scraper fails or the
+     *                                      page returns an HTTP error status
+     */
+    public function fetchGiftLink(string $url): string;
 }

@@ -5,6 +5,7 @@ namespace App\Platforms;
 use App\Apis\Tts\Contracts\Client as TtsApi;
 use App\Articles\Article;
 use App\Articles\Contracts\Reader as ArticleReader;
+use App\Articles\GiftLinks;
 use App\Concerns\FixesUrls;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
@@ -26,6 +27,7 @@ readonly class Web implements Platform
         protected ArticleReader $reader,
         protected TtsApi $tts,
         protected Factory $http,
+        protected GiftLinks $giftLinks,
     ) {}
 
     /**
@@ -57,7 +59,7 @@ readonly class Web implements Platform
             // gets the URL with "www." kept.
             $article = $this->reader->read($this->removeUtmCodesFromUrl($this->ensureSchemeIsHttps($clipUrl)));
 
-            $clipUrl = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($clipUrl));
+            $clipUrl = $this->giftLinks->removeGiftParams($this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($clipUrl)));
 
             return new ClipMetadata(
                 title: $article->title,

@@ -4,6 +4,7 @@ namespace App\Platforms;
 
 use App\Apis\Tts\Contracts\Client as TtsApi;
 use App\Articles\Contracts\Reader as ArticleReader;
+use App\Articles\GiftLinks;
 use App\Enums\PlatformType;
 use App\Platforms\Contracts\ClipMetadata;
 use App\Platforms\Contracts\SourceMetadata;
@@ -28,9 +29,10 @@ readonly class Rss extends Web implements SubscribablePlatform
         ArticleReader $reader,
         TtsApi $tts,
         Factory $http,
+        GiftLinks $giftLinks,
         private FeedParser $feedParser,
     ) {
-        parent::__construct($reader, $tts, $http);
+        parent::__construct($reader, $tts, $http, $giftLinks);
     }
 
     protected function type(): PlatformType

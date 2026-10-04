@@ -5,6 +5,7 @@ namespace Tests\Articles;
 use App\Articles\ArchiveBlockedException;
 use App\Articles\ArchiveSnapshotNotFoundException;
 use App\Articles\Contracts\Fetcher;
+use App\Articles\GiftLinkFetchFailedException;
 use App\Articles\WaybackSnapshotNotFoundException;
 use App\Proxies\Contracts\ResidentialProxyConfig;
 use GuzzleHttp\Promise\PromiseInterface;
@@ -225,5 +226,38 @@ class FetcherTest extends TestCase
         $this->expectException(ArchiveBlockedException::class);
 
         $this->fetcher()->fetchFromArchive('https://www.example.com/x');
+    }
+
+    #[Test]
+    public function it_fetches_a_gift_link_in_one_rendered_request()
+    {
+        $captured = [];
+        $this->fakeArchive($this->scrapflyResponse('<html>article</html>'), $captured);
+
+        $body = $this->fetcher()->fetchGiftLink('https://www.theatlantic.com/a/1/?gift=abc');
+
+        $this->assertEquals('<html>article</html>', $body);
+        $this->assertSame('https://www.theatlantic.com/a/1/?gift=abc', $captured['url']);
+        $this->assertSame('true', $captured['render_js']);
+    }
+
+    #[Test]
+    public function it_throws_gift_link_fetch_failed_when_the_scraper_fails()
+    {
+        $this->fakeArchive($this->scrapflyResponse('', 200, success: false));
+
+        $this->expectException(GiftLinkFetchFailedException::class);
+
+        $this->fetcher()->fetchGiftLink('https://www.theatlantic.com/a/1/?gift=abc');
+    }
+
+    #[Test]
+    public function it_throws_gift_link_fetch_failed_when_the_publisher_answers_with_an_error_status()
+    {
+        $this->fakeArchive($this->scrapflyResponse('<html>blocked</html>', statusCode: 403));
+
+        $this->expectException(GiftLinkFetchFailedException::class);
+
+        $this->fetcher()->fetchGiftLink('https://www.theatlantic.com/a/1/?gift=abc');
     }
 }

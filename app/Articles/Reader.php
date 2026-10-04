@@ -22,6 +22,7 @@ readonly class Reader implements ReaderContract
         private Fetcher $fetcher,
         private Extractor $extractor,
         private PaywallDetector $paywallDetector,
+        private GiftLinks $giftLinks,
         private Cache $cache,
         #[Config('articles.cache_ttl_hours')] private int $cacheTtlHours,
         /** @var list<string> */
@@ -30,32 +31,38 @@ readonly class Reader implements ReaderContract
 
     public function read(string $url): Article
     {
-        // $url has "www." removed and is the cache key and the input to the
-        // hard-paywall-domain check. $archiveLookupUrl keeps any "www." because
-        // archive.is indexes pages by their published URL (NYT is
-        // www.nytimes.com), and a lookup without it finds nothing.
-        $archiveLookupUrl = $this->removeUtmCodesFromUrl($this->ensureSchemeIsHttps($url));
-        $url = $this->removeUtmCodesFromUrl($this->fixUrlSchemeAndHost($url));
+        // $url has "www." removed and is the input to the hard-paywall-domain
+        // check. $publishedUrl keeps any "www." because archive.is indexes
+        // pages by their published URL (NYT is www.nytimes.com), and a lookup
+        // without it finds nothing.
+        $publishedUrl = $this->removeUtmCodesFromUrl($this->ensureSchemeIsHttps($url));
+        $url = $this->fixUrlSchemeAndHost($publishedUrl);
 
+        // A clip's download reads its canonical URL, which has no gift
+        // parameters, so the cache key has none either.
         return $this->cache->remember(
-            "article:$url",
+            'article:'.$this->giftLinks->removeGiftParams($url),
             now()->addHours($this->cacheTtlHours),
-            fn () => $this->fetchAndExtract($url, $archiveLookupUrl),
+            fn () => $this->fetchAndExtract($url, $publishedUrl),
         );
     }
 
     /**
-     * Three fetch tiers, cheapest first:
+     * Four fetch tiers, cheapest first:
      *
      *   1. Direct (free). Skipped for a hard-paywall domain, which never serves
      *      a usable page to a logged-out reader. Used only if not paywalled.
-     *   2. Wayback (free). Its snapshot is often a capture of the paywalled
+     *   2. Gift link (paid, one rendered scraper request). Only for a URL with
+     *      a gift parameter. Used only if the PaywallDetector passes it.
+     *   3. Wayback (free). Its snapshot is often a capture of the paywalled
      *      page, so it is used only if the PaywallDetector passes it.
-     *   3. archive.is (paid, one or two scraper requests). Its snapshots are
+     *   4. archive.is (paid, one or two scraper requests). Its snapshots are
      *      user-submitted captures without the paywall, and it is the last
      *      tier, so its result is not checked.
+     *
+     * Wayback and archive.is are looked up without gift parameters.
      */
-    private function fetchAndExtract(string $url, string $archiveLookupUrl): Article
+    private function fetchAndExtract(string $url, string $publishedUrl): Article
     {
         if (! $this->isHardPaywallDomain($url)) {
             $direct = $this->extractor->extract($url, $html = $this->fetcher->fetchDirect($url));
@@ -64,6 +71,16 @@ readonly class Reader implements ReaderContract
                 return $direct;
             }
         }
+
+        if ($this->giftLinks->isGiftLink($publishedUrl)) {
+            $gift = $this->tryGiftLinkTier($url, $publishedUrl);
+
+            if ($gift !== null) {
+                return $gift;
+            }
+        }
+
+        $archiveLookupUrl = $this->giftLinks->removeGiftParams($publishedUrl);
 
         // Wayback indexes pages by the published URL, as archive.is does.
         $wayback = $this->tryWaybackTier($url, $archiveLookupUrl);
@@ -94,6 +111,24 @@ readonly class Reader implements ReaderContract
 
             return $this->fetcher->fetchFromArchive($uri->withHost("www.$host")->toString());
         }
+    }
+
+    /**
+     * Returns the Article from the gift link, or null when the fetch fails or
+     * the page is still paywalled. Null means the caller should continue to
+     * the archives.
+     */
+    private function tryGiftLinkTier(string $url, string $giftLinkUrl): ?Article
+    {
+        try {
+            $html = $this->fetcher->fetchGiftLink($giftLinkUrl);
+        } catch (GiftLinkFetchFailedException) {
+            return null;
+        }
+
+        $article = $this->extractor->extract($url, $html);
+
+        return $this->paywallDetector->isGated($html, $article) ? null : $article;
     }
 
     /**

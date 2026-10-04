@@ -277,6 +277,83 @@ class ReaderTest extends TestCase
         }
     }
 
+    /**
+     * Fake a read in which the scraper returns $giftPage for a URL with a gift
+     * parameter and $archiveSnapshot for anything else. Wayback has no snapshot.
+     */
+    private function fakeGiftLink(string $giftPage, string $archiveSnapshot): void
+    {
+        Http::fake(function (Request $request) use ($giftPage, $archiveSnapshot) {
+            if (str_starts_with($request->url(), 'https://archive.org/wayback/available')) {
+                return Http::response(['archived_snapshots' => []]);
+            }
+
+            $query = [];
+            parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+
+            return str_contains((string) ($query['url'] ?? ''), 'gift=')
+                ? $this->scrapfly($giftPage)
+                : $this->scrapfly($archiveSnapshot);
+        });
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function scrapedUrls(): array
+    {
+        return Http::recorded(fn (Request $request) => str_starts_with($request->url(), 'https://api.scrapfly.io'))
+            ->map(function (array $pair) {
+                $query = [];
+                parse_str((string) parse_url($pair[0]->url(), PHP_URL_QUERY), $query);
+
+                return (string) ($query['url'] ?? '');
+            })
+            ->values()
+            ->all();
+    }
+
+    #[Test]
+    public function it_reads_a_gift_link_through_the_scraper_before_the_archives()
+    {
+        $this->fakeGiftLink(giftPage: $this->cleanHtml(), archiveSnapshot: $this->gatedHtml());
+
+        $article = $this->reader()->read('https://www.theatlantic.com/a/1/?gift=abc');
+
+        $this->assertEquals('A Complete, Freely Readable Article', $article->title);
+        $this->assertSame(['https://www.theatlantic.com/a/1/?gift=abc'], $this->scrapedUrls());
+        Http::assertNotSent(fn (Request $request) => str_starts_with($request->url(), 'https://archive.org/'));
+    }
+
+    #[Test]
+    public function it_falls_back_to_the_archives_without_the_gift_parameter_when_the_gift_link_is_paywalled()
+    {
+        $this->fakeGiftLink(giftPage: $this->gatedHtml(), archiveSnapshot: $this->cleanHtml());
+
+        $article = $this->reader()->read('https://www.theatlantic.com/a/1/?gift=abc');
+
+        $this->assertEquals('A Complete, Freely Readable Article', $article->title);
+        $this->assertSame([
+            'https://www.theatlantic.com/a/1/?gift=abc',
+            'https://archive.ph/newest/https://www.theatlantic.com/a/1/',
+        ], $this->scrapedUrls());
+    }
+
+    #[Test]
+    public function it_serves_the_url_without_the_gift_parameter_from_the_gift_links_cache_entry()
+    {
+        $this->fakeGiftLink(giftPage: $this->cleanHtml(), archiveSnapshot: $this->gatedHtml());
+
+        $this->reader()->read('https://www.theatlantic.com/a/1/?gift=abc');
+
+        // A clip's download reads its canonical URL, which has no "www." or
+        // gift parameter.
+        $article = $this->reader()->read('https://theatlantic.com/a/1/');
+
+        $this->assertEquals('A Complete, Freely Readable Article', $article->title);
+        $this->assertCount(1, $this->scrapedUrls());
+    }
+
     #[Test]
     public function it_serves_a_second_read_of_the_same_url_from_cache()
     {

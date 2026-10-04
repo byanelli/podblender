@@ -30,6 +30,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Gift Link Parameters
+    |--------------------------------------------------------------------------
+    |
+    | Query parameters that make a URL a publisher's gift link, which unlocks
+    | one paywalled article, keyed by host with any leading "www." removed. A
+    | gift link is fetched through the scraper with JavaScript rendering before
+    | the archives are tried. The parameters are removed from the clip's
+    | canonical URL, the article cache key and the archive lookups.
+    |
+    */
+
+    'gift_link_params'     => [
+        'theatlantic.com' => ['gift'],
+        'nytimes.com'     => ['unlocked_article_code'],
+        'bloomberg.com'   => ['accessToken'],
+        'ft.com'          => ['accessToken'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Paywall Markers
     |--------------------------------------------------------------------------
     |
